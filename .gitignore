@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and caches
+.venv/
+venv/
+.uv-cache/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime databases and process files
+*.db
+*.sqlite
+*.sqlite3
+*.pid
+
+# Logs
+logs/
+*.log
+
+# Vector stores and generated retrieval state
+chroma/
+chroma_db/
+vector_store/
+storage/
+data/chroma/
+data/v05_eval/
+data/neo4j_real_probe_chroma/
+data/mineru_probe_output/
+
+# Uploads and downloaded raw files
+data/uploaded_docs/*
+!data/uploaded_docs/.gitkeep
+data/raw_manuals_downloaded/*
+!data/raw_manuals_downloaded/.gitkeep
+!data/raw_manuals_downloaded/README.md
+
+# Frontend outputs
+frontend/dist/
+frontend/node_modules/
+
+# Generated reports and temp files
+reports/
+outputs/
+tmp/
+temp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

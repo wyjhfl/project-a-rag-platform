@@ -1,0 +1,50 @@
+[
+  {
+    "question": "A100 出现 E-17 报警怎么排查？",
+    "expected_source": "air_compressor_a100.txt"
+  },
+  {
+    "question": "空压机压力上不去优先排查什么？",
+    "expected_source": "air_compressor_a100.txt"
+  },
+  {
+    "question": "A100 油温过高怎么处理？",
+    "expected_source": "air_compressor_a100.txt"
+  },
+  {
+    "question": "VFD-4500 OC-3 报警是什么意思？",
+    "expected_source": "vfd_4500.txt"
+  },
+  {
+    "question": "变频器减速时报过电压是什么原因？",
+    "expected_source": "vfd_4500.txt"
+  },
+  {
+    "question": "UPS-30K 逆变器过温怎么办？",
+    "expected_source": "ups_30k.txt"
+  },
+  {
+    "question": "UPS 放电时间变短怎么排查？",
+    "expected_source": "ups_30k.txt"
+  },
+  {
+    "question": "PLC-X200 RUN 灯闪烁怎么办？",
+    "expected_source": "plc_x200.txt"
+  },
+  {
+    "question": "DI 输入无响应怎么排查？",
+    "expected_source": "plc_x200.txt"
+  },
+  {
+    "question": "CW-200 出水温度降不下来怎么办？",
+    "expected_source": "chiller_cw200.txt"
+  },
+  {
+    "question": "工业冷水机水流报警怎么处理？",
+    "expected_source": "chiller_cw200.txt"
+  },
+  {
+    "question": "制动电阻异常会导致什么报警？",
+    "expected_source": "vfd_4500.txt"
+  }
+]
