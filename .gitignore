@@ -32,7 +32,7 @@ logs/
 chroma/
 chroma_db/
 vector_store/
-storage/
+/storage/
 data/chroma/
 data/v05_eval/
 data/neo4j_real_probe_chroma/
