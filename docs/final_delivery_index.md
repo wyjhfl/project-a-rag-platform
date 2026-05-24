@@ -54,6 +54,7 @@ sqlite + chroma + deepseek-chat + FastAPI + Vue 验收中心
 - bad case 负责沉淀失败样本。
 - trace 负责定位召回、上下文、rerank 和答案决策链路。
 - 前端验收中心负责把真实报告聚合成可展示状态。
+- A-v2.9 已将真实回归扩容到 `30/30`，真实对抗扩容到 `20/20`，并将 RAGAS 风格 `faithfulness` 提升到 `0.6983`。
 
 ## 核心证据入口
 
@@ -75,6 +76,8 @@ Provider：
 - [A-real-data 回归报告](A-real-data_regression_report.json)
 - [A-real-data 对抗报告](A-real-data_adversarial_report.json)
 - [A-real-data bad cases](A-real-data_bad_cases.md)
+- [A-v2.9 评测质量提升复盘](A-v2.9-evaluation-quality-review.md)
+- [A-v2.9 bad cases](A-v2.9_bad_cases.md)
 
 演示交付：
 
@@ -83,6 +86,8 @@ Provider：
 - [A-v2.6 公开交付检查复盘](A-v2.6-public-delivery-review.md)
 - [A-v2.7 面试材料压缩版复盘](A-v2.7-interview-compression-review.md)
 - [A-v2.8 作品集视觉补图复盘](A-v2.8-portfolio-visual-assets-review.md)
+- [A-v2.9 评测质量提升与样本扩容复盘](A-v2.9-evaluation-quality-review.md)
+- [A-v3.0 最终公开发布复核](A-v3.0-public-release-verification.md)
 
 面试材料：
 

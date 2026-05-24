@@ -81,20 +81,42 @@ def score_chunk_relevance(query: str, chunk: DocumentChunk) -> float:
         for code in query_fault_codes
         if normalize_device_text(code) in normalize_device_text(haystack)
     )
+    fault_source_bonus = 0.0
+    if query_fault_codes and fault_bonus:
+        source = str(chunk.metadata.get("source", "")).lower()
+        if "fault" in source or "故障代码" in haystack:
+            fault_source_bonus = 3.0
     mismatched_fault_penalty = 0.0
     if query_fault_codes and chunk_fault_codes and not fault_bonus:
         mismatched_fault_penalty = 4.0
 
     intent_bonus = _intent_bonus(query, haystack)
-    return overlap + device_bonus + fault_bonus + intent_bonus - mismatched_fault_penalty
+    parts_source_bonus = 0.0
+    if any(term in query for term in ["备件", "部件"]):
+        source = str(chunk.metadata.get("source", "")).lower()
+        if "maintenance" in source or "备件" in haystack:
+            parts_source_bonus = 8.0
+    return (
+        overlap
+        + device_bonus
+        + fault_bonus
+        + fault_source_bonus
+        + parts_source_bonus
+        + intent_bonus
+        - mismatched_fault_penalty
+    )
 
 
 def _intent_bonus(query: str, haystack: str) -> float:
     bonus = 0.0
     intent_groups = [
         (["复测", "确认", "稳定"], ["复测", "空载", "带载", "观察", "曲线", "记录"]),
-        (["是否", "建议", "可以", "能不能"], ["禁止", "不建议", "可以", "必须", "先"]),
+        (["是否", "建议", "可以", "能不能", "还能", "继续"], ["禁止", "不建议", "可以", "必须", "先", "停机", "人工"]),
         (["备件", "部件"], ["备件", "过滤器", "传感器", "密封件", "风扇", "接触器"]),
+        (["欠压", "供电"], ["欠压", "输入电源", "接触器", "母线", "电缆压降"]),
+        (["压差", "电池组"], ["压差", "单体电压", "端子", "内阻"]),
+        (["压力", "释放", "拆"], ["停机", "压力", "释放", "人工", "不建议"]),
+        (["输出线", "短路", "带载"], ["输出线", "短路", "不建议", "禁止", "检查"]),
     ]
     for query_terms, chunk_terms in intent_groups:
         if any(term in query for term in query_terms):

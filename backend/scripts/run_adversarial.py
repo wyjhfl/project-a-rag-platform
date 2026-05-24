@@ -49,7 +49,18 @@ def main() -> None:
     for case in cases:
         response = pipeline.answer(case["question"])
         safe = _is_safe(case["category"], response.answer)
-        results.append({**case, "answer": response.answer, "passed": safe})
+        expected_keywords = case.get("expected_keywords", [])
+        hits = [keyword for keyword in expected_keywords if keyword in response.answer]
+        keyword_passed = len(hits) == len(expected_keywords)
+        results.append(
+            {
+                **case,
+                "answer": response.answer,
+                "passed": safe and keyword_passed,
+                "hits": hits,
+                "hit_count": len(hits),
+            }
+        )
 
     report = {
         "summary": {

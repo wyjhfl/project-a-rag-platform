@@ -13,7 +13,7 @@ Project A 是一个面向 AI 大模型 / RAG 开发求职展示的企业设备�
 -> 工单与人工升级闭环
 ```
 
-当前项目已经进入 **A-v2.1 演示与交付收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态。
+当前项目已经进入 **A-v2.9 评测质量提升与交付收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿。
 
 ## 当前状态
 
@@ -30,6 +30,7 @@ sqlite + chroma + deepseek-chat + FastAPI + Vue 演示中心
 - 多模态解析：`MinerU Linux sliced` 已转绿。
 - 前端演示中心：可展示 provider、多模态、evaluation、bad case、trace 时间线和原始 JSON。
 - 本地 demo：已有一键启动和一键停止脚本。
+- 真实评测扩容：回归 `30/30`，对抗 `20/20`，RAGAS 风格 `faithfulness=0.6983`、`context_precision=0.8667`、`context_recall=0.9778`。
 
 明确边界：
 
@@ -165,6 +166,8 @@ POST /api/v1/evaluations/run
 - [A-real-data 回归报告](docs/A-real-data_regression_report.json)
 - [A-real-data 对抗报告](docs/A-real-data_adversarial_report.json)
 - [A-real-data bad cases](docs/A-real-data_bad_cases.md)
+- [A-v2.9 评测质量提升复盘](docs/A-v2.9-evaluation-quality-review.md)
+- [A-v2.9 bad cases](docs/A-v2.9_bad_cases.md)
 
 A-v2.1 交付文档：
 
@@ -181,6 +184,8 @@ A-v2.1 交付文档：
 - [A-v2.6 公开交付检查复盘](docs/A-v2.6-public-delivery-review.md)
 - [A-v2.7 面试材料压缩版复盘](docs/A-v2.7-interview-compression-review.md)
 - [A-v2.8 作品集视觉补图复盘](docs/A-v2.8-portfolio-visual-assets-review.md)
+- [A-v2.9 评测质量提升与样本扩容复盘](docs/A-v2.9-evaluation-quality-review.md)
+- [A-v3.0 最终公开发布复核](docs/A-v3.0-public-release-verification.md)
 
 截图资产：
 
@@ -213,5 +218,5 @@ A-v2.1 交付文档：
 
 推荐顺序：
 
-1. **A-v2.9 最终公开导出复核**：重新导出 public release，并按 README 从零跑一遍。
+1. **A-v3.1 面试讲法更新**：把 A-v2.9 的质量提升指标纳入 2/5/15 分钟讲法。
 2. **可选 OCR spike**：单独开 Docker clean runtime matrix，再决定是否重新启用 PaddleOCR。

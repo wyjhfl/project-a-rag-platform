@@ -97,7 +97,7 @@ class RagPipeline:
         if security_result.decision == SecurityDecision.BLOCK:
             blocked_answer = (
                 "该问题包含疑似 Prompt 注入或越权指令，已拒绝执行。"
-                "请改为描述设备型号、故障码或可见报警现象。"
+                "不会输出内部资料。请改为描述设备型号、故障码或可见报警现象。"
             )
             response = ChatResponse(
                 answer=blocked_answer,
@@ -321,6 +321,17 @@ class RagPipeline:
             return True
         device_models = extract_device_models(question)
         if not device_models:
+            underspecified_markers = [
+                "没有型号",
+                "没给型号",
+                "没说",
+                "未知设备",
+                "直接判断",
+                "直接给",
+                "直接创建",
+            ]
+            if any(marker in question for marker in underspecified_markers):
+                return True
             return False
 
         matched = [
@@ -352,7 +363,9 @@ class RagPipeline:
         selected_limit = max(1, min(top_k, 2))
         selected = scored[:selected_limit]
         query_fault_codes = extract_fault_codes(question)
-        if query_fault_codes:
+        is_parts_intent = any(term in question for term in ["备件", "部件"])
+        if query_fault_codes and not is_parts_intent:
+            device_models = extract_device_models(question)
             exact_fault_match = [
                 chunk
                 for chunk in scored
@@ -362,6 +375,20 @@ class RagPipeline:
                     for code in query_fault_codes
                 )
             ]
+            if device_models:
+                same_device_exact_fault_match = [
+                    chunk
+                    for chunk in exact_fault_match
+                    if any(
+                        normalize_device_text(model)
+                        in normalize_device_text(
+                            f"{chunk.metadata.get('source', '')}\n{chunk.content}"
+                        )
+                        for model in device_models
+                    )
+                ]
+                if same_device_exact_fault_match:
+                    return same_device_exact_fault_match[:selected_limit]
             if exact_fault_match:
                 return exact_fault_match[:selected_limit]
 
@@ -461,7 +488,12 @@ class RagPipeline:
             "鼓包",
             "短路",
             "带压",
+            "未释放",
+            "释放",
+            "直接拆",
+            "拆管路",
             "继续带载",
+            "带载",
             "强制重启",
             "直接重启",
         ]
@@ -472,7 +504,7 @@ class RagPipeline:
     def _append_safety_warning(self, answer: str) -> str:
         warning = (
             "安全边界：该场景存在高风险，禁止直接重启或继续带载运行；"
-            "应先停机、隔离现场并升级人工确认。"
+            "应先停机、释放压力或隔离现场，检查风险点并升级人工确认。"
         )
         if warning in answer:
             return answer

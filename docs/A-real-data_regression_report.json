@@ -1,8 +1,8 @@
 {
   "summary": {
-    "case_count": 20,
-    "passed_count": 19,
-    "source_hit_count": 20
+    "case_count": 30,
+    "passed_count": 30,
+    "source_hit_count": 30
   },
   "results": [
     {
@@ -67,7 +67,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_air_compressor_a100_faults.md",
-        "real_air_compressor_a100_maintenance.md"
+        "real_air_compressor_a100_faults.md"
       ],
       "passed": true,
       "hits": [
@@ -91,9 +91,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_air_compressor_a100_maintenance.md",
-        "real_air_compressor_a100_faults.md",
-        "real_air_compressor_a100_faults.md",
-        "real_air_compressor_a100_maintenance.md"
+        "real_air_compressor_a100_faults.md"
       ],
       "passed": true,
       "hits": [
@@ -117,7 +115,6 @@
       "source_hit": true,
       "citation_sources": [
         "real_ups_30k_safety.md",
-        "real_ups_30k_thermal.md",
         "public_schneider_smartups_vt_30k_safety.md"
       ],
       "passed": true,
@@ -138,15 +135,15 @@
       ],
       "expected_source": "real_ups_30k_safety.md",
       "category": "fault_code",
-      "hit_count": 2,
+      "hit_count": 3,
       "source_hit": true,
       "citation_sources": [
         "real_ups_30k_safety.md",
-        "real_ups_30k_thermal.md",
-        "public_schneider_smartups_vt_30k_safety.md"
+        "real_ups_30k_thermal.md"
       ],
       "passed": true,
       "hits": [
+        "BAT-SMOKE",
         "电池",
         "HITL"
       ]
@@ -166,8 +163,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_ups_30k_thermal.md",
-        "public_schneider_smartups_vt_30k_safety.md",
-        "real_ups_30k_safety.md"
+        "public_schneider_smartups_vt_30k_safety.md"
       ],
       "passed": true,
       "hits": [
@@ -215,7 +211,6 @@
       "source_hit": true,
       "citation_sources": [
         "real_plc_x200_comm.md",
-        "real_plc_x200_io.md",
         "real_plc_x200_comm.md"
       ],
       "passed": true,
@@ -240,8 +235,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_plc_x200_comm.md",
-        "real_plc_x200_comm.md",
-        "real_plc_x200_io.md"
+        "real_plc_x200_comm.md"
       ],
       "passed": true,
       "hits": [
@@ -261,15 +255,15 @@
       ],
       "expected_source": "real_plc_x200_io.md",
       "category": "fault_code",
-      "hit_count": 2,
+      "hit_count": 3,
       "source_hit": true,
       "citation_sources": [
         "real_plc_x200_io.md",
-        "real_plc_x200_comm.md",
         "real_plc_x200_io.md"
       ],
       "passed": true,
       "hits": [
+        "IO-24",
         "24V",
         "公共端"
       ]
@@ -289,8 +283,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_plc_x200_io.md",
-        "real_plc_x200_io.md",
-        "real_plc_x200_comm.md"
+        "real_plc_x200_io.md"
       ],
       "passed": true,
       "hits": [
@@ -310,15 +303,17 @@
       ],
       "expected_source": "real_chiller_cw200_pressure.md",
       "category": "fault_code",
-      "hit_count": 2,
+      "hit_count": 3,
       "source_hit": true,
       "citation_sources": [
+        "real_chiller_cw200_pressure.md",
         "real_chiller_cw200_pressure.md"
       ],
       "passed": true,
       "hits": [
         "HP-01",
-        "冷凝器"
+        "冷凝器",
+        "水泵"
       ]
     },
     {
@@ -332,15 +327,14 @@
       ],
       "expected_source": "real_chiller_cw200_pressure.md",
       "category": "parts",
-      "hit_count": 2,
+      "hit_count": 3,
       "source_hit": true,
       "citation_sources": [
-        "real_chiller_cw200_pressure.md",
-        "real_chiller_cw200_flow.md",
         "real_chiller_cw200_pressure.md"
       ],
       "passed": true,
       "hits": [
+        "LP-02",
         "制冷剂",
         "膨胀阀"
       ]
@@ -360,7 +354,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_chiller_cw200_flow.md",
-        "real_chiller_cw200_pressure.md"
+        "real_chiller_cw200_flow.md"
       ],
       "passed": true,
       "hits": [
@@ -408,7 +402,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_vfd_4500_overcurrent.md",
-        "real_vfd_4500_voltage.md"
+        "real_vfd_4500_overcurrent.md"
       ],
       "passed": true,
       "hits": [
@@ -428,15 +422,14 @@
       ],
       "expected_source": "real_vfd_4500_overcurrent.md",
       "category": "fault_code",
-      "hit_count": 2,
+      "hit_count": 3,
       "source_hit": true,
       "citation_sources": [
-        "real_vfd_4500_overcurrent.md",
-        "real_vfd_4500_voltage.md",
         "real_vfd_4500_overcurrent.md"
       ],
       "passed": true,
       "hits": [
+        "OC-7",
         "负载突变",
         "电机绝缘"
       ]
@@ -456,7 +449,7 @@
       "source_hit": true,
       "citation_sources": [
         "real_vfd_4500_voltage.md",
-        "real_vfd_4500_overcurrent.md"
+        "real_vfd_4500_voltage.md"
       ],
       "passed": true,
       "hits": [
@@ -476,13 +469,256 @@
       ],
       "expected_source": "real_vfd_4500_voltage.md",
       "category": "fault_code",
-      "hit_count": 0,
+      "hit_count": 3,
       "source_hit": true,
       "citation_sources": [
         "real_vfd_4500_voltage.md"
       ],
-      "passed": false,
-      "hits": []
+      "passed": true,
+      "hits": [
+        "UV-1",
+        "输入电源",
+        "接触器"
+      ]
+    },
+    {
+      "id": "real-reg-021",
+      "device_model": "UPS-30K",
+      "question": "UPS-30K 电池组压差 BAT-VOLT 异常要检查什么？",
+      "expected_keywords": [
+        "BAT-VOLT",
+        "单体电压",
+        "内阻"
+      ],
+      "expected_source": "real_ups_30k_safety.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_ups_30k_safety.md",
+        "real_ups_30k_safety.md"
+      ],
+      "passed": true,
+      "hits": [
+        "BAT-VOLT",
+        "单体电压",
+        "内阻"
+      ]
+    },
+    {
+      "id": "real-reg-022",
+      "device_model": "UPS-30K",
+      "question": "UPS-30K 过温未恢复前可以强制重启吗？",
+      "expected_keywords": [
+        "过温",
+        "不建议",
+        "重启"
+      ],
+      "expected_source": "real_ups_30k_thermal.md",
+      "category": "safety",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_ups_30k_thermal.md",
+        "public_schneider_smartups_vt_30k_safety.md"
+      ],
+      "passed": true,
+      "hits": [
+        "过温",
+        "不建议",
+        "重启"
+      ]
+    },
+    {
+      "id": "real-reg-023",
+      "device_model": "A100",
+      "question": "A100 E-17 处理前是否需要先释放现场压力？",
+      "expected_keywords": [
+        "停机",
+        "压力",
+        "释放"
+      ],
+      "expected_source": "real_air_compressor_a100_faults.md",
+      "category": "safety",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_maintenance.md"
+      ],
+      "passed": true,
+      "hits": [
+        "停机",
+        "压力",
+        "释放"
+      ]
+    },
+    {
+      "id": "real-reg-024",
+      "device_model": "A100",
+      "question": "A100 E-17 和 E-09 是同一个故障吗？",
+      "expected_keywords": [
+        "E-17",
+        "E-09",
+        "供压"
+      ],
+      "expected_source": "real_air_compressor_a100_faults.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_faults.md"
+      ],
+      "passed": true,
+      "hits": [
+        "E-17",
+        "E-09",
+        "供压"
+      ]
+    },
+    {
+      "id": "real-reg-025",
+      "device_model": "CW200",
+      "question": "CW200 HP-01 高压报警时需要确认哪些水路状态？",
+      "expected_keywords": [
+        "HP-01",
+        "水泵",
+        "阀门"
+      ],
+      "expected_source": "real_chiller_cw200_pressure.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_chiller_cw200_pressure.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "passed": true,
+      "hits": [
+        "HP-01",
+        "水泵",
+        "阀门"
+      ]
+    },
+    {
+      "id": "real-reg-026",
+      "device_model": "CW200",
+      "question": "CW200 TEMP-H 出水温度过高应该检查哪些项？",
+      "expected_keywords": [
+        "TEMP-H",
+        "冷凝器",
+        "温控"
+      ],
+      "expected_source": "real_chiller_cw200_flow.md",
+      "category": "symptom",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_chiller_cw200_flow.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "passed": true,
+      "hits": [
+        "TEMP-H",
+        "冷凝器",
+        "温控"
+      ]
+    },
+    {
+      "id": "real-reg-027",
+      "device_model": "PLC-X200",
+      "question": "PLC-X200 COM-12 和 COM-08 的排查重点有什么区别？",
+      "expected_keywords": [
+        "COM-12",
+        "COM-08",
+        "网络拥塞"
+      ],
+      "expected_source": "real_plc_x200_comm.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_plc_x200_comm.md",
+        "real_plc_x200_comm.md"
+      ],
+      "passed": true,
+      "hits": [
+        "COM-12",
+        "COM-08",
+        "网络拥塞"
+      ]
+    },
+    {
+      "id": "real-reg-028",
+      "device_model": "PLC-X200",
+      "question": "PLC-X200 IO-24 输入点无响应时要看模块什么状态？",
+      "expected_keywords": [
+        "IO-24",
+        "输入模块",
+        "诊断灯"
+      ],
+      "expected_source": "real_plc_x200_io.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_plc_x200_io.md",
+        "real_plc_x200_io.md"
+      ],
+      "passed": true,
+      "hits": [
+        "IO-24",
+        "输入模块",
+        "诊断灯"
+      ]
+    },
+    {
+      "id": "real-reg-029",
+      "device_model": "VFD-4500",
+      "question": "VFD-4500 OV-2 和 UV-1 分别和母线电压什么状态有关？",
+      "expected_keywords": [
+        "OV-2",
+        "UV-1",
+        "母线"
+      ],
+      "expected_source": "real_vfd_4500_voltage.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_vfd_4500_voltage.md",
+        "real_vfd_4500_voltage.md"
+      ],
+      "passed": true,
+      "hits": [
+        "OV-2",
+        "UV-1",
+        "母线"
+      ]
+    },
+    {
+      "id": "real-reg-030",
+      "device_model": "VFD-4500",
+      "question": "VFD-4500 OC-3 输出线疑似短路时还能继续带载观察吗？",
+      "expected_keywords": [
+        "OC-3",
+        "输出线",
+        "不建议"
+      ],
+      "expected_source": "real_vfd_4500_overcurrent.md",
+      "category": "safety",
+      "hit_count": 2,
+      "source_hit": true,
+      "citation_sources": [
+        "real_vfd_4500_overcurrent.md",
+        "real_vfd_4500_overcurrent.md"
+      ],
+      "passed": true,
+      "hits": [
+        "OC-3",
+        "输出线"
+      ]
     }
   ]
 }

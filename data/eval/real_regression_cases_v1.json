@@ -158,5 +158,85 @@
     "expected_keywords": ["UV-1", "输入电源", "接触器"],
     "expected_source": "real_vfd_4500_voltage.md",
     "category": "fault_code"
+  },
+  {
+    "id": "real-reg-021",
+    "device_model": "UPS-30K",
+    "question": "UPS-30K 电池组压差 BAT-VOLT 异常要检查什么？",
+    "expected_keywords": ["BAT-VOLT", "单体电压", "内阻"],
+    "expected_source": "real_ups_30k_safety.md",
+    "category": "fault_code"
+  },
+  {
+    "id": "real-reg-022",
+    "device_model": "UPS-30K",
+    "question": "UPS-30K 过温未恢复前可以强制重启吗？",
+    "expected_keywords": ["过温", "不建议", "重启"],
+    "expected_source": "real_ups_30k_thermal.md",
+    "category": "safety"
+  },
+  {
+    "id": "real-reg-023",
+    "device_model": "A100",
+    "question": "A100 E-17 处理前是否需要先释放现场压力？",
+    "expected_keywords": ["停机", "压力", "释放"],
+    "expected_source": "real_air_compressor_a100_faults.md",
+    "category": "safety"
+  },
+  {
+    "id": "real-reg-024",
+    "device_model": "A100",
+    "question": "A100 E-17 和 E-09 是同一个故障吗？",
+    "expected_keywords": ["E-17", "E-09", "供压"],
+    "expected_source": "real_air_compressor_a100_faults.md",
+    "category": "fault_code"
+  },
+  {
+    "id": "real-reg-025",
+    "device_model": "CW200",
+    "question": "CW200 HP-01 高压报警时需要确认哪些水路状态？",
+    "expected_keywords": ["HP-01", "水泵", "阀门"],
+    "expected_source": "real_chiller_cw200_pressure.md",
+    "category": "fault_code"
+  },
+  {
+    "id": "real-reg-026",
+    "device_model": "CW200",
+    "question": "CW200 TEMP-H 出水温度过高应该检查哪些项？",
+    "expected_keywords": ["TEMP-H", "冷凝器", "温控"],
+    "expected_source": "real_chiller_cw200_flow.md",
+    "category": "symptom"
+  },
+  {
+    "id": "real-reg-027",
+    "device_model": "PLC-X200",
+    "question": "PLC-X200 COM-12 和 COM-08 的排查重点有什么区别？",
+    "expected_keywords": ["COM-12", "COM-08", "网络拥塞"],
+    "expected_source": "real_plc_x200_comm.md",
+    "category": "fault_code"
+  },
+  {
+    "id": "real-reg-028",
+    "device_model": "PLC-X200",
+    "question": "PLC-X200 IO-24 输入点无响应时要看模块什么状态？",
+    "expected_keywords": ["IO-24", "输入模块", "诊断灯"],
+    "expected_source": "real_plc_x200_io.md",
+    "category": "fault_code"
+  },
+  {
+    "id": "real-reg-029",
+    "device_model": "VFD-4500",
+    "question": "VFD-4500 OV-2 和 UV-1 分别和母线电压什么状态有关？",
+    "expected_keywords": ["OV-2", "UV-1", "母线"],
+    "expected_source": "real_vfd_4500_voltage.md",
+    "category": "fault_code"
+  },
+  {
+    "id": "real-reg-030",
+    "device_model": "VFD-4500",
+    "question": "VFD-4500 OC-3 输出线疑似短路时还能继续带载观察吗？",
+    "expected_keywords": ["OC-3", "输出线", "不建议"],
+    "expected_source": "real_vfd_4500_overcurrent.md",
+    "category": "safety"
   }
 ]

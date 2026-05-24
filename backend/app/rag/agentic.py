@@ -168,7 +168,7 @@ class AgenticRetriever:
 
     def _extract_fault_codes(self, text: str) -> list[str]:
         codes: list[str] = []
-        for match in re.finditer(r"\b[A-Z][-_]?\d{2,4}\b", text, flags=re.IGNORECASE):
+        for match in re.finditer(r"\b[A-Z]{1,6}[-_]?\d{1,4}\b", text, flags=re.IGNORECASE):
             code = match.group(0).upper()
             if code.startswith(("A", "CW", "PLC", "VFD", "UPS", "ZX")):
                 continue
@@ -195,6 +195,19 @@ class AgenticRetriever:
                 "重启",
                 "停机",
                 "人工",
+                "禁止",
+                "不建议",
+                "带载",
+                "输出线",
+                "欠压",
+                "输入电源",
+                "接触器",
+                "压差",
+                "单体电压",
+                "内阻",
+                "释放",
+                "诊断灯",
+                "母线",
             ]
             if term in text
         ]

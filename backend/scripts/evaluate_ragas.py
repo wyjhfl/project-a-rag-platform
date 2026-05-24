@@ -13,7 +13,6 @@ if str(BACKEND_DIR) not in sys.path:
 
 METRICS = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
 
-
 def evaluate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
     results = []
     for case in cases:
@@ -188,7 +187,9 @@ def _keyword_coverage(text: str, expected_keywords: list[str]) -> float:
 
 
 def _terms(text: str) -> list[str]:
-    return [term for term in text.replace("，", " ").replace("。", " ").split() if len(term) > 1]
+    from app.rag.scoring import tokenize
+
+    return [term for term in tokenize(text) if len(term) > 1]
 
 
 def _build_diagnostics(case: dict[str, Any], scores: dict[str, float]) -> dict[str, Any]:

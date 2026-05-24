@@ -61,9 +61,12 @@ def semantic_chunk_text(
     def flush_buffer() -> None:
         if not buffer:
             return
+        content_lines = list(buffer)
+        if section and section != default_section:
+            content_lines = [section, *content_lines]
         chunks.append(
             DocumentChunk(
-                content="\n".join(buffer),
+                content="\n".join(content_lines),
                 metadata={
                     "source": source,
                     "document_id": document_id,
