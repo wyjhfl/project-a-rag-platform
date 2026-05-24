@@ -13,7 +13,15 @@ Project A 是一个面向 AI 大模型 / RAG 开发求职展示的企业设备�
 -> 工单与人工升级闭环
 ```
 
-当前项目已经进入 **A-v2.9 评测质量提升与交付收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿。
+当前项目已经进入 **A-v3.1 公开展示与面试讲法收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，README 已按招聘方首次阅读路径整理。
+
+## 30 秒看懂项目
+
+- **业务场景**：企业设备售后诊断，输入设备型号、故障码或现场现象，输出带引用的排障建议，并在高风险或资料不足时触发拒答/人工升级。
+- **核心能力**：RAG 检索、grounded 回答、引用证据、Provider 验收、多模态边界、bad case、trace、evaluation、工单闭环。
+- **默认 demo**：`sqlite + chroma + deepseek-chat + FastAPI + Vue 演示中心`，不要求现场部署 PostgreSQL、Redis、Milvus、Neo4j 或 PaddleOCR。
+- **质量证据**：真实回归 `30/30`，真实对抗 `20/20`，RAGAS 风格 `context_precision=0.8667`、`faithfulness=0.6983`、`context_recall=0.9778`。
+- **面试亮点**：不是只包装聊天接口，而是把“能回答”推进到“可验收、可追踪、可解释边界、可本地演示”的 RAG 工程系统。
 
 ## 当前状态
 
@@ -186,6 +194,7 @@ A-v2.1 交付文档：
 - [A-v2.8 作品集视觉补图复盘](docs/A-v2.8-portfolio-visual-assets-review.md)
 - [A-v2.9 评测质量提升与样本扩容复盘](docs/A-v2.9-evaluation-quality-review.md)
 - [A-v3.0 最终公开发布复核](docs/A-v3.0-public-release-verification.md)
+- [A-v3.1 公开展示与面试讲法收口](docs/A-v3.1-public-readability-review.md)
 
 截图资产：
 
@@ -218,5 +227,5 @@ A-v2.1 交付文档：
 
 推荐顺序：
 
-1. **A-v3.1 面试讲法更新**：把 A-v2.9 的质量提升指标纳入 2/5/15 分钟讲法。
+1. **A-v3.2 CI 状态与远端展示复核**：确认 GitHub Actions、README 链接、公开仓库首屏展示全部正常。
 2. **可选 OCR spike**：单独开 Docker clean runtime matrix，再决定是否重新启用 PaddleOCR。

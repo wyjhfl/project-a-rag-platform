@@ -19,11 +19,12 @@
 
 它从设备故障描述出发，完成知识检索、引用证据、grounded 回答、evaluation、bad case、trace，以及工单和人工升级闭环。
 
-我重点做了三件事：
+我重点做了四件事：
 
 - 第一，文本主链不是“接上 LLM 就算完成”，而是做 provider auth preflight 和 grounded acceptance。当前 `deepseek_chat` 是公开 demo 默认主链，MiMo token-plan 已经在 A-v2.2 重新验收转绿，并在 A-v2.4 做了横向对比。
 - 第二，多模态没有笼统说支持，而是拆开验收。Vision LLM 和 MinerU Linux sliced 已转绿，PaddleOCR 已明确为 runtime compatibility boundary，不进入默认演示路径。
-- 第三，我做了前端验收中心，把 provider、多模态、evaluation、bad case、trace 和原始 JSON 聚合起来，面试时能直接展示真实证据链。
+- 第三，评测不是小样本自证。我把真实回归从 20 条扩到 30 条并做到 `30/30`，真实对抗从 10 条扩到 20 条并做到 `20/20`，同时让 `context_precision=0.8667`、`faithfulness=0.6983`、`context_recall=0.9778`。
+- 第四，我做了前端验收中心，把 provider、多模态、evaluation、bad case、trace 和原始 JSON 聚合起来，面试时能直接展示真实证据链。
 
 这个项目最能体现的是：我不只是会搭 RAG，而是能把 RAG 做成可验收、可排查、可演示、边界清楚的工程系统。
 
@@ -63,7 +64,7 @@
 
 - Provider 状态。
 - 多模态状态。
-- evaluation 和 bad case。
+- evaluation 和 bad case，重点讲 A-v2.9 的 `30/30` 回归、`20/20` 对抗和 RAGAS 风格指标。
 - trace 时间线和原始 JSON。
 
 ### 2:20 - 3:20 Provider 主线
@@ -104,11 +105,11 @@
 
 讲法：
 
-> 这个项目最重要的不是堆 RAG 名词，而是每条能力都有真实验收、证据文件和失败边界。bad case 和 trace 能说明问题发生在召回、上下文、rerank 还是答案决策。
+> 这个项目最重要的不是堆 RAG 名词，而是每条能力都有真实验收、证据文件和失败边界。A-v2.9 后，回归和对抗样本都扩容并全量通过，bad case 和 trace 能说明问题发生在召回、上下文、rerank 还是答案决策。
 
 收束句：
 
-> 所以它展示的是一个能落地、能排查、能演示的 RAG 工程系统。
+> 所以它展示的是一个能落地、能排查、能演示、能证明质量提升的 RAG 工程系统。
 
 ## 15 分钟深挖版
 
@@ -199,6 +200,23 @@ PaddleOCR 的问题被定性为 runtime compatibility boundary，因为多轮真
 - trace 展开关键节点。
 - 判断是召回、上下文噪声、rerank 还是答案决策。
 - 修复后再回归。
+
+A-v2.9 可以直接报数字：
+
+```text
+real regression: 30/30
+real adversarial: 20/20
+context_precision: 0.8667
+faithfulness: 0.6983
+context_recall: 0.9778
+```
+
+幻觉缓解可以讲四类：
+
+- 未知型号拒答。
+- 无型号或缺故障码时要求补充信息。
+- 跨设备相似故障不能混用资料。
+- 危险操作必须触发停机、隔离和人工确认表达。
 
 ### 6. 前端验收中心
 
