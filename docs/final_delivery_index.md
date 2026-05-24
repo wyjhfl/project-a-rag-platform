@@ -89,6 +89,7 @@ Provider：
 - [A-v2.9 评测质量提升与样本扩容复盘](A-v2.9-evaluation-quality-review.md)
 - [A-v3.0 最终公开发布复核](A-v3.0-public-release-verification.md)
 - [A-v3.1 公开展示与面试讲法收口](A-v3.1-public-readability-review.md)
+- [A-v3.2 远端 CI 与公开展示复核](A-v3.2-remote-ci-display-review.md)
 
 面试材料：
 

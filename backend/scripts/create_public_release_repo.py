@@ -90,6 +90,7 @@ FILES_TO_COPY = [
     "docs/A-v2.9_bad_cases.md",
     "docs/A-v3.0-public-release-verification.md",
     "docs/A-v3.1-public-readability-review.md",
+    "docs/A-v3.2-remote-ci-display-review.md",
     "docs/A-vue-fastapi_preflight_2026-05-17.json",
     "docs/demo_assets_checklist.md",
     "docs/demo_guide.md",

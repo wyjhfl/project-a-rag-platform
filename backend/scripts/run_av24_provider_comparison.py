@@ -10,10 +10,9 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from app.rag.costing import TokenCostEstimator
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
-
-from app.rag.costing import TokenCostEstimator
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = PROJECT_DIR / "docs" / "A-v2.2_provider_manifest.json"

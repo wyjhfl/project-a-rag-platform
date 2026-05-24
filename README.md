@@ -13,7 +13,7 @@ Project A 是一个面向 AI 大模型 / RAG 开发求职展示的企业设备�
 -> 工单与人工升级闭环
 ```
 
-当前项目已经进入 **A-v3.1 公开展示与面试讲法收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，README 已按招聘方首次阅读路径整理。
+当前项目已经进入 **A-v3.2 远端 CI 与公开展示复核阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，README 已按招聘方首次阅读路径整理，并开始对 GitHub 远端 CI 和公开页面做闭环检查。
 
 ## 30 秒看懂项目
 
@@ -195,6 +195,7 @@ A-v2.1 交付文档：
 - [A-v2.9 评测质量提升与样本扩容复盘](docs/A-v2.9-evaluation-quality-review.md)
 - [A-v3.0 最终公开发布复核](docs/A-v3.0-public-release-verification.md)
 - [A-v3.1 公开展示与面试讲法收口](docs/A-v3.1-public-readability-review.md)
+- [A-v3.2 远端 CI 与公开展示复核](docs/A-v3.2-remote-ci-display-review.md)
 
 截图资产：
 
@@ -227,5 +228,5 @@ A-v2.1 交付文档：
 
 推荐顺序：
 
-1. **A-v3.2 CI 状态与远端展示复核**：确认 GitHub Actions、README 链接、公开仓库首屏展示全部正常。
+1. **A-v3.3 轻量作品集入口增强**：在不新增功能的前提下，补一段更适合简历/作品集引用的项目摘要。
 2. **可选 OCR spike**：单独开 Docker clean runtime matrix，再决定是否重新启用 PaddleOCR。
