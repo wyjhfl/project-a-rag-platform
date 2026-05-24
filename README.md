@@ -13,7 +13,7 @@ Project A 是一个面向 AI 大模型 / RAG 开发求职展示的企业设备�
 -> 工单与人工升级闭环
 ```
 
-当前项目已经进入 **A-v3.5 远端最终巡检完成阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，GitHub 远端 CI 已通过，README 已按招聘方、作品集和简历投递路径整理。
+当前项目已经进入 **A-v3.6 Release Tag 收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，GitHub 远端 CI 已通过，README 已按招聘方、作品集和简历投递路径整理，并准备以 `v3.5-public-delivery` 作为公开交付版本。
 
 ## 作品集摘要
 
@@ -26,6 +26,12 @@ Project A 是一个企业设备售后诊断 RAG 平台，把设备型号、故�
 - **30 秒开场白**：我做的 Project A 不是普通聊天 demo，而是把设备故障诊断做成可检索、可引用、可评测、可追踪、可演示、能升级人工的 RAG 工程闭环。
 
 完整投递材料见：[docs/A-v3.4-resume-delivery-pack.md](docs/A-v3.4-resume-delivery-pack.md)。
+
+## 当前发布版本
+
+- Release tag：`v3.5-public-delivery`
+- Release notes：[docs/A-v3.6-public-release-notes.md](docs/A-v3.6-public-release-notes.md)
+- 最终巡检：[docs/A-v3.5-final-remote-audit.md](docs/A-v3.5-final-remote-audit.md)
 
 ## 30 秒看懂项目
 
@@ -211,6 +217,7 @@ A-v2.1 交付文档：
 - [A-v3.3 轻量作品集入口增强](docs/A-v3.3-portfolio-entry-review.md)
 - [A-v3.4 简历投递材料收口](docs/A-v3.4-resume-delivery-pack.md)
 - [A-v3.5 远端最终巡检](docs/A-v3.5-final-remote-audit.md)
+- [A-v3.6 公开交付 Release Notes](docs/A-v3.6-public-release-notes.md)
 
 截图资产：
 
@@ -243,5 +250,5 @@ A-v2.1 交付文档：
 
 推荐顺序：
 
-1. **可选 A-v3.6 Release Tag**：如需正式版本号，可打 `v3.5-public-delivery` tag 并补 GitHub release notes。
+1. **可选 GitHub Release 页面**：如果需要更正式的发布页，可基于 `docs/A-v3.6-public-release-notes.md` 在 GitHub 创建 Release。
 2. **可选 OCR spike**：单独开 Docker clean runtime matrix，再决定是否重新启用 PaddleOCR。

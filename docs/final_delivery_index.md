@@ -93,6 +93,7 @@ Provider：
 - [A-v3.3 轻量作品集入口增强](A-v3.3-portfolio-entry-review.md)
 - [A-v3.4 简历投递材料收口](A-v3.4-resume-delivery-pack.md)
 - [A-v3.5 远端最终巡检](A-v3.5-final-remote-audit.md)
+- [A-v3.6 公开交付 Release Notes](A-v3.6-public-release-notes.md)
 
 面试材料：
 
