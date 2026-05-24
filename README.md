@@ -13,11 +13,19 @@ Project A 是一个面向 AI 大模型 / RAG 开发求职展示的企业设备�
 -> 工单与人工升级闭环
 ```
 
-当前项目已经进入 **A-v3.3 轻量作品集入口增强阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，GitHub 远端 CI 已完成复核，README 已按招聘方和作品集首次阅读路径整理。
+当前项目已经进入 **A-v3.4 简历投递材料收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，GitHub 远端 CI 已完成复核，README 已按招聘方、作品集和简历投递路径整理。
 
 ## 作品集摘要
 
 Project A 是一个企业设备售后诊断 RAG 平台，把设备型号、故障码和现场现象转成可引用的排障建议，并在资料不足或高风险操作时拒答/升级人工。项目覆盖 FastAPI、Vue、Chroma、SQLite、LangChain/LangGraph、Provider 验收、多模态边界、evaluation、bad case、trace 和工单闭环。A-v2.9 后真实回归扩容到 `30/30`、真实对抗扩容到 `20/20`，并达到 `context_precision=0.8667`、`faithfulness=0.6983`、`context_recall=0.9778`。
+
+## 简历投递口径
+
+- **简历 bullet**：企业设备售后诊断 RAG 平台，基于 FastAPI、Vue、Chroma、SQLite、LangChain/LangGraph 实现可引用问答、Provider 验收、多模态边界、bad case、trace、evaluation 与工单闭环；真实回归扩容至 `30/30`，真实对抗扩容至 `20/20`。
+- **GitHub pinned repo**：Equipment after-sales diagnosis RAG platform with grounded answers, citations, evaluation, trace, provider acceptance, multimodal boundaries, and ticket workflow.
+- **30 秒开场白**：我做的 Project A 不是普通聊天 demo，而是把设备故障诊断做成可检索、可引用、可评测、可追踪、可演示、能升级人工的 RAG 工程闭环。
+
+完整投递材料见：[docs/A-v3.4-resume-delivery-pack.md](docs/A-v3.4-resume-delivery-pack.md)。
 
 ## 30 秒看懂项目
 
@@ -201,6 +209,7 @@ A-v2.1 交付文档：
 - [A-v3.1 公开展示与面试讲法收口](docs/A-v3.1-public-readability-review.md)
 - [A-v3.2 远端 CI 与公开展示复核](docs/A-v3.2-remote-ci-display-review.md)
 - [A-v3.3 轻量作品集入口增强](docs/A-v3.3-portfolio-entry-review.md)
+- [A-v3.4 简历投递材料收口](docs/A-v3.4-resume-delivery-pack.md)
 
 截图资产：
 
@@ -233,5 +242,5 @@ A-v2.1 交付文档：
 
 推荐顺序：
 
-1. **A-v3.4 简历投递材料收口**：把项目摘要压缩成简历 bullet、GitHub pinned repo 描述和面试开场白三种口径。
+1. **A-v3.5 远端最终巡检**：最后检查公开仓库 README、Actions、核心链接和投递材料是否一致。
 2. **可选 OCR spike**：单独开 Docker clean runtime matrix，再决定是否重新启用 PaddleOCR。

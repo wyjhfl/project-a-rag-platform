@@ -92,6 +92,7 @@ FILES_TO_COPY = [
     "docs/A-v3.1-public-readability-review.md",
     "docs/A-v3.2-remote-ci-display-review.md",
     "docs/A-v3.3-portfolio-entry-review.md",
+    "docs/A-v3.4-resume-delivery-pack.md",
     "docs/A-vue-fastapi_preflight_2026-05-17.json",
     "docs/demo_assets_checklist.md",
     "docs/demo_guide.md",
