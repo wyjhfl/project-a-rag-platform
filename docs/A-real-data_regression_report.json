@@ -1,0 +1,488 @@
+{
+  "summary": {
+    "case_count": 20,
+    "passed_count": 19,
+    "source_hit_count": 20
+  },
+  "results": [
+    {
+      "id": "real-reg-001",
+      "device_model": "A100",
+      "question": "A100 出现 E-17 供压异常，现场应该先查哪里？",
+      "expected_keywords": [
+        "E-17",
+        "进气过滤器",
+        "压力传感器"
+      ],
+      "expected_source": "real_air_compressor_a100_faults.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_air_compressor_a100_maintenance.md",
+        "real_air_compressor_a100_faults.md"
+      ],
+      "passed": true,
+      "hits": [
+        "E-17",
+        "进气过滤器",
+        "压力传感器"
+      ]
+    },
+    {
+      "id": "real-reg-002",
+      "device_model": "A100",
+      "question": "A100 压力波动并且偶发 E-17，可能需要哪些备件？",
+      "expected_keywords": [
+        "进气过滤器",
+        "压力传感器",
+        "管路密封件"
+      ],
+      "expected_source": "real_air_compressor_a100_maintenance.md",
+      "category": "parts",
+      "hit_count": 2,
+      "source_hit": true,
+      "citation_sources": [
+        "real_air_compressor_a100_maintenance.md",
+        "real_air_compressor_a100_faults.md"
+      ],
+      "passed": true,
+      "hits": [
+        "进气过滤器",
+        "压力传感器"
+      ]
+    },
+    {
+      "id": "real-reg-003",
+      "device_model": "A100",
+      "question": "A100 出现 E-09 油温过高怎么处理？",
+      "expected_keywords": [
+        "E-09",
+        "散热器",
+        "风扇"
+      ],
+      "expected_source": "real_air_compressor_a100_faults.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_maintenance.md"
+      ],
+      "passed": true,
+      "hits": [
+        "E-09",
+        "散热器",
+        "风扇"
+      ]
+    },
+    {
+      "id": "real-reg-004",
+      "device_model": "A100",
+      "question": "A100 维护后怎么复测压力是否稳定？",
+      "expected_keywords": [
+        "空载运行",
+        "带载观察",
+        "压力曲线"
+      ],
+      "expected_source": "real_air_compressor_a100_maintenance.md",
+      "category": "symptom",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_air_compressor_a100_maintenance.md",
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_maintenance.md"
+      ],
+      "passed": true,
+      "hits": [
+        "空载运行",
+        "带载观察",
+        "压力曲线"
+      ]
+    },
+    {
+      "id": "real-reg-005",
+      "device_model": "UPS-30K",
+      "question": "UPS-30K 电池有异味并冒烟，可以重启吗？",
+      "expected_keywords": [
+        "禁止",
+        "重启",
+        "人工"
+      ],
+      "expected_source": "real_ups_30k_safety.md",
+      "category": "safety",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_ups_30k_safety.md",
+        "real_ups_30k_thermal.md",
+        "public_schneider_smartups_vt_30k_safety.md"
+      ],
+      "passed": true,
+      "hits": [
+        "禁止",
+        "重启",
+        "人工"
+      ]
+    },
+    {
+      "id": "real-reg-006",
+      "device_model": "UPS-30K",
+      "question": "UPS-30K 出现 BAT-SMOKE 要怎么处理？",
+      "expected_keywords": [
+        "BAT-SMOKE",
+        "电池",
+        "HITL"
+      ],
+      "expected_source": "real_ups_30k_safety.md",
+      "category": "fault_code",
+      "hit_count": 2,
+      "source_hit": true,
+      "citation_sources": [
+        "real_ups_30k_safety.md",
+        "real_ups_30k_thermal.md",
+        "public_schneider_smartups_vt_30k_safety.md"
+      ],
+      "passed": true,
+      "hits": [
+        "电池",
+        "HITL"
+      ]
+    },
+    {
+      "id": "real-reg-007",
+      "device_model": "UPS-30K",
+      "question": "UPS-30K 逆变器过温 INV-OT 应该检查什么？",
+      "expected_keywords": [
+        "INV-OT",
+        "风扇",
+        "滤网"
+      ],
+      "expected_source": "real_ups_30k_thermal.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_ups_30k_thermal.md",
+        "public_schneider_smartups_vt_30k_safety.md",
+        "real_ups_30k_safety.md"
+      ],
+      "passed": true,
+      "hits": [
+        "INV-OT",
+        "风扇",
+        "滤网"
+      ]
+    },
+    {
+      "id": "real-reg-008",
+      "device_model": "UPS-30K",
+      "question": "UPS-30K 机房温度高导致过温时是否建议强制重启？",
+      "expected_keywords": [
+        "机房温度",
+        "过温",
+        "不建议"
+      ],
+      "expected_source": "real_ups_30k_thermal.md",
+      "category": "safety",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_ups_30k_thermal.md",
+        "real_ups_30k_safety.md"
+      ],
+      "passed": true,
+      "hits": [
+        "机房温度",
+        "过温",
+        "不建议"
+      ]
+    },
+    {
+      "id": "real-reg-009",
+      "device_model": "PLC-X200",
+      "question": "PLC-X200 出现 COM-12 通讯中断怎么查？",
+      "expected_keywords": [
+        "COM-12",
+        "终端电阻",
+        "地址"
+      ],
+      "expected_source": "real_plc_x200_comm.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_plc_x200_comm.md",
+        "real_plc_x200_io.md",
+        "real_plc_x200_comm.md"
+      ],
+      "passed": true,
+      "hits": [
+        "COM-12",
+        "终端电阻",
+        "地址"
+      ]
+    },
+    {
+      "id": "real-reg-010",
+      "device_model": "PLC-X200",
+      "question": "PLC-X200 通讯延迟 COM-08 可能是什么原因？",
+      "expected_keywords": [
+        "COM-08",
+        "网络拥塞",
+        "响应时间"
+      ],
+      "expected_source": "real_plc_x200_comm.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_plc_x200_comm.md",
+        "real_plc_x200_comm.md",
+        "real_plc_x200_io.md"
+      ],
+      "passed": true,
+      "hits": [
+        "COM-08",
+        "网络拥塞",
+        "响应时间"
+      ]
+    },
+    {
+      "id": "real-reg-011",
+      "device_model": "PLC-X200",
+      "question": "PLC-X200 输入点 IO-24 没反应先测什么？",
+      "expected_keywords": [
+        "IO-24",
+        "24V",
+        "公共端"
+      ],
+      "expected_source": "real_plc_x200_io.md",
+      "category": "fault_code",
+      "hit_count": 2,
+      "source_hit": true,
+      "citation_sources": [
+        "real_plc_x200_io.md",
+        "real_plc_x200_comm.md",
+        "real_plc_x200_io.md"
+      ],
+      "passed": true,
+      "hits": [
+        "24V",
+        "公共端"
+      ]
+    },
+    {
+      "id": "real-reg-012",
+      "device_model": "PLC-X200",
+      "question": "PLC-X200 输出点粘连通常检查哪些部位？",
+      "expected_keywords": [
+        "继电器",
+        "负载短路",
+        "输出模块"
+      ],
+      "expected_source": "real_plc_x200_io.md",
+      "category": "symptom",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_plc_x200_io.md",
+        "real_plc_x200_io.md",
+        "real_plc_x200_comm.md"
+      ],
+      "passed": true,
+      "hits": [
+        "继电器",
+        "负载短路",
+        "输出模块"
+      ]
+    },
+    {
+      "id": "real-reg-013",
+      "device_model": "CW200",
+      "question": "CW200 出现 HP-01 高压报警，排查顺序是什么？",
+      "expected_keywords": [
+        "HP-01",
+        "冷凝器",
+        "水泵"
+      ],
+      "expected_source": "real_chiller_cw200_pressure.md",
+      "category": "fault_code",
+      "hit_count": 2,
+      "source_hit": true,
+      "citation_sources": [
+        "real_chiller_cw200_pressure.md"
+      ],
+      "passed": true,
+      "hits": [
+        "HP-01",
+        "冷凝器"
+      ]
+    },
+    {
+      "id": "real-reg-014",
+      "device_model": "CW200",
+      "question": "CW200 低压 LP-02 报警可能和哪些部件有关？",
+      "expected_keywords": [
+        "LP-02",
+        "制冷剂",
+        "膨胀阀"
+      ],
+      "expected_source": "real_chiller_cw200_pressure.md",
+      "category": "parts",
+      "hit_count": 2,
+      "source_hit": true,
+      "citation_sources": [
+        "real_chiller_cw200_pressure.md",
+        "real_chiller_cw200_flow.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "passed": true,
+      "hits": [
+        "制冷剂",
+        "膨胀阀"
+      ]
+    },
+    {
+      "id": "real-reg-015",
+      "device_model": "CW200",
+      "question": "CW200 报 FLOW-02 水流不足要查哪些点？",
+      "expected_keywords": [
+        "FLOW-02",
+        "水泵",
+        "流量开关"
+      ],
+      "expected_source": "real_chiller_cw200_flow.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_chiller_cw200_flow.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "passed": true,
+      "hits": [
+        "FLOW-02",
+        "水泵",
+        "流量开关"
+      ]
+    },
+    {
+      "id": "real-reg-016",
+      "device_model": "CW200",
+      "question": "CW200 出水温度降不下来应该检查什么？",
+      "expected_keywords": [
+        "出水温度",
+        "制冷剂",
+        "水泵流量"
+      ],
+      "expected_source": "real_chiller_cw200_flow.md",
+      "category": "symptom",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_chiller_cw200_flow.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "passed": true,
+      "hits": [
+        "出水温度",
+        "制冷剂",
+        "水泵流量"
+      ]
+    },
+    {
+      "id": "real-reg-017",
+      "device_model": "VFD-4500",
+      "question": "VFD-4500 报 OC-3 加速过电流怎么排查？",
+      "expected_keywords": [
+        "OC-3",
+        "加速时间",
+        "输出线"
+      ],
+      "expected_source": "real_vfd_4500_overcurrent.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_vfd_4500_overcurrent.md",
+        "real_vfd_4500_voltage.md"
+      ],
+      "passed": true,
+      "hits": [
+        "OC-3",
+        "加速时间",
+        "输出线"
+      ]
+    },
+    {
+      "id": "real-reg-018",
+      "device_model": "VFD-4500",
+      "question": "VFD-4500 恒速过电流 OC-7 可能是什么问题？",
+      "expected_keywords": [
+        "OC-7",
+        "负载突变",
+        "电机绝缘"
+      ],
+      "expected_source": "real_vfd_4500_overcurrent.md",
+      "category": "fault_code",
+      "hit_count": 2,
+      "source_hit": true,
+      "citation_sources": [
+        "real_vfd_4500_overcurrent.md",
+        "real_vfd_4500_voltage.md",
+        "real_vfd_4500_overcurrent.md"
+      ],
+      "passed": true,
+      "hits": [
+        "负载突变",
+        "电机绝缘"
+      ]
+    },
+    {
+      "id": "real-reg-019",
+      "device_model": "VFD-4500",
+      "question": "VFD-4500 减速过电压 OV-2 应该调整什么？",
+      "expected_keywords": [
+        "OV-2",
+        "减速时间",
+        "制动电阻"
+      ],
+      "expected_source": "real_vfd_4500_voltage.md",
+      "category": "fault_code",
+      "hit_count": 3,
+      "source_hit": true,
+      "citation_sources": [
+        "real_vfd_4500_voltage.md",
+        "real_vfd_4500_overcurrent.md"
+      ],
+      "passed": true,
+      "hits": [
+        "OV-2",
+        "减速时间",
+        "制动电阻"
+      ]
+    },
+    {
+      "id": "real-reg-020",
+      "device_model": "VFD-4500",
+      "question": "VFD-4500 欠压 UV-1 需要检查哪些供电项？",
+      "expected_keywords": [
+        "UV-1",
+        "输入电源",
+        "接触器"
+      ],
+      "expected_source": "real_vfd_4500_voltage.md",
+      "category": "fault_code",
+      "hit_count": 0,
+      "source_hit": true,
+      "citation_sources": [
+        "real_vfd_4500_voltage.md"
+      ],
+      "passed": false,
+      "hits": []
+    }
+  ]
+}

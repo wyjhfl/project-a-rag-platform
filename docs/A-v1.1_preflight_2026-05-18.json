@@ -1,0 +1,56 @@
+{
+  "checks": [
+    {
+      "name": "health",
+      "passed": true,
+      "detail": {
+        "status": "ok",
+        "version": "v1.1"
+      }
+    },
+    {
+      "name": "system_status",
+      "passed": true,
+      "detail": {
+        "status_code": 200,
+        "version": "v1.1",
+        "llm_enabled": true,
+        "llm_provider": "xiaomi_mimo",
+        "llm_model": "mimo-v2.5-pro",
+        "vector_store_ready": false
+      }
+    },
+    {
+      "name": "direct_llm_call",
+      "passed": true,
+      "detail": {
+        "answer_present": true,
+        "prompt_tokens": 93,
+        "completion_tokens": 477,
+        "total_tokens": 570,
+        "error": ""
+      }
+    },
+    {
+      "name": "ingest_real_manuals",
+      "passed": true,
+      "detail": {
+        "status_code": 200,
+        "document_count": 16,
+        "chunk_count": 81
+      }
+    },
+    {
+      "name": "strict_chat_llm",
+      "passed": true,
+      "detail": {
+        "status_code": 200,
+        "llm_used": true,
+        "insufficient": false,
+        "citation_count": 4,
+        "first_source": "real_air_compressor_a100_faults.md"
+      }
+    }
+  ],
+  "critical_failures": []
+}

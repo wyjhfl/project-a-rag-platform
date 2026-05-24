@@ -17,6 +17,7 @@ venv/
 .env
 .env.*
 !.env.example
+!.env.demo.example
 
 # Runtime databases and process files
 *.db
@@ -32,11 +33,15 @@ logs/
 chroma/
 chroma_db/
 vector_store/
-/storage/
+storage/
 data/chroma/
+data/chroma_demo/
 data/v05_eval/
 data/neo4j_real_probe_chroma/
 data/mineru_probe_output/
+data/mineru_output_*/
+data/model_cache/
+data/manual_test_uploads/
 
 # Uploads and downloaded raw files
 data/uploaded_docs/*
@@ -48,6 +53,8 @@ data/raw_manuals_downloaded/*
 # Frontend outputs
 frontend/dist/
 frontend/node_modules/
+frontend/test-results/
+frontend/playwright-report/
 
 # Generated reports and temp files
 reports/

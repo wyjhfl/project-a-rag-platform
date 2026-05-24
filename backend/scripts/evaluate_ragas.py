@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from statistics import mean
 from typing import Any
@@ -25,6 +26,7 @@ def evaluate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
             "context_precision": _context_precision(contexts, expected_keywords),
             "context_recall": _keyword_coverage("\n".join(contexts), expected_keywords),
         }
+        diagnostics = _build_diagnostics(case, scores)
         results.append(
             {
                 "id": case["id"],
@@ -35,6 +37,8 @@ def evaluate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
                 "citation_sources": case.get("citation_sources", []),
                 "source_hit": case.get("source_hit", False),
                 "scores": scores,
+                "diagnostics": diagnostics,
+                "trace": case.get("trace", {}),
             }
         )
 
@@ -42,10 +46,26 @@ def evaluate_cases(cases: list[dict[str, Any]]) -> dict[str, Any]:
         metric: round(mean(result["scores"][metric] for result in results), 4) if results else 0.0
         for metric in METRICS
     }
+    issue_counts = Counter(result["diagnostics"]["likely_issue"] for result in results)
+    low_score_cases = [
+        {
+            "id": result["id"],
+            "likely_issue": result["diagnostics"]["likely_issue"],
+            "faithfulness": result["scores"]["faithfulness"],
+            "answer_relevancy": result["scores"]["answer_relevancy"],
+            "context_precision": result["scores"]["context_precision"],
+            "context_recall": result["scores"]["context_recall"],
+        }
+        for result in results
+        if min(result["scores"].values()) < 0.5
+    ]
     return {
         "summary": {
             "case_count": len(results),
             "average_scores": summary_scores,
+            "issue_counts": dict(issue_counts),
+            "low_score_case_count": len(low_score_cases),
+            "low_score_cases": low_score_cases[:10],
         },
         "results": results,
     }
@@ -80,6 +100,17 @@ def run_pipeline_cases(
                 "citation_sources": citation_sources,
                 "source_hit": bool(expected_source)
                 and any(expected_source in source for source in citation_sources),
+                "trace": pipeline.last_trace or {},
+                "agentic": (
+                    {
+                        "quality_score": pipeline.last_agentic_result.quality_score,
+                        "retried": pipeline.last_agentic_result.retried,
+                        "rewritten_query": pipeline.last_agentic_result.rewritten_query,
+                        "contradictions": pipeline.last_agentic_result.contradictions,
+                    }
+                    if pipeline.last_agentic_result
+                    else {}
+                ),
             }
         )
     return enriched
@@ -158,6 +189,52 @@ def _keyword_coverage(text: str, expected_keywords: list[str]) -> float:
 
 def _terms(text: str) -> list[str]:
     return [term for term in text.replace("，", " ").replace("。", " ").split() if len(term) > 1]
+
+
+def _build_diagnostics(case: dict[str, Any], scores: dict[str, float]) -> dict[str, Any]:
+    expected_keywords = case.get("expected_keywords", [])
+    answer = case.get("answer", "")
+    contexts = case.get("contexts", [])
+    context_text = "\n".join(contexts)
+    answer_hits = [keyword for keyword in expected_keywords if keyword in answer]
+    context_hits = [keyword for keyword in expected_keywords if keyword in context_text]
+    answer_misses = [keyword for keyword in expected_keywords if keyword not in answer]
+    context_misses = [keyword for keyword in expected_keywords if keyword not in context_text]
+    likely_issue = _likely_issue(case, scores)
+    return {
+        "answer_keyword_hits": answer_hits,
+        "answer_keyword_misses": answer_misses,
+        "context_keyword_hits": context_hits,
+        "context_keyword_misses": context_misses,
+        "citation_count": len(case.get("citation_sources", [])),
+        "context_count": len(contexts),
+        "likely_issue": likely_issue,
+        "source_hit": case.get("source_hit", False),
+        "agentic_quality_score": case.get("agentic", {}).get("quality_score", 0.0),
+        "agentic_retried": case.get("agentic", {}).get("retried", False),
+        "rewritten_query": case.get("agentic", {}).get("rewritten_query", ""),
+        "trace_event_names": [
+            event.get("name", "")
+            for event in case.get("trace", {}).get("events", [])
+            if event.get("name")
+        ],
+    }
+
+
+def _likely_issue(case: dict[str, Any], scores: dict[str, float]) -> str:
+    if not case.get("source_hit", False):
+        return "source_miss"
+    if scores["context_precision"] < 0.5:
+        return "context_noise"
+    if scores["context_recall"] < 0.5:
+        return "context_recall_gap"
+    if scores["answer_relevancy"] < 0.5:
+        return "answer_coverage_gap"
+    if scores["faithfulness"] < 0.5:
+        return "grounding_gap"
+    if case.get("agentic", {}).get("contradictions"):
+        return "contradictory_context"
+    return "pass_or_minor_gap"
 
 
 if __name__ == "__main__":

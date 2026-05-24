@@ -1,0 +1,453 @@
+{
+  "summary": {
+    "case_count": 20,
+    "average_scores": {
+      "faithfulness": 0.367,
+      "answer_relevancy": 0.7,
+      "context_precision": 0.5375,
+      "context_recall": 0.85
+    },
+    "source_hit_count": 20,
+    "source_case_count": 20
+  },
+  "results": [
+    {
+      "id": "real-reg-001",
+      "question": "A100 出现 E-17 供压异常，现场应该先查哪里？",
+      "answer": "根据已检索资料，建议按以下方向排查：A100 出现压力波动时；优先检查进气过滤器、压力传感器、最小压力阀和管路密封；若同时出现 E-17 报警；应按供压异常流程处理",
+      "contexts": [
+        "A100 出现压力波动时，优先检查进气过滤器、压力传感器、最小压力阀和管路密封。若同时出现 E-17 报警，应按供压异常流程处理。",
+        "故障代码 E-17 表示 A100 空压机供压异常。常见原因包括进气过滤器堵塞、压力传感器偏移、供压管路泄漏、进气阀动作不充分。"
+      ],
+      "expected_source": "real_air_compressor_a100_faults.md",
+      "citation_sources": [
+        "real_air_compressor_a100_maintenance.md",
+        "real_air_compressor_a100_faults.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.2,
+        "answer_relevancy": 1.0,
+        "context_precision": 1.0,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-002",
+      "question": "A100 压力波动并且偶发 E-17，可能需要哪些备件？",
+      "answer": "根据已检索资料，建议按以下方向排查：A100 出现压力波动时；优先检查进气过滤器、压力传感器、最小压力阀和管路密封；若同时出现 E-17 报警；应按供压异常流程处理",
+      "contexts": [
+        "A100 出现压力波动时，优先检查进气过滤器、压力传感器、最小压力阀和管路密封。若同时出现 E-17 报警，应按供压异常流程处理。",
+        "故障代码 E-17 表示 A100 空压机供压异常。常见原因包括进气过滤器堵塞、压力传感器偏移、供压管路泄漏、进气阀动作不充分。"
+      ],
+      "expected_source": "real_air_compressor_a100_maintenance.md",
+      "citation_sources": [
+        "real_air_compressor_a100_maintenance.md",
+        "real_air_compressor_a100_faults.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.2,
+        "answer_relevancy": 0.6667,
+        "context_precision": 1.0,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "id": "real-reg-003",
+      "question": "A100 出现 E-09 油温过高怎么处理？",
+      "answer": "根据已检索资料，建议按以下方向排查：故障代码 E-09 表示 A100 油温超过保护阈值；常见原因包括散热器脏堵、冷却风扇异常、润滑油不足或环境温度过高；A100 出现压力波动时；优先检查进气过滤器、压力传感器、最小压力阀和管路密封",
+      "contexts": [
+        "故障代码 E-09 表示 A100 油温超过保护阈值。常见原因包括散热器脏堵、冷却风扇异常、润滑油不足或环境温度过高。",
+        "A100 出现压力波动时，优先检查进气过滤器、压力传感器、最小压力阀和管路密封。若同时出现 E-17 报警，应按供压异常流程处理。"
+      ],
+      "expected_source": "real_air_compressor_a100_faults.md",
+      "citation_sources": [
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_maintenance.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4286,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.5,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-004",
+      "question": "A100 维护后怎么复测压力是否稳定？",
+      "answer": "根据已检索资料，建议按以下方向排查：完成维护后；空载运行 10 分钟；再带载观察压力曲线；压力仍不稳定时升级人工复核",
+      "contexts": [
+        "完成维护后，空载运行 10 分钟，再带载观察压力曲线。压力仍不稳定时升级人工复核。",
+        "排查步骤：\n1. 停机并确认现场压力已经释放。\n2. 检查进气过滤器是否堵塞或超过更换周期。\n3. 检查压力传感器接线、校准值和接口密封。\n4. 检查供压管路接头是否漏气。\n5. 恢复运行后记录运行压力、报警时间和最近一次保养时间。\n风险提示：压力无法稳定恢复时，不建议连续带载运行。",
+        "故障代码 E-17 表示 A100 空压机供压异常。常见原因包括进气过滤器堵塞、压力传感器偏移、供压管路泄漏、进气阀动作不充分。",
+        "A100 出现压力波动时，优先检查进气过滤器、压力传感器、最小压力阀和管路密封。若同时出现 E-17 报警，应按供压异常流程处理。"
+      ],
+      "expected_source": "real_air_compressor_a100_maintenance.md",
+      "citation_sources": [
+        "real_air_compressor_a100_maintenance.md",
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_faults.md",
+        "real_air_compressor_a100_maintenance.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.25,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.25,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-005",
+      "question": "UPS-30K 电池有异味并冒烟，可以重启吗？",
+      "answer": "根据已检索资料，建议按以下方向排查：UPS-30K 电池出现异味、冒烟、鼓包或异常发热时；属于高风险场景；禁止现场直接重启；禁止继续带载观察",
+      "contexts": [
+        "UPS-30K 电池出现异味、冒烟、鼓包或异常发热时，属于高风险场景。禁止现场直接重启，禁止继续带载观察。\n处理动作：\n1. 立即停止非必要负载切换。\n2. 通知现场人员远离电池柜。\n3. 断开电池回路前必须由具备资质人员确认。\n4. 创建高风险工单并升级人工处理。\n风险提示：电池热失控可能导致火灾或爆炸，必须进入 HITL 人工确认流程。",
+        "UPS-30K 出现 INV-OT 报警时，常见原因包括风扇停转、滤网堵塞、机房温度过高或负载率过高。\n排查步骤：\n1. 检查风扇运行状态和告警记录。\n2. 清理进风口滤网。\n3. 确认机房温度低于设备要求。\n4. 检查负载率是否超过额定容量。\n处理建议：过温未恢复前不建议强制重启。",
+        "测试别名：UPS-30K"
+      ],
+      "expected_source": "real_ups_30k_safety.md",
+      "citation_sources": [
+        "real_ups_30k_safety.md",
+        "real_ups_30k_thermal.md",
+        "public_schneider_smartups_vt_30k_safety.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.6667,
+        "context_precision": 0.6667,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-006",
+      "question": "UPS-30K 出现 BAT-SMOKE 要怎么处理？",
+      "answer": "根据已检索资料，建议按以下方向排查：UPS-30K 电池出现异味、冒烟、鼓包或异常发热时；属于高风险场景；禁止现场直接重启；禁止继续带载观察",
+      "contexts": [
+        "UPS-30K 电池出现异味、冒烟、鼓包或异常发热时，属于高风险场景。禁止现场直接重启，禁止继续带载观察。\n处理动作：\n1. 立即停止非必要负载切换。\n2. 通知现场人员远离电池柜。\n3. 断开电池回路前必须由具备资质人员确认。\n4. 创建高风险工单并升级人工处理。\n风险提示：电池热失控可能导致火灾或爆炸，必须进入 HITL 人工确认流程。",
+        "UPS-30K 出现 INV-OT 报警时，常见原因包括风扇停转、滤网堵塞、机房温度过高或负载率过高。\n排查步骤：\n1. 检查风扇运行状态和告警记录。\n2. 清理进风口滤网。\n3. 确认机房温度低于设备要求。\n4. 检查负载率是否超过额定容量。\n处理建议：过温未恢复前不建议强制重启。",
+        "测试别名：UPS-30K"
+      ],
+      "expected_source": "real_ups_30k_safety.md",
+      "citation_sources": [
+        "real_ups_30k_safety.md",
+        "real_ups_30k_thermal.md",
+        "public_schneider_smartups_vt_30k_safety.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.3333,
+        "context_precision": 0.3333,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "id": "real-reg-007",
+      "question": "UPS-30K 逆变器过温 INV-OT 应该检查什么？",
+      "answer": "根据已检索资料，建议按以下方向排查：UPS-30K 出现 INV-OT 报警时；常见原因包括风扇停转、滤网堵塞、机房温度过高或负载率过高；排查步骤：；1. 检查风扇运行状态和告警记录",
+      "contexts": [
+        "UPS-30K 出现 INV-OT 报警时，常见原因包括风扇停转、滤网堵塞、机房温度过高或负载率过高。\n排查步骤：\n1. 检查风扇运行状态和告警记录。\n2. 清理进风口滤网。\n3. 确认机房温度低于设备要求。\n4. 检查负载率是否超过额定容量。\n处理建议：过温未恢复前不建议强制重启。",
+        "测试别名：UPS-30K",
+        "UPS-30K 电池出现异味、冒烟、鼓包或异常发热时，属于高风险场景。禁止现场直接重启，禁止继续带载观察。\n处理动作：\n1. 立即停止非必要负载切换。\n2. 通知现场人员远离电池柜。\n3. 断开电池回路前必须由具备资质人员确认。\n4. 创建高风险工单并升级人工处理。\n风险提示：电池热失控可能导致火灾或爆炸，必须进入 HITL 人工确认流程。"
+      ],
+      "expected_source": "real_ups_30k_thermal.md",
+      "citation_sources": [
+        "real_ups_30k_thermal.md",
+        "public_schneider_smartups_vt_30k_safety.md",
+        "real_ups_30k_safety.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.5,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.3333,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-008",
+      "question": "UPS-30K 机房温度高导致过温时是否建议强制重启？",
+      "answer": "根据已检索资料，建议按以下方向排查：UPS-30K 出现 INV-OT 报警时；常见原因包括风扇停转、滤网堵塞、机房温度过高或负载率过高；排查步骤：；1. 检查风扇运行状态和告警记录",
+      "contexts": [
+        "UPS-30K 出现 INV-OT 报警时，常见原因包括风扇停转、滤网堵塞、机房温度过高或负载率过高。\n排查步骤：\n1. 检查风扇运行状态和告警记录。\n2. 清理进风口滤网。\n3. 确认机房温度低于设备要求。\n4. 检查负载率是否超过额定容量。\n处理建议：过温未恢复前不建议强制重启。",
+        "UPS-30K 电池出现异味、冒烟、鼓包或异常发热时，属于高风险场景。禁止现场直接重启，禁止继续带载观察。\n处理动作：\n1. 立即停止非必要负载切换。\n2. 通知现场人员远离电池柜。\n3. 断开电池回路前必须由具备资质人员确认。\n4. 创建高风险工单并升级人工处理。\n风险提示：电池热失控可能导致火灾或爆炸，必须进入 HITL 人工确认流程。"
+      ],
+      "expected_source": "real_ups_30k_thermal.md",
+      "citation_sources": [
+        "real_ups_30k_thermal.md",
+        "real_ups_30k_safety.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.5,
+        "answer_relevancy": 0.3333,
+        "context_precision": 0.5,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-009",
+      "question": "PLC-X200 出现 COM-12 通讯中断怎么查？",
+      "answer": "根据已检索资料，建议按以下方向排查：PLC-X200 出现 COM-12 时；表示现场总线通信中断；常见原因包括通讯线松动、终端电阻缺失、模块地址冲突、交换机端口异常；PLC-X200 输入点无响应时",
+      "contexts": [
+        "PLC-X200 出现 COM-12 时，表示现场总线通信中断。常见原因包括通讯线松动、终端电阻缺失、模块地址冲突、交换机端口异常。",
+        "PLC-X200 输入点无响应时，优先检查 24V 供电、端子接线、输入模块状态灯和公共端。",
+        "COM-08 表示通讯周期超时。应检查网络拥塞、从站响应时间和网线质量。"
+      ],
+      "expected_source": "real_plc_x200_comm.md",
+      "citation_sources": [
+        "real_plc_x200_comm.md",
+        "real_plc_x200_io.md",
+        "real_plc_x200_comm.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.5,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.3333,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-010",
+      "question": "PLC-X200 通讯延迟 COM-08 可能是什么原因？",
+      "answer": "根据已检索资料，建议按以下方向排查：PLC-X200 出现 COM-12 时；表示现场总线通信中断；常见原因包括通讯线松动、终端电阻缺失、模块地址冲突、交换机端口异常；COM-08 表示通讯周期超时",
+      "contexts": [
+        "PLC-X200 出现 COM-12 时，表示现场总线通信中断。常见原因包括通讯线松动、终端电阻缺失、模块地址冲突、交换机端口异常。",
+        "COM-08 表示通讯周期超时。应检查网络拥塞、从站响应时间和网线质量。",
+        "PLC-X200 输入点无响应时，优先检查 24V 供电、端子接线、输入模块状态灯和公共端。"
+      ],
+      "expected_source": "real_plc_x200_comm.md",
+      "citation_sources": [
+        "real_plc_x200_comm.md",
+        "real_plc_x200_comm.md",
+        "real_plc_x200_io.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.5,
+        "answer_relevancy": 0.3333,
+        "context_precision": 0.3333,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-011",
+      "question": "PLC-X200 输入点 IO-24 没反应先测什么？",
+      "answer": "根据已检索资料，建议按以下方向排查：PLC-X200 输入点无响应时；优先检查 24V 供电、端子接线、输入模块状态灯和公共端；PLC-X200 出现 COM-12 时；表示现场总线通信中断",
+      "contexts": [
+        "PLC-X200 输入点无响应时，优先检查 24V 供电、端子接线、输入模块状态灯和公共端。",
+        "PLC-X200 出现 COM-12 时，表示现场总线通信中断。常见原因包括通讯线松动、终端电阻缺失、模块地址冲突、交换机端口异常。",
+        "排查步骤：测量 24V 电源，确认公共端接线，替换测试传感器，查看模块诊断灯。"
+      ],
+      "expected_source": "real_plc_x200_io.md",
+      "citation_sources": [
+        "real_plc_x200_io.md",
+        "real_plc_x200_comm.md",
+        "real_plc_x200_io.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.375,
+        "answer_relevancy": 0.6667,
+        "context_precision": 0.6667,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "id": "real-reg-012",
+      "question": "PLC-X200 输出点粘连通常检查哪些部位？",
+      "answer": "根据已检索资料，建议按以下方向排查：输出点粘连时；检查继电器触点、负载短路和输出模块温升；PLC-X200 输入点无响应时；优先检查 24V 供电、端子接线、输入模块状态灯和公共端",
+      "contexts": [
+        "输出点粘连时，检查继电器触点、负载短路和输出模块温升。",
+        "PLC-X200 输入点无响应时，优先检查 24V 供电、端子接线、输入模块状态灯和公共端。",
+        "PLC-X200 出现 COM-12 时，表示现场总线通信中断。常见原因包括通讯线松动、终端电阻缺失、模块地址冲突、交换机端口异常。"
+      ],
+      "expected_source": "real_plc_x200_io.md",
+      "citation_sources": [
+        "real_plc_x200_io.md",
+        "real_plc_x200_io.md",
+        "real_plc_x200_comm.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.3333,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-013",
+      "question": "CW200 出现 HP-01 高压报警，排查顺序是什么？",
+      "answer": "根据已检索资料，建议按以下方向排查：CW200 出现 HP-01 高压报警时；常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量",
+      "contexts": [
+        "CW200 出现 HP-01 高压报警时，常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量。"
+      ],
+      "expected_source": "real_chiller_cw200_pressure.md",
+      "citation_sources": [
+        "real_chiller_cw200_pressure.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4,
+        "answer_relevancy": 0.6667,
+        "context_precision": 1.0,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "id": "real-reg-014",
+      "question": "CW200 低压 LP-02 报警可能和哪些部件有关？",
+      "answer": "根据已检索资料，建议按以下方向排查：CW200 出现 HP-01 高压报警时；常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量；CW200 出现 FLOW-02 时；表示水流量低于设定阈值",
+      "contexts": [
+        "CW200 出现 HP-01 高压报警时，常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量。",
+        "CW200 出现 FLOW-02 时，表示水流量低于设定阈值。常见原因包括水泵流量不足、过滤器堵塞、水箱液位低或流量开关异常。",
+        "低压报警常见原因包括制冷剂不足、过滤器堵塞或膨胀阀异常。"
+      ],
+      "expected_source": "real_chiller_cw200_pressure.md",
+      "citation_sources": [
+        "real_chiller_cw200_pressure.md",
+        "real_chiller_cw200_flow.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4286,
+        "answer_relevancy": 0.3333,
+        "context_precision": 0.6667,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "id": "real-reg-015",
+      "question": "CW200 报 FLOW-02 水流不足要查哪些点？",
+      "answer": "根据已检索资料，建议按以下方向排查：CW200 出现 FLOW-02 时；表示水流量低于设定阈值；常见原因包括水泵流量不足、过滤器堵塞、水箱液位低或流量开关异常；CW200 出现 HP-01 高压报警时",
+      "contexts": [
+        "CW200 出现 FLOW-02 时，表示水流量低于设定阈值。常见原因包括水泵流量不足、过滤器堵塞、水箱液位低或流量开关异常。",
+        "CW200 出现 HP-01 高压报警时，常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量。"
+      ],
+      "expected_source": "real_chiller_cw200_flow.md",
+      "citation_sources": [
+        "real_chiller_cw200_flow.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.5714,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.5,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-016",
+      "question": "CW200 出水温度降不下来应该检查什么？",
+      "answer": "根据已检索资料，建议按以下方向排查：出水温度降不下来时；检查冷凝器、制冷剂、水泵流量和温控设定；CW200 出现 HP-01 高压报警时；常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量",
+      "contexts": [
+        "出水温度降不下来时，检查冷凝器、制冷剂、水泵流量和温控设定。",
+        "CW200 出现 HP-01 高压报警时，常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量。"
+      ],
+      "expected_source": "real_chiller_cw200_flow.md",
+      "citation_sources": [
+        "real_chiller_cw200_flow.md",
+        "real_chiller_cw200_pressure.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4,
+        "answer_relevancy": 1.0,
+        "context_precision": 1.0,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-017",
+      "question": "VFD-4500 报 OC-3 加速过电流怎么排查？",
+      "answer": "根据已检索资料，建议按以下方向排查：VFD-4500 出现 OC-3 表示加速过电流；常见原因包括加速时间过短、电机堵转、负载惯量过大或输出线短路；VFD-4500 出现 OV-2 表示减速过程母线电压过高；常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大",
+      "contexts": [
+        "VFD-4500 出现 OC-3 表示加速过电流。常见原因包括加速时间过短、电机堵转、负载惯量过大或输出线短路。",
+        "VFD-4500 出现 OV-2 表示减速过程母线电压过高。常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大。"
+      ],
+      "expected_source": "real_vfd_4500_overcurrent.md",
+      "citation_sources": [
+        "real_vfd_4500_overcurrent.md",
+        "real_vfd_4500_voltage.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4286,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.5,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-018",
+      "question": "VFD-4500 恒速过电流 OC-7 可能是什么问题？",
+      "answer": "根据已检索资料，建议按以下方向排查：VFD-4500 出现 OC-3 表示加速过电流；常见原因包括加速时间过短、电机堵转、负载惯量过大或输出线短路；VFD-4500 出现 OV-2 表示减速过程母线电压过高；常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大",
+      "contexts": [
+        "VFD-4500 出现 OC-3 表示加速过电流。常见原因包括加速时间过短、电机堵转、负载惯量过大或输出线短路。",
+        "VFD-4500 出现 OV-2 表示减速过程母线电压过高。常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大。",
+        "恒速过电流通常与负载突变、电机绝缘下降或参数设置不当有关。"
+      ],
+      "expected_source": "real_vfd_4500_overcurrent.md",
+      "citation_sources": [
+        "real_vfd_4500_overcurrent.md",
+        "real_vfd_4500_voltage.md",
+        "real_vfd_4500_overcurrent.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4286,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.3333,
+        "context_recall": 0.6667
+      }
+    },
+    {
+      "id": "real-reg-019",
+      "question": "VFD-4500 减速过电压 OV-2 应该调整什么？",
+      "answer": "根据已检索资料，建议按以下方向排查：VFD-4500 出现 OV-2 表示减速过程母线电压过高；常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大；VFD-4500 出现 OC-3 表示加速过电流；常见原因包括加速时间过短、电机堵转、负载惯量过大或输出线短路",
+      "contexts": [
+        "VFD-4500 出现 OV-2 表示减速过程母线电压过高。常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大。",
+        "VFD-4500 出现 OC-3 表示加速过电流。常见原因包括加速时间过短、电机堵转、负载惯量过大或输出线短路。"
+      ],
+      "expected_source": "real_vfd_4500_voltage.md",
+      "citation_sources": [
+        "real_vfd_4500_voltage.md",
+        "real_vfd_4500_overcurrent.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4286,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.5,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "real-reg-020",
+      "question": "VFD-4500 欠压 UV-1 需要检查哪些供电项？",
+      "answer": "根据已检索资料，建议按以下方向排查：VFD-4500 出现 OV-2 表示减速过程母线电压过高；常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大",
+      "contexts": [
+        "VFD-4500 出现 OV-2 表示减速过程母线电压过高。常见原因包括减速时间过短、制动电阻异常或负载回馈能量过大。"
+      ],
+      "expected_source": "real_vfd_4500_voltage.md",
+      "citation_sources": [
+        "real_vfd_4500_voltage.md"
+      ],
+      "source_hit": true,
+      "scores": {
+        "faithfulness": 0.4,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      }
+    }
+  ]
+}

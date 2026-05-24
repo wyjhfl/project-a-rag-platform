@@ -56,6 +56,24 @@ def test_local_reranker_promotes_chunk_with_more_query_terms():
     assert reranked[0].metadata["source"] == "air_compressor_a100.txt"
 
 
+def test_local_reranker_prefers_exact_fault_code_over_same_device_other_fault():
+    chunks = [
+        chunk(
+            "real_vfd_4500_voltage.md",
+            "VFD-4500 UV-1 表示输入欠压，应检查输入电源、接触器和进线端子。",
+        ),
+        chunk(
+            "real_vfd_4500_voltage.md",
+            "VFD-4500 OV-2 表示减速过压，应检查减速时间和制动电阻。",
+            1,
+        ),
+    ]
+
+    reranked = LocalReranker().rerank("VFD-4500 UV-1 需要检查哪些供电项？", chunks, top_k=2)
+
+    assert "UV-1" in reranked[0].content
+
+
 def test_hybrid_retriever_uses_keyword_vector_rrf_and_rerank(tmp_path):
     chunks = [
         chunk(

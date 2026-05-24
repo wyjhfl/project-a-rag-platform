@@ -9,10 +9,8 @@ on:
   pull_request:
 
 jobs:
-  backend:
-    name: Backend Checks
+  backend-and-frontend:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -26,15 +24,15 @@ jobs:
       - name: Install backend dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install .
-          python -m pip install pytest ruff
+          pip install -e .
+          pip install pytest ruff
 
       - name: Ruff
         run: python -m ruff check backend
 
       - name: Core pytest
         run: |
-          python -m pytest \
+          pytest \
             backend/tests/test_api.py \
             backend/tests/test_enterprise_api.py \
             backend/tests/test_hybrid_retrieval.py \
@@ -44,15 +42,6 @@ jobs:
 
       - name: Compile backend modules
         run: python -m compileall backend/app backend/scripts
-
-  frontend:
-    name: Frontend Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -70,9 +59,7 @@ jobs:
         run: npm run build
 
   docker-config:
-    name: Docker Compose Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     steps:
       - name: Checkout

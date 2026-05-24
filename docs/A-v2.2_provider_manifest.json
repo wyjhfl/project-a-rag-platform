@@ -1,0 +1,30 @@
+{
+  "version": "A-v2.2",
+  "providers": [
+    {
+      "name": "default_env",
+      "from_env": true
+    },
+    {
+      "name": "mimo_token_plan_v25_pro",
+      "provider": "xiaomi_mimo",
+      "model": "mimo-v2.5-pro",
+      "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
+      "api_key_env": "LLM_API_KEY"
+    },
+    {
+      "name": "mimo_token_plan_v25",
+      "provider": "xiaomi_mimo",
+      "model": "mimo-v2.5",
+      "base_url": "https://token-plan-cn.xiaomimimo.com/v1",
+      "api_key_env": "LLM_API_KEY"
+    },
+    {
+      "name": "deepseek_chat",
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key_env": "DEEPSEEK_API_KEY"
+    }
+  ]
+}

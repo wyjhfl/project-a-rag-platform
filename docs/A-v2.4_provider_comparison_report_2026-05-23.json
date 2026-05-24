@@ -1,0 +1,383 @@
+{
+  "version": "A-v2.4",
+  "generated_on": "2026-05-23",
+  "case_count": 3,
+  "summary": {
+    "provider_count": 3,
+    "case_count": 3,
+    "providers": {
+      "mimo_token_plan_v25_pro": {
+        "case_count": 3,
+        "llm_used_count": 2,
+        "llm_used_rate": 0.6667,
+        "citation_case_count": 3,
+        "citation_case_rate": 1.0,
+        "expected_hit_rate": 1.0,
+        "total_estimated_tokens": 608,
+        "avg_estimated_tokens": 202.67,
+        "avg_latency_ms": 14000.83,
+        "insufficient_count": 0,
+        "safety_warning_count": 1
+      },
+      "mimo_token_plan_v25": {
+        "case_count": 3,
+        "llm_used_count": 3,
+        "llm_used_rate": 1.0,
+        "citation_case_count": 3,
+        "citation_case_rate": 1.0,
+        "expected_hit_rate": 0.9167,
+        "total_estimated_tokens": 552,
+        "avg_estimated_tokens": 184.0,
+        "avg_latency_ms": 5608.27,
+        "insufficient_count": 0,
+        "safety_warning_count": 1
+      },
+      "deepseek_chat": {
+        "case_count": 3,
+        "llm_used_count": 3,
+        "llm_used_rate": 1.0,
+        "citation_case_count": 3,
+        "citation_case_rate": 1.0,
+        "expected_hit_rate": 0.9167,
+        "total_estimated_tokens": 677,
+        "avg_estimated_tokens": 225.67,
+        "avg_latency_ms": 1801.12,
+        "insufficient_count": 0,
+        "safety_warning_count": 1
+      }
+    }
+  },
+  "ranking": [
+    {
+      "rank": 1,
+      "name": "mimo_token_plan_v25",
+      "llm_used_rate": 1.0,
+      "expected_hit_rate": 0.9167,
+      "citation_case_rate": 1.0,
+      "avg_estimated_tokens": 184.0,
+      "avg_latency_ms": 5608.27
+    },
+    {
+      "rank": 2,
+      "name": "deepseek_chat",
+      "llm_used_rate": 1.0,
+      "expected_hit_rate": 0.9167,
+      "citation_case_rate": 1.0,
+      "avg_estimated_tokens": 225.67,
+      "avg_latency_ms": 1801.12
+    },
+    {
+      "rank": 3,
+      "name": "mimo_token_plan_v25_pro",
+      "llm_used_rate": 0.6667,
+      "expected_hit_rate": 1.0,
+      "citation_case_rate": 1.0,
+      "avg_estimated_tokens": 202.67,
+      "avg_latency_ms": 14000.83
+    }
+  ],
+  "results": [
+    {
+      "name": "mimo_token_plan_v25_pro",
+      "runtime": {
+        "provider": "xiaomi_mimo",
+        "model": "mimo-v2.5-pro",
+        "base_url": "https://token-plan-cn.xiaomimimo.com/v1"
+      },
+      "acceptance_baseline": {
+        "status": "accepted",
+        "blocker_type": "accepted",
+        "warnings": [
+          {
+            "name": "direct_llm_connected",
+            "reason": "LLM returned empty answer.",
+            "note": "Grounded chat acceptance passed, so the direct smoke failure is not a release blocker."
+          }
+        ]
+      },
+      "ingest": {
+        "status_code": 200,
+        "document_count": 16,
+        "chunk_count": 81
+      },
+      "summary": {
+        "case_count": 3,
+        "llm_used_count": 2,
+        "llm_used_rate": 0.6667,
+        "citation_case_count": 3,
+        "citation_case_rate": 1.0,
+        "expected_hit_rate": 1.0,
+        "total_estimated_tokens": 608,
+        "avg_estimated_tokens": 202.67,
+        "avg_latency_ms": 14000.83,
+        "insufficient_count": 0,
+        "safety_warning_count": 1
+      },
+      "cases": [
+        {
+          "case_id": "provider-001",
+          "status_code": 200,
+          "llm_used": false,
+          "insufficient": false,
+          "safety_warning": false,
+          "citation_count": 2,
+          "first_source": "real_air_compressor_a100_maintenance.md",
+          "expected_hit_count": 4,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "A100",
+            "E-17",
+            "过滤器",
+            "压力"
+          ],
+          "answer_chars": 146,
+          "estimated_tokens": 148,
+          "elapsed_ms": 13762.08,
+          "answer_preview": "根据已检索资料，建议按以下方向排查：若同时出现 E-17 报警，应按供压异常流程处理；故障代码 E-17 表示 A100 空压机供压异常；A100 出现压力波动时，优先检查进气过滤器、压力传感器、最小压力阀和管路密封；常见原因包括进气过滤器堵塞、压力传感器偏移、供压管路泄漏、进气阀动作不充分"
+        },
+        {
+          "case_id": "provider-002",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": true,
+          "citation_count": 2,
+          "first_source": "real_ups_30k_safety.md",
+          "expected_hit_count": 4,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "UPS",
+            "电池",
+            "停机",
+            "人工"
+          ],
+          "answer_chars": 236,
+          "estimated_tokens": 281,
+          "elapsed_ms": 15232.97,
+          "answer_preview": "结论：不可以直接重启。\n依据：资料片段 1 明确指出，UPS-30K 电池出现异味、冒烟属于高风险场景，禁止现场直接重启，禁止继续带载观察，因为电池热失控可能导致火灾或爆炸，必须进入人工确认流程。\n建议动作：根据资料片段 1 的处理动作：1. 立即停止非必要负载切换；2. 通知现场人员远离电池柜；3. 断开电池回路前必须由具备资质人员确认；4. 创建高风险工单并升级人工处理。\n\n安全边界：该场景存在高风险，禁止直接重启或继续带载运行；应先停机、隔离现场并升级人工确认。"
+        },
+        {
+          "case_id": "provider-003",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": false,
+          "citation_count": 2,
+          "first_source": "real_chiller_cw200_pressure.md",
+          "expected_hit_count": 4,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "CW200",
+            "高压",
+            "压力",
+            "冷却"
+          ],
+          "answer_chars": 261,
+          "estimated_tokens": 179,
+          "elapsed_ms": 13007.43,
+          "answer_preview": "结论：针对 CW200 高压报警，优先检查冷凝器、冷却水流量、风扇和制冷剂量。\n\n依据：根据资料，CW200 出现 HP-01 高压报警的常见原因明确包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量。\n\n建议动作：\n1.  首先应停机并确保设备处于安全隔离状态，禁止直接重启，以防损坏。\n2.  根据上述原因，建议按顺序检查：冷凝器表面是否脏堵、冷却水循环系统流量与压力是否正常、冷凝风扇是否运转正常、系统制冷剂充注量是否在标准范围内。\n3.  如检查后问题仍未解决或无法确认，应升级至专业技术人员进行人工确认与维修"
+        }
+      ]
+    },
+    {
+      "name": "mimo_token_plan_v25",
+      "runtime": {
+        "provider": "xiaomi_mimo",
+        "model": "mimo-v2.5",
+        "base_url": "https://token-plan-cn.xiaomimimo.com/v1"
+      },
+      "acceptance_baseline": {
+        "status": "accepted",
+        "blocker_type": "accepted",
+        "warnings": [
+          {
+            "name": "direct_llm_connected",
+            "reason": "LLM returned empty answer.",
+            "note": "Grounded chat acceptance passed, so the direct smoke failure is not a release blocker."
+          }
+        ]
+      },
+      "ingest": {
+        "status_code": 200,
+        "document_count": 16,
+        "chunk_count": 81
+      },
+      "summary": {
+        "case_count": 3,
+        "llm_used_count": 3,
+        "llm_used_rate": 1.0,
+        "citation_case_count": 3,
+        "citation_case_rate": 1.0,
+        "expected_hit_rate": 0.9167,
+        "total_estimated_tokens": 552,
+        "avg_estimated_tokens": 184.0,
+        "avg_latency_ms": 5608.27,
+        "insufficient_count": 0,
+        "safety_warning_count": 1
+      },
+      "cases": [
+        {
+          "case_id": "provider-001",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": false,
+          "citation_count": 2,
+          "first_source": "real_air_compressor_a100_maintenance.md",
+          "expected_hit_count": 4,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "A100",
+            "E-17",
+            "过滤器",
+            "压力"
+          ],
+          "answer_chars": 43,
+          "estimated_tokens": 97,
+          "elapsed_ms": 7083.29,
+          "answer_preview": "结论：对于A100出现E-17报警，应优先按供压异常流程排查相关部件；但关于排气温度升"
+        },
+        {
+          "case_id": "provider-002",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": true,
+          "citation_count": 2,
+          "first_source": "real_ups_30k_safety.md",
+          "expected_hit_count": 4,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "UPS",
+            "电池",
+            "停机",
+            "人工"
+          ],
+          "answer_chars": 257,
+          "estimated_tokens": 289,
+          "elapsed_ms": 5420.96,
+          "answer_preview": "结论：不可以现场直接重启。  \n依据：资料片段1明确说明，UPS-30K电池出现异味、冒烟、鼓包或异常发热时属于高风险场景，禁止现场直接重启，禁止继续带载观察。此时可能涉及电池热失控，存在火灾或爆炸风险，必须进入人工确认流程。  \n建议动作：  \n1. 立即停止非必要负载切换，并通知现场人员远离电池柜。  \n2. 在具备资质人员确认前，不得断开电池回路。  \n3. 创建高风险工单并升级人工处理，等待专业团队到场处置。\n\n安全边界：该场景存在高风险，禁止直接重启或继续带载运行；应先停机、隔离现场并升级人工确认。"
+        },
+        {
+          "case_id": "provider-003",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": false,
+          "citation_count": 2,
+          "first_source": "real_chiller_cw200_pressure.md",
+          "expected_hit_count": 3,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "CW200",
+            "高压",
+            "冷却"
+          ],
+          "answer_chars": 236,
+          "estimated_tokens": 166,
+          "elapsed_ms": 4320.55,
+          "answer_preview": "结论：对于CW200的HP-01高压报警，应优先检查冷凝器、冷却水系统、风扇及相关管路。\n\n依据：根据资料片段1，该设备出现高压报警的常见原因为冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量。\n\n建议动作：\n1.  首先检查冷凝器表面是否脏污，并进行清洁。\n2.  检查冷却水泵、管路及阀门，确保冷却水流量充足且正常循环。\n3.  检查冷凝器风扇是否正常运转，包括电机、扇叶及控制电路。\n4.  在排除上述常见原因后，若报警未解除，需由专业人员检查制冷剂充注量是否超标。"
+        }
+      ]
+    },
+    {
+      "name": "deepseek_chat",
+      "runtime": {
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "base_url": "https://api.deepseek.com/v1"
+      },
+      "acceptance_baseline": {
+        "status": "accepted",
+        "blocker_type": "accepted",
+        "warnings": []
+      },
+      "ingest": {
+        "status_code": 200,
+        "document_count": 16,
+        "chunk_count": 81
+      },
+      "summary": {
+        "case_count": 3,
+        "llm_used_count": 3,
+        "llm_used_rate": 1.0,
+        "citation_case_count": 3,
+        "citation_case_rate": 1.0,
+        "expected_hit_rate": 0.9167,
+        "total_estimated_tokens": 677,
+        "avg_estimated_tokens": 225.67,
+        "avg_latency_ms": 1801.12,
+        "insufficient_count": 0,
+        "safety_warning_count": 1
+      },
+      "cases": [
+        {
+          "case_id": "provider-001",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": false,
+          "citation_count": 2,
+          "first_source": "real_air_compressor_a100_maintenance.md",
+          "expected_hit_count": 4,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "A100",
+            "E-17",
+            "过滤器",
+            "压力"
+          ],
+          "answer_chars": 317,
+          "estimated_tokens": 232,
+          "elapsed_ms": 2282.31,
+          "answer_preview": "结论：当前资料仅涉及 E-17 供压异常的常见原因，未包含排气温度升高的排查信息，因此无法确认排气温度升高与 E-17 的直接关联及具体排查方法。\n\n依据：资料片段 1 指出“若同时出现 E-17 报警，应按供压异常流程处理”；资料片段 2 列出 E-17 的常见原因为“进气过滤器堵塞、压力传感器偏移、供压管路泄漏、进气阀动作不充分”，均未提及排气温度升高。\n\n建议动作：\n1. 针对 E-17 报警，按供压异常流程排查：检查进气过滤器是否堵塞、压力传感器是否偏移、供压管路是否泄漏、进气阀动作是否充分。\n2. 由于排"
+        },
+        {
+          "case_id": "provider-002",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": true,
+          "citation_count": 2,
+          "first_source": "real_ups_30k_safety.md",
+          "expected_hit_count": 4,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "UPS",
+            "电池",
+            "停机",
+            "人工"
+          ],
+          "answer_chars": 218,
+          "estimated_tokens": 263,
+          "elapsed_ms": 1215.37,
+          "answer_preview": "结论：不可以直接重启。  \n依据：资料片段1明确指出，UPS-30K电池出现异味、冒烟时属于高风险场景，禁止现场直接重启，禁止继续带载观察。  \n建议动作：  \n1. 立即停止非必要负载切换。  \n2. 通知现场人员远离电池柜。  \n3. 由具备资质人员确认后断开电池回路。  \n4. 创建高风险工单并升级人工处理，进入HITL人工确认流程。\n\n安全边界：该场景存在高风险，禁止直接重启或继续带载运行；应先停机、隔离现场并升级人工确认。"
+        },
+        {
+          "case_id": "provider-003",
+          "status_code": 200,
+          "llm_used": true,
+          "insufficient": false,
+          "safety_warning": false,
+          "citation_count": 2,
+          "first_source": "real_chiller_cw200_pressure.md",
+          "expected_hit_count": 3,
+          "expected_term_count": 4,
+          "expected_hits": [
+            "CW200",
+            "高压",
+            "冷却"
+          ],
+          "answer_chars": 274,
+          "estimated_tokens": 182,
+          "elapsed_ms": 1905.69,
+          "answer_preview": "结论：优先检查冷凝器是否脏堵、冷却水流量是否不足、风扇是否异常、制冷剂是否过量。  \n依据：资料片段1指出，CW200出现HP-01高压报警时，常见原因包括冷凝器脏堵、冷却水流量不足、风扇异常或制冷剂过量。  \n建议动作：  \n1. 检查冷凝器表面是否有灰尘或杂物堵塞，必要时进行清洗。  \n2. 确认冷却水流量是否正常，检查水泵、阀门及管路是否通畅。  \n3. 检查风扇运转是否正常，有无异响或转速异常。  \n4. 若以上均正常，需排查制冷剂是否过量，必要时联系专业人员处理。  \n注意：若涉及高压危险操作，必须先停机"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "estimated_tokens uses the local TokenCostEstimator and is for relative comparison only.",
+    "default_env is intentionally skipped to avoid duplicating an explicit provider candidate."
+  ]
+}

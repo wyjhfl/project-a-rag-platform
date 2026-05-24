@@ -64,6 +64,68 @@ class EvaluationRunResponse(BaseModel):
     report_path: str | None = None
 
 
+class AcceptanceEvidenceItem(BaseModel):
+    label: str
+    path: str
+
+
+class AcceptanceBreakdownItem(BaseModel):
+    label: str
+    status: str
+    summary: str
+    metrics: dict[str, str] = Field(default_factory=dict)
+
+
+class AcceptanceChartBar(BaseModel):
+    label: str
+    value: float
+    total: float = 1.0
+    tone: str = "info"
+
+
+class AcceptanceHighlightItem(BaseModel):
+    title: str
+    summary: str
+    status: str
+    tags: list[str] = Field(default_factory=list)
+
+
+class AcceptanceTraceEvent(BaseModel):
+    name: str
+    summary: str
+    inputs: dict[str, str] = Field(default_factory=dict)
+    outputs: dict[str, str] = Field(default_factory=dict)
+    metadata: dict[str, str] = Field(default_factory=dict)
+
+
+class AcceptanceTraceCase(BaseModel):
+    case_id: str
+    title: str
+    issue: str
+    events: list[AcceptanceTraceEvent] = Field(default_factory=list)
+    raw_trace: dict = Field(default_factory=dict)
+
+
+class AcceptancePanel(BaseModel):
+    key: str
+    title: str
+    status: str
+    summary: str
+    metrics: dict[str, str]
+    evidence: list[AcceptanceEvidenceItem] = Field(default_factory=list)
+    breakdown: list[AcceptanceBreakdownItem] = Field(default_factory=list)
+    chart: list[AcceptanceChartBar] = Field(default_factory=list)
+    highlights: list[AcceptanceHighlightItem] = Field(default_factory=list)
+    trace_cases: list[AcceptanceTraceCase] = Field(default_factory=list)
+
+
+class AcceptanceOverviewResponse(BaseModel):
+    status: str
+    version: str
+    generated_from: list[str]
+    panels: list[AcceptancePanel]
+
+
 class TicketStartRequest(BaseModel):
     question: str = Field(min_length=1)
     idempotency_key: str = Field(min_length=1)

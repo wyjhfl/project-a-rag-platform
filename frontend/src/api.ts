@@ -18,6 +18,68 @@ export interface ChatResponse {
   safety_warning: boolean
 }
 
+export interface AcceptanceEvidenceItem {
+  label: string
+  path: string
+}
+
+export interface AcceptanceBreakdownItem {
+  label: string
+  status: string
+  summary: string
+  metrics: Record<string, string>
+}
+
+export interface AcceptanceChartBar {
+  label: string
+  value: number
+  total: number
+  tone: string
+}
+
+export interface AcceptanceHighlightItem {
+  title: string
+  summary: string
+  status: string
+  tags: string[]
+}
+
+export interface AcceptanceTraceEvent {
+  name: string
+  summary: string
+  inputs: Record<string, string>
+  outputs: Record<string, string>
+  metadata: Record<string, string>
+}
+
+export interface AcceptanceTraceCase {
+  case_id: string
+  title: string
+  issue: string
+  events: AcceptanceTraceEvent[]
+  raw_trace: Record<string, unknown>
+}
+
+export interface AcceptancePanel {
+  key: string
+  title: string
+  status: string
+  summary: string
+  metrics: Record<string, string>
+  evidence: AcceptanceEvidenceItem[]
+  breakdown: AcceptanceBreakdownItem[]
+  chart: AcceptanceChartBar[]
+  highlights: AcceptanceHighlightItem[]
+  trace_cases: AcceptanceTraceCase[]
+}
+
+export interface AcceptanceOverviewResponse {
+  status: string
+  version: string
+  generated_from: string[]
+  panels: AcceptancePanel[]
+}
+
 export interface TicketRecord {
   ticket_id: string
   question: string
@@ -37,6 +99,11 @@ export interface TicketRecord {
 
 export async function loadSystemStatus() {
   const { data } = await api.get('/api/v1/system/status')
+  return data
+}
+
+export async function loadAcceptanceOverview(): Promise<AcceptanceOverviewResponse> {
+  const { data } = await api.get('/api/v1/acceptance/overview')
   return data
 }
 

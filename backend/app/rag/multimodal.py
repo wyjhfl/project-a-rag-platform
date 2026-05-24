@@ -67,12 +67,18 @@ class MinerUAdapter:
         if self.output_dir is None:
             raise ValueError("MULTIMODAL_BACKEND=real requires MINERU_OUTPUT_DIR.")
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        subprocess.run(
+        completed = subprocess.run(
             [self.command, "-p", str(path), "-o", str(self.output_dir)],
-            check=True,
             capture_output=True,
             text=True,
         )
+        if completed.returncode != 0:
+            details = "\n".join(
+                part.strip() for part in [completed.stdout, completed.stderr] if part and part.strip()
+            )
+            raise ValueError(
+                f"MinerU CLI failed for {path.name}: {_trim_subprocess_text(details)}"
+            )
         candidates = sorted(self.output_dir.rglob(f"{path.stem}.md"))
         if not candidates:
             candidates = sorted(self.output_dir.rglob("*.md"))
@@ -274,3 +280,9 @@ def _parse_json_content(content: str) -> dict:
         cleaned = re.sub(r"^```(?:json)?", "", cleaned).strip()
         cleaned = re.sub(r"```$", "", cleaned).strip()
     return json.loads(cleaned)
+
+
+def _trim_subprocess_text(text: str, limit: int = 1200) -> str:
+    if len(text) <= limit:
+        return text
+    return text[: limit // 2] + "\n...\n" + text[-limit // 2 :]

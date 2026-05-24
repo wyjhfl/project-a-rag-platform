@@ -1,0 +1,49 @@
+{
+  "version": "A-v1.5",
+  "generated_on": "2026-05-20",
+  "component": "paddleocr_linux_runtime",
+  "environment": {
+    "platform": "WSL Ubuntu-24.04",
+    "python_version": "3.12.3",
+    "paddle": "3.3.1",
+    "paddleocr": "3.5.0",
+    "paddlex": "3.5.2"
+  },
+  "attempts": [
+    {
+      "name": "flags_enable_pir_api_0",
+      "result": "runtime_incompatible",
+      "error_type": "NotImplementedError",
+      "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+    },
+    {
+      "name": "flags_use_mkldnn_0",
+      "result": "runtime_incompatible",
+      "error_type": "NotImplementedError",
+      "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+    },
+    {
+      "name": "flags_enable_pir_api_0_and_use_mkldnn_0",
+      "result": "runtime_incompatible",
+      "error_type": "NotImplementedError",
+      "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+    },
+    {
+      "name": "pp_ocr_v5_mobile_det_and_rec",
+      "result": "runtime_incompatible",
+      "error_type": "NotImplementedError",
+      "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+    },
+    {
+      "name": "pp_ocr_v4_mobile_profile",
+      "result": "runtime_incompatible",
+      "error_type": "NotImplementedError",
+      "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+    }
+  ],
+  "final_conclusion": {
+    "status": "runtime_incompatible",
+    "summary": "The current WSL runtime still fails inside PaddleX static inference even after disabling PIR/MKLDNN flags and switching to lighter PP-OCR mobile models.",
+    "next_step": "Do not spend more A-v1.5 time on Paddle runtime tweaking. Move forward with A-v1.6/A-v2 display work using Vision plus MinerU Linux sliced as the current multimodal acceptance baseline."
+  }
+}

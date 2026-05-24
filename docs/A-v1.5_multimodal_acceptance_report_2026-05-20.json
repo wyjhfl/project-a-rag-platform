@@ -1,0 +1,115 @@
+{
+  "version": "A-v1.5",
+  "generated_on": "2026-05-20",
+  "summary": {
+    "component_count": 7,
+    "status_counts": {
+      "passed": 2,
+      "runtime_incompatible": 1,
+      "runtime_resource_blocked": 1,
+      "blocked_dependency": 3
+    },
+    "preflight_returncode": 1
+  },
+  "components": [
+    {
+      "name": "vision_llm_real_runtime",
+      "status": "passed",
+      "detail": {
+        "image_type": "fault_screen",
+        "field_count": 4,
+        "confidence": 0.95,
+        "fields": {
+          "model": "A100",
+          "serial_number": "SN-TEST-001",
+          "fault_code": "E-17",
+          "voltage": "380V"
+        }
+      }
+    },
+    {
+      "name": "paddleocr_real_runtime",
+      "status": "runtime_incompatible",
+      "detail": {
+        "error": "Error: Can not import paddle core while this file exists: F:\\BaiduNetdiskDownload\\python\\Lib\\site-packages\\paddle\\base\\libpaddle.pyd\nTraceback (most recent call last):\n  File \"<string>\", line 5, in <module>\n    result = PaddleOCRAdapter(backend='real').extract_text(Path(r'E:\\githubshizhanxiangmu666\\我的学习计划\\天空没有极限\\project-a-rag-platform\\data\\manual_t\n...\n line 28, in <module>\n    from . import core, framework, log_helper, unique_name\n  File \"F:\\BaiduNetdiskDownload\\python\\Lib\\site-packages\\paddle\\base\\core.py\", line 393, in <module>\n    raise e\n  File \"F:\\BaiduNetdiskDownload\\python\\Lib\\site-packages\\paddle\\base\\core.py\", line 267, in <module>\n    from . import libpaddle\nImportError: bad allocation",
+        "diagnosis": "Windows Paddle/PaddleX runtime incompatible in current environment.",
+        "next_step": "Prefer WSL/Linux or a dedicated Docker image for real PaddleOCR acceptance."
+      }
+    },
+    {
+      "name": "mineru_real_pdf_parsing",
+      "status": "runtime_resource_blocked",
+      "detail": {
+        "error": "OSError: page file too small for MinerU model load",
+        "diagnosis": "MinerU local API started but document task did not complete successfully.",
+        "next_step": "Inspect mineru-api task status and prefer Linux/WSL if local Windows CLI remains unstable."
+      }
+    },
+    {
+      "name": "mineru_linux_local_sliced_pdf_parsing",
+      "status": "passed",
+      "detail": {
+        "passed_samples": [
+          {
+            "sample": "MPOD-AFCDNS_R0_EN.pdf",
+            "status": "passed",
+            "start": 0,
+            "end": 1,
+            "markdown_generated": true,
+            "content_list_generated": true
+          },
+          {
+            "sample": "OM_780-3.pdf",
+            "status": "passed",
+            "start": 0,
+            "end": 1,
+            "markdown_generated": true,
+            "content_list_generated": true
+          }
+        ],
+        "full_document_attempts": [
+          {
+            "sample": "upload_pdf_sidecar.pdf",
+            "status": "passed",
+            "start": null,
+            "end": null,
+            "markdown_generated": true,
+            "content_list_generated": true
+          },
+          {
+            "sample": "OM_780-3.pdf",
+            "status": "failed",
+            "start": null,
+            "end": null,
+            "markdown_generated": false,
+            "content_list_generated": false
+          }
+        ],
+        "acceptance_mode": "linux_local_sliced"
+      }
+    },
+    {
+      "name": "multimodal_image_parse",
+      "status": "blocked_dependency",
+      "detail": {
+        "path": "upload_fault_screen.png",
+        "error": "Skipped because image multimodal probes did not pass."
+      }
+    },
+    {
+      "name": "multimodal_pdf_parse",
+      "status": "blocked_dependency",
+      "detail": {
+        "path": "upload_pdf_sidecar.pdf",
+        "error": "Skipped because MinerU probe did not pass."
+      }
+    },
+    {
+      "name": "multimodal_end_to_end_ingest",
+      "status": "blocked_dependency",
+      "detail": {
+        "error": "Skipped because no multimodal parser reached ready state."
+      }
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "version": "A-v2.2",
+  "generated_on": "2026-05-23",
+  "summary": {
+    "provider_count": 4,
+    "status_counts": {
+      "passed": 4
+    }
+  },
+  "results": [
+    {
+      "name": "default_env",
+      "runtime": {
+        "name": "default_env",
+        "provider": "xiaomi_mimo",
+        "model": "mimo-v2.5-pro",
+        "base_url": "https://token-plan-cn.xiaomimimo.com/v1"
+      },
+      "status": "passed",
+      "auth_ok": true,
+      "chat_ok": true,
+      "models_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"object\":\"list\",\"data\":[{\"id\":\"mimo-v2-omni\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2-pro\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2-tts\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-pro\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts-voiceclone\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts-voicedesign\",\"object\":\"model\",\"o"
+      },
+      "chat_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"id\":\"a82709e0a19f40659b697475bb4d5684\",\"choices\":[{\"finish_reason\":\"length\",\"index\":0,\"message\":{\"content\":\"\",\"role\":\"assistant\",\"tool_calls\":null,\"reasoning_content\":\"The user wants me to reply with\"}}],\"created\":1779532529,\"model\":\"mimo-v2.5-pro\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":8,\"prompt_tokens\":256,\"total_tokens\":264,\"completion_tokens_details\":{\"reasoning_tokens\":7},\"prompt_tokens_details\":{\"cached_tokens\":192}}}"
+      }
+    },
+    {
+      "name": "mimo_token_plan_v25_pro",
+      "runtime": {
+        "name": "mimo_token_plan_v25_pro",
+        "provider": "xiaomi_mimo",
+        "model": "mimo-v2.5-pro",
+        "base_url": "https://token-plan-cn.xiaomimimo.com/v1"
+      },
+      "status": "passed",
+      "auth_ok": true,
+      "chat_ok": true,
+      "models_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"object\":\"list\",\"data\":[{\"id\":\"mimo-v2-omni\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2-pro\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2-tts\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-pro\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts-voiceclone\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts-voicedesign\",\"object\":\"model\",\"o"
+      },
+      "chat_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"id\":\"5db8b84bd734487a89543bfddc3555d4\",\"choices\":[{\"finish_reason\":\"length\",\"index\":0,\"message\":{\"content\":\"\",\"role\":\"assistant\",\"tool_calls\":null,\"reasoning_content\":\"The user is asking me to reply\"}}],\"created\":1779532530,\"model\":\"mimo-v2.5-pro\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":8,\"prompt_tokens\":256,\"total_tokens\":264,\"completion_tokens_details\":{\"reasoning_tokens\":7},\"prompt_tokens_details\":{\"cached_tokens\":192}}}"
+      }
+    },
+    {
+      "name": "mimo_token_plan_v25",
+      "runtime": {
+        "name": "mimo_token_plan_v25",
+        "provider": "xiaomi_mimo",
+        "model": "mimo-v2.5",
+        "base_url": "https://token-plan-cn.xiaomimimo.com/v1"
+      },
+      "status": "passed",
+      "auth_ok": true,
+      "chat_ok": true,
+      "models_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"object\":\"list\",\"data\":[{\"id\":\"mimo-v2-omni\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2-pro\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2-tts\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-pro\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts-voiceclone\",\"object\":\"model\",\"owned_by\":\"xiaomi\"},{\"id\":\"mimo-v2.5-tts-voicedesign\",\"object\":\"model\",\"o"
+      },
+      "chat_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"id\":\"8020f9a177a04cdcb2ec2546c3706d21\",\"choices\":[{\"finish_reason\":\"length\",\"index\":0,\"message\":{\"content\":\"\",\"role\":\"assistant\",\"tool_calls\":null,\"reasoning_content\":\"The user is asking me to reply\"}}],\"created\":1779532531,\"model\":\"mimo-v2.5\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":8,\"prompt_tokens\":252,\"total_tokens\":260,\"completion_tokens_details\":{\"reasoning_tokens\":7},\"prompt_tokens_details\":{\"cached_tokens\":192}}}"
+      }
+    },
+    {
+      "name": "deepseek_chat",
+      "runtime": {
+        "name": "deepseek_chat",
+        "provider": "deepseek",
+        "model": "deepseek-chat",
+        "base_url": "https://api.deepseek.com/v1"
+      },
+      "status": "passed",
+      "auth_ok": true,
+      "chat_ok": true,
+      "models_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"object\":\"list\",\"data\":[{\"id\":\"deepseek-v4-flash\",\"object\":\"model\",\"owned_by\":\"deepseek\"},{\"id\":\"deepseek-v4-pro\",\"object\":\"model\",\"owned_by\":\"deepseek\"}]}"
+      },
+      "chat_probe": {
+        "ok": true,
+        "status": 200,
+        "body_preview": "{\"id\":\"39dab3ff-0dc4-42f8-ace0-e7b7b3fe6f5d\",\"object\":\"chat.completion\",\"created\":1779532531,\"model\":\"deepseek-v4-flash\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\"},\"logprobs\":null,\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":9,\"completion_tokens\":1,\"total_tokens\":10,\"prompt_tokens_details\":{\"cached_tokens\":0},\"prompt_cache_hit_tokens\":0,\"prompt_cache_miss_tokens\":9},\"system_fingerprint\":\"fp_8b330d02d0_prod0820_fp8_kvcache_20260402\"}"
+      }
+    }
+  ]
+}

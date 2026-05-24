@@ -31,9 +31,10 @@ class ChromaVectorStore:
         )
 
     def reset(self) -> None:
+        not_found_error = getattr(chromadb.errors, "NotFoundError", ValueError)
         try:
             self.client.delete_collection(self.collection_name)
-        except ValueError:
+        except (ValueError, not_found_error):
             pass
         self.collection = self.client.get_or_create_collection(
             name=self.collection_name,

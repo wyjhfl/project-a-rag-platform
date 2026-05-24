@@ -1,0 +1,9 @@
+{
+  "checks": [],
+  "critical_failures": [
+    {
+      "name": "app_import",
+      "reason": "couldn't get a connection after 30.00 sec"
+    }
+  ]
+}

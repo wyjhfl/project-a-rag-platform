@@ -1,0 +1,149 @@
+{
+  "version": "A-v2.3",
+  "generated_on": "2026-05-23",
+  "component": "paddleocr_compatibility",
+  "summary": {
+    "check_count": 8,
+    "status_counts": {
+      "passed": 2,
+      "blocked": 6
+    },
+    "blocker_type_counts": {
+      "wsl_runtime_incompatible": 1,
+      "runtime_incompatible": 5
+    },
+    "runtime_incompatible_confirmed": true
+  },
+  "decision": {
+    "status": "formal_boundary",
+    "recommendation": "Keep PaddleOCR out of the default demo path and document it as a runtime compatibility boundary.",
+    "next_step": "Only continue if a clean Docker/Linux runtime matrix is allocated as a separate spike."
+  },
+  "matrix": [
+    {
+      "name": "docker_daemon",
+      "status": "passed",
+      "blocker_type": "",
+      "detail": "Docker daemon can be used for an isolated OCR runtime."
+    },
+    {
+      "name": "wsl_python_and_packages",
+      "status": "passed",
+      "blocker_type": "",
+      "detail": {
+        "repo_mounted": true,
+        "python_ready": true,
+        "package_flags": {
+          "cv2": true,
+          "numpy": true,
+          "paddle": true,
+          "paddleocr": true,
+          "paddlex": true
+        }
+      }
+    },
+    {
+      "name": "wsl_paddleocr_real_runtime",
+      "status": "blocked",
+      "blocker_type": "wsl_runtime_incompatible",
+      "detail": {
+        "image_path": "data/manual_test_uploads/upload_fault_screen.png",
+        "package_imports": {
+          "cv2": {
+            "ok": true,
+            "version": "4.13.0"
+          },
+          "numpy": {
+            "ok": true,
+            "version": "2.3.5"
+          },
+          "paddle": {
+            "ok": true,
+            "version": "3.3.1"
+          },
+          "paddleocr": {
+            "ok": true,
+            "version": "3.5.0"
+          },
+          "paddlex": {
+            "ok": true,
+            "version": "3.5.2"
+          }
+        },
+        "ocr_runtime_ready": false,
+        "ocr_error": {
+          "type": "NotImplementedError",
+          "message": "(Unimplemented) ConvertPirAttribute2RuntimeAttribute not support [pir::ArrayAttribute<pir::DoubleAttribute>]  (at /paddle/paddle/fluid/framework/new_executor/instruction/onednn/onednn_instruction.cc:116)\n",
+          "traceback": "Traceback (most recent call last):\n  File \"/mnt/e/githubshizhanxiangmu666/我的学习计划/天空没有极限/project-a-rag-platform/backend/scripts/wsl_paddleocr_probe.py\", line 23, in main\n    result = PaddleOCRAdapter(backend=\"real\").extract_text(IMAGE_PATH)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/e/githubshizhanxiangmu666/我的学习计划/天空没有极限/project-a-rag-platform/backend/app/rag/multimodal.py\", line 98, in extract_text\n    return self._extract_with_paddleocr(image_path)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/e/githubshizhanxiangmu666/我的学习计划/天空没有极限\n...\n^^^^^^^^^^^^^^^^\n  File \"/home/wei_yanjie/.local/lib/python3.12/site-packages/paddlex/inference/models/runners/paddle_static/runner.py\", line 297, in __call__\n    pred = self.infer(x)\n           ^^^^^^^^^^^^^\n  File \"/home/wei_yanjie/.local/lib/python3.12/site-packages/paddlex/inference/models/runners/paddle_static/runner.py\", line 265, in __call__\n    self.predictor.run()\nNotImplementedError: (Unimplemented) ConvertPirAttribute2RuntimeAttribute not support [pir::ArrayAttribute<pir::DoubleAttribute>]  (at /paddle/paddle/fluid/framework/new_executor/instruction/onednn/onednn_instruction.cc:116)"
+        }
+      }
+    },
+    {
+      "name": "final_probe_flags_enable_pir_api_0",
+      "status": "blocked",
+      "blocker_type": "runtime_incompatible",
+      "detail": {
+        "error_type": "NotImplementedError",
+        "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+      }
+    },
+    {
+      "name": "final_probe_flags_use_mkldnn_0",
+      "status": "blocked",
+      "blocker_type": "runtime_incompatible",
+      "detail": {
+        "error_type": "NotImplementedError",
+        "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+      }
+    },
+    {
+      "name": "final_probe_flags_enable_pir_api_0_and_use_mkldnn_0",
+      "status": "blocked",
+      "blocker_type": "runtime_incompatible",
+      "detail": {
+        "error_type": "NotImplementedError",
+        "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+      }
+    },
+    {
+      "name": "final_probe_pp_ocr_v5_mobile_det_and_rec",
+      "status": "blocked",
+      "blocker_type": "runtime_incompatible",
+      "detail": {
+        "error_type": "NotImplementedError",
+        "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+      }
+    },
+    {
+      "name": "final_probe_pp_ocr_v4_mobile_profile",
+      "status": "blocked",
+      "blocker_type": "runtime_incompatible",
+      "detail": {
+        "error_type": "NotImplementedError",
+        "error_contains": "ConvertPirAttribute2RuntimeAttribute"
+      }
+    }
+  ],
+  "evidence": {
+    "current_preflight_summary": {
+      "docker_daemon_ready": true,
+      "wsl_repo_mounted": true,
+      "wsl_python_ready": true,
+      "wsl_packages_ready": true,
+      "wsl_ocr_runtime_ready": false,
+      "recommended_path": "wsl_runtime_incompatible"
+    },
+    "final_probe_environment": {
+      "platform": "WSL Ubuntu-24.04",
+      "python_version": "3.12.3",
+      "paddle": "3.3.1",
+      "paddleocr": "3.5.0",
+      "paddlex": "3.5.2"
+    },
+    "final_probe_conclusion": {
+      "status": "runtime_incompatible",
+      "summary": "The current WSL runtime still fails inside PaddleX static inference even after disabling PIR/MKLDNN flags and switching to lighter PP-OCR mobile models.",
+      "next_step": "Do not spend more A-v1.5 time on Paddle runtime tweaking. Move forward with A-v1.6/A-v2 display work using Vision plus MinerU Linux sliced as the current multimodal acceptance baseline."
+    }
+  }
+}

@@ -1,4 +1,10 @@
+import os
 from pathlib import Path
+
+os.environ["STORAGE_BACKEND"] = "sqlite"
+os.environ["VECTOR_BACKEND"] = "chroma"
+os.environ["CACHE_ENABLED"] = "false"
+os.environ["GRAPH_RETRIEVAL_ENABLED"] = "false"
 
 from app.main import create_app
 from fastapi.testclient import TestClient
@@ -21,7 +27,7 @@ def test_system_status_reports_llm_disabled_without_api_key(tmp_path: Path, monk
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["version"] == "v1.0"
+    assert payload["version"] == "v2.0"
     assert payload["llm_provider"] == "xiaomi_mimo"
     assert payload["llm_model"] == "mimo-test"
     assert payload["llm_enabled"] is False

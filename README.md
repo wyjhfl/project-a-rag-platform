@@ -1,118 +1,125 @@
-# Project A: 企业设备售后诊断与工单闭环 RAG 平台
+# Project A：企业设备售后诊断与工单闭环 RAG 平台
 
-[![CI](https://github.com/wyjhfl/project-a-rag-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/wyjhfl/project-a-rag-platform/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-RAG%20API-009688)
-![Vue](https://img.shields.io/badge/Vue-3%20Dashboard-42b883)
-![LangGraph](https://img.shields.io/badge/LangGraph-Ticket%20Workflow-black)
+Project A 是一个面向 AI 大模型 / RAG 开发求职展示的企业设备售后诊断平台。
 
-面向企业设备售后场景的 RAG 工程项目。核心目标不是只做问答，而是把“故障描述 -> 检索诊断 -> 引用证据 -> 工单推进”串成一条可演示、可验证、可部署的业务闭环。
-
-## 项目亮点
-
-- 不止回答问题：从设备故障描述出发，给出带引用的诊断建议，并在高风险或缺件场景中推进工单流转。
-- 兼顾效果与工程：同时覆盖基础 RAG、混合检索、查询增强、安全边界、多轮对话、工单闭环和 CI/CD。
-- 对外展示友好：公开仓库只保留最终实现、最小演示数据、核心测试和部署入口，不混入研发噪音。
-
-## 适合展示的能力
-
-- 基础 RAG：文档入库、切片、向量检索、问答、引用、SSE 流式响应
-- 检索增强：BM25、RRF、rerank、查询增强、查询路由
-- 安全边界：Prompt Injection 拦截、资料不足拒答、危险操作安全提示
-- 多轮会话：设备型号与故障码的会话级指代消解
-- 工单闭环：LangGraph 工作流、HITL、人审恢复、备件查询、工单关闭
-- 工程能力：FastAPI、Vue3、Docker Compose、GitHub Actions、核心自动化测试
-- 可选增强：Redis、PostgreSQL、Milvus、Neo4j、真实多模态解析与视觉 LLM
-
-## 业务链路
-
-```mermaid
-flowchart LR
-    A["用户描述设备故障"] --> B["RAG 检索与诊断"]
-    B --> C["返回答案与引用证据"]
-    C --> D{"是否高风险/缺件/需人工?"}
-    D -- 否 --> E["给出排障建议并结束"]
-    D -- 是 --> F["进入 LangGraph 工单流"]
-    F --> G["查询备件 / 人工确认 / 状态推进"]
-    G --> H["关闭工单并沉淀记录"]
-```
-
-## 技术架构
+它不是只做“问答”的 RAG demo，而是围绕设备故障描述，完成：
 
 ```text
-Frontend        Vue3 + Vite + TypeScript + Element Plus
-API Layer       FastAPI
-RAG Layer       Chunking + Hybrid Retrieval + Rerank + Query Enhancement
-Workflow        LangGraph Ticket Workflow + HITL
-Default Store   SQLite + Chroma
-Optional Infra  Redis + PostgreSQL + Milvus + Neo4j + MinerU + PaddleOCR
+故障问题
+-> 知识检索
+-> grounded 回答
+-> 引用证据
+-> bad case / trace / evaluation
+-> 工单与人工升级闭环
 ```
+
+当前项目已经进入 **A-v2.1 演示与交付收口阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态。
+
+## 当前状态
+
+推荐公开演示画像：
+
+```text
+sqlite + chroma + deepseek-chat + FastAPI + Vue 演示中心
+```
+
+已转绿能力：
+
+- 文本真实 LLM 主链：`deepseek_chat` 已通过 grounded 验收。
+- 多模态验收：`Vision LLM` 已转绿。
+- 多模态解析：`MinerU Linux sliced` 已转绿。
+- 前端演示中心：可展示 provider、多模态、evaluation、bad case、trace 时间线和原始 JSON。
+- 本地 demo：已有一键启动和一键停止脚本。
+
+明确边界：
+
+- `MiMo` 已在 A-v2.2 通过 token-plan 口径重新验收，`mimo-v2.5-pro` 和 `mimo-v2.5` 均已进入 grounded 可比较状态。
+- A-v2.4 横向对比后，`deepseek_chat` 仍推荐作为公开 demo 默认主链，`mimo-v2.5` 作为候选对照。
+- `PaddleOCR` 已在 A-v2.3 正式定性为 runtime compatibility boundary，不进入默认 demo 路径。
+- `.env` 偏企业增强开发口径，公开演示请使用 `.env.demo.example` / `.env.demo`。
+- Redis、PostgreSQL、Milvus、Neo4j 等增强能力保留代码入口和部分验收证据，但不是公开 demo 默认前提。
+
+## 快速启动 Demo
+
+前置条件：
+
+- Python 环境已可用。
+- 前端依赖已安装，或可在 `frontend/` 下执行 `npm install`。
+- `.env` 中存在真实 `DEEPSEEK_API_KEY`。
+
+准备 demo 配置：
+
+```powershell
+copy .env.demo.example .env.demo
+```
+
+启动：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_demo_stack.ps1 -StopExisting
+```
+
+停止：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\stop_demo_stack.ps1
+```
+
+默认访问地址：
+
+- 前端演示中心：[http://127.0.0.1:4175](http://127.0.0.1:4175)
+- 后端健康检查：[http://127.0.0.1:18082/health](http://127.0.0.1:18082/health)
+- 系统状态：[http://127.0.0.1:18082/api/v1/system/status](http://127.0.0.1:18082/api/v1/system/status)
+- 验收中心接口：[http://127.0.0.1:18082/api/v1/acceptance/overview](http://127.0.0.1:18082/api/v1/acceptance/overview)
+
+更完整的启动和排查说明见：[docs/demo_guide.md](docs/demo_guide.md)。
+
+## 演示顺序
+
+推荐按这个顺序讲 5-10 分钟：
+
+1. 项目定位：设备售后诊断与工单闭环 RAG。
+2. Demo 画像：`sqlite + chroma + deepseek-chat`。
+3. 系统状态：确认后端、LLM、资料源、向量库状态。
+4. 验收中心：讲 provider、多模态、evaluation、bad case。
+5. 文本主链：讲 grounded 回答、引用和拒答边界。
+6. 多模态边界：讲 Vision / MinerU 转绿，PaddleOCR 阻塞。
+7. trace：展开低分 case 的关键输入输出和原始 JSON。
+8. 收束：讲清默认 demo、候选 provider、OCR 边界和下一步面试材料压缩。
+
+完整演示脚本见：[docs/demo_script.md](docs/demo_script.md)。
+
+## 技术栈
+
+- 后端：FastAPI
+- 前端：Vue 3 + Vite + TypeScript
+- RAG 编排：LangChain / LangGraph
+- 默认向量存储：Chroma
+- 默认结构化存储：SQLite
+- 工单状态机：LangGraph
+- 测试：pytest
+- 演示中心：前端聚合 `/api/v1/acceptance/overview`
 
 ## 仓库结构
 
 ```text
-backend/app/                  FastAPI、RAG、工单与存储实现
-backend/tests/                公开版核心回归测试
-backend/scripts/              评测与发布辅助脚本
-frontend/                     Vue3 演示前端
-data/seed_docs/               最小演示文档
-data/real_manuals_sanitized/  脱敏真实资料样例
-data/eval/                    回归与发布场景用例
-docs/                         功能核对、发布说明、测试结果、bad cases
-prompts/                      RAG prompt 文件
+backend/app/        FastAPI、RAG、工单、评测与验收接口
+backend/scripts/    provider、多模态、前端联调等预检脚本
+backend/tests/      自动化测试
+frontend/           Vue 演示中心
+data/               seed data、真实脱敏资料、评测集与本地产物
+docs/               版本记录、验收报告、演示和面试材料
+bad_cases/          bad case 记录
+scripts/            demo 启停脚本
+prompts/            版本推进 prompt
 ```
 
-## 快速启动
-
-### 1. 安装后端依赖
-
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -e .
-```
-
-### 2. 配置环境变量
-
-复制 `.env.example` 为 `.env`。
-
-默认情况下，即使不配置真实 LLM，也可以本地跑通主链路；系统会自动回退到抽取式答案生成，适合演示和 CI。
-
-### 3. 启动后端
-
-```powershell
-uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 18081 --reload
-```
-
-### 4. 启动前端
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-访问地址：
-
-- 前端：[http://127.0.0.1:5173](http://127.0.0.1:5173)
-- 后端健康检查：[http://127.0.0.1:18081/health](http://127.0.0.1:18081/health)
-
-## Docker Compose
-
-```powershell
-docker compose up --build
-```
-
-访问地址：
-
-- Web：[http://127.0.0.1:18080](http://127.0.0.1:18080)
-- API：[http://127.0.0.1:18081](http://127.0.0.1:18081)
-
-## API 概览
+## 核心接口
 
 ```text
 GET  /health
 GET  /api/v1/system/status
+GET  /api/v1/acceptance/overview
 POST /api/v1/documents/ingest
 POST /api/v1/documents/upload
 POST /api/v1/chat
@@ -125,72 +132,86 @@ POST /api/v1/tickets/{ticket_id}/close
 POST /api/v1/evaluations/run
 ```
 
-## 默认可跑与可选增强
+## 证据索引
 
-默认本地可跑：
+文本 LLM / Provider：
 
-- SQLite
-- Chroma
-- 脱敏演示资料
-- 核心 API / 检索 / 工单 / 安全 / 评测入口
+- [A-v1.4 Provider 稳定性收口与默认模型决策](docs/A-v1.4_真实LLM_Provider稳定性收口与默认模型决策.md)
+- [A-v1.4 Provider 验收报告 2026-05-19](docs/A-v1.4_provider_acceptance_report_2026-05-19.json)
+- [A-v1.4 DeepSeek grounded 预检](docs/A-v1.4_real_llm_grounding_preflight_deepseek_2026-05-19.json)
+- [A-v2.2 MiMo Provider 重新验收](docs/A-v2.2-mimo-provider-reacceptance.md)
+- [A-v2.2 Provider 验收报告 2026-05-23](docs/A-v2.2_provider_acceptance_report_2026-05-23.json)
+- [A-v2.4 Provider 对比报告复盘](docs/A-v2.4-provider-comparison-review.md)
+- [A-v2.4 Provider 对比 JSON](docs/A-v2.4_provider_comparison_report_2026-05-23.json)
 
-可选增强，通过 `.env` 打开：
+多模态：
 
-- `CACHE_ENABLED=true`：Redis 缓存
-- `STORAGE_BACKEND=postgres`：PostgreSQL 结构化存储
-- `VECTOR_BACKEND=milvus`：Milvus 向量库
-- `GRAPH_RETRIEVAL_ENABLED=true`：Neo4j 图检索
-- `MULTIMODAL_BACKEND=real`：真实 MinerU / PaddleOCR / Vision LLM 链路
+- [A-v1.5 真实多模态全链路开启与验收收口](docs/A-v1.5_真实多模态全链路开启与验收收口.md)
+- [A-v1.5 多模态验收报告 2026-05-20](docs/A-v1.5_multimodal_acceptance_report_2026-05-20.json)
+- [A-v1.5 PaddleOCR 最终探针](docs/A-v1.5_paddleocr_linux_final_probe_2026-05-20.json)
+- [A-v1.5 bad cases](docs/A-v1.5_bad_cases.md)
+- [A-v2.3 PaddleOCR 兼容性专项复盘](docs/A-v2.3-paddleocr-compatibility-review.md)
+- [A-v2.3 PaddleOCR 兼容性报告](docs/A-v2.3_paddleocr_compatibility_report_2026-05-23.json)
 
-这些增强能力不是 GitHub Actions 默认前提，因此公开仓库的 CI 聚焦“本地可复现主链路”。
+演示中心：
 
-## CI
+- [A-v1.6 验收中心与演示产品化](docs/A-v1.6_验收中心与演示产品化.md)
+- [A-v2.0 前端验收中心与演示产品化](docs/A-v2.0_前端验收中心与演示产品化.md)
+- [A-v2.0 前端 live preflight public chain](docs/A-v2.0_frontend_live_preflight_publicchain_2026-05-22.json)
 
-仓库提供 GitHub Actions，默认验证：
+评测与 bad case：
 
-- `ruff check backend`
-- 核心 `pytest`
-- `python -m compileall backend/app backend/scripts`
-- `npm ci`
-- `npm run build`
-- `docker compose config`
+- [A-real-data RAGAS 报告](docs/A-real-data_ragas_report.json)
+- [A-real-data 回归报告](docs/A-real-data_regression_report.json)
+- [A-real-data 对抗报告](docs/A-real-data_adversarial_report.json)
+- [A-real-data bad cases](docs/A-real-data_bad_cases.md)
 
-## 核心验证命令
+A-v2.1 交付文档：
 
-```powershell
-pytest backend/tests/test_api.py `
-  backend/tests/test_enterprise_api.py `
-  backend/tests/test_hybrid_retrieval.py `
-  backend/tests/test_rag_security.py `
-  backend/tests/test_release_scenarios.py `
-  backend/tests/test_ticket_workflow.py -q
+- [最终交付索引](docs/final_delivery_index.md)
+- [Demo 启动指南](docs/demo_guide.md)
+- [标准演示脚本](docs/demo_script.md)
+- [五分钟演示路线](docs/five_min_demo_route.md)
+- [演示素材清单](docs/demo_assets_checklist.md)
+- [公开交付 Checklist](docs/public_delivery_checklist.md)
+- [面试讲法索引](docs/interview_guide.md)
+- [面试材料压缩包](docs/interview_pitch_pack.md)
+- [A-v2.1 演示与交付收口复盘](docs/A-v2.1-demo-delivery-review.md)
+- [A-v2.5 演示素材补强复盘](docs/A-v2.5-demo-assets-review.md)
+- [A-v2.6 公开交付检查复盘](docs/A-v2.6-public-delivery-review.md)
+- [A-v2.7 面试材料压缩版复盘](docs/A-v2.7-interview-compression-review.md)
+- [A-v2.8 作品集视觉补图复盘](docs/A-v2.8-portfolio-visual-assets-review.md)
 
-python -m ruff check backend
-python -m compileall backend\app backend\scripts
+截图资产：
 
-cd frontend
-npm run build
-```
+- [A-v2.5 demo 首页截图](docs/assets/a-v2.5/01-demo-home.png)
+- [Provider 状态截图](docs/assets/a-v2.5/02-provider-status.png)
+- [多模态状态截图](docs/assets/a-v2.5/03-multimodal-status.png)
+- [Evaluation Trace 截图](docs/assets/a-v2.5/04-evaluation-trace.png)
+- [Trace JSON 截图](docs/assets/a-v2.5/05-trace-json.png)
+- [Provider 对比摘要截图](docs/assets/a-v2.5/06-provider-comparison-report.png)
 
-## 公开版文档
+## 面试讲法
 
-- [功能核对表](docs/A-v1.0_public_feature_audit.md)
-- [发布说明](docs/A-v1.0_public_release.md)
-- [测试结果](docs/A-v1.0_测试结果.md)
-- [Bad Cases 摘要](docs/A-v1.0_bad_cases.md)
+一句话版本：
 
-## 为什么这个项目适合面试展示
+> 这个项目把设备售后诊断场景做成了可检索、可引用、可评测、可追踪、可演示的 RAG 闭环，而不是只包装一个聊天接口。
 
-- 有明确业务终态：不是“问完就结束”，而是把诊断结果推进到工单处理。
-- 有真实工程取舍：默认可跑链路与可选企业级增强链路清晰分层。
-- 有验证闭环：不仅有实现，还有测试、CI、发布说明和 bad cases 沉淀。
+重点讲：
 
-## 发布仓库生成
+- grounded 回答：真实 LLM 只有通过上下文校验才接管最终回答。
+- provider 验收：把认证失败、配置缺失、grounded rejection 分开记录。
+- 多模态验收：明确 Vision / MinerU / PaddleOCR 的真实状态和阻塞层。
+- bad case 闭环：低分 case 能追到 trace，能解释问题在召回、上下文还是答案决策。
+- 演示中心：不是静态说明页，而是读取真实验收报告聚合展示。
 
-如果你在研发仓库继续迭代，可用下面的脚本重新生成干净公开版仓库：
+完整问答见：[docs/interview_guide.md](docs/interview_guide.md)。
 
-```powershell
-python backend/scripts/create_public_release_repo.py --target ..\project-a-rag-platform-public --force
-```
+临场压缩讲法见：[docs/interview_pitch_pack.md](docs/interview_pitch_pack.md)。
 
-该脚本会按白名单复制公开版文件，不会带上研发仓库的 Git 历史和本地运行产物。
+## 下一步规划
+
+推荐顺序：
+
+1. **A-v2.9 最终公开导出复核**：重新导出 public release，并按 README 从零跑一遍。
+2. **可选 OCR spike**：单独开 Docker clean runtime matrix，再决定是否重新启用 PaddleOCR。

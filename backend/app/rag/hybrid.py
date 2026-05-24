@@ -4,7 +4,7 @@ from app.rag.chunker import DocumentChunk
 from app.rag.keyword import BM25Retriever
 from app.rag.reranker import BGEReranker
 from app.rag.rrf import reciprocal_rank_fusion
-from app.rag.tracing import trace_retrieval
+from app.rag.tracing import record_trace_event, summarize_chunks, trace_retrieval
 
 
 class Retriever(Protocol):
@@ -66,8 +66,27 @@ class HybridRetriever:
             [keyword_results, vector_results],
             top_k=candidate_count,
         )
+        record_trace_event(
+            "hybrid_retrieval",
+            inputs={
+                "query": query,
+                "top_k": top_k,
+                "candidate_k": candidate_count,
+            },
+            outputs={
+                "keyword_results": summarize_chunks(keyword_results),
+                "vector_results": summarize_chunks(vector_results),
+                "fused_results": summarize_chunks(fused),
+            },
+        )
 
         if not fused:
             return []
 
-        return self.reranker.rerank(query, fused, top_k=top_k)
+        reranked = self.reranker.rerank(query, fused, top_k=top_k)
+        record_trace_event(
+            "rerank",
+            inputs={"query": query, "top_k": top_k},
+            outputs={"reranked_results": summarize_chunks(reranked)},
+        )
+        return reranked

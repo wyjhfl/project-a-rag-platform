@@ -3,6 +3,12 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from app.rag.chunker import DocumentChunk
+from app.rag.scoring import (
+    extract_device_models,
+    normalize_device_text,
+    score_chunk_relevance,
+    tokenize,
+)
 
 SearchFn = Callable[[str, int], list[DocumentChunk]]
 
@@ -70,10 +76,14 @@ class AgenticRetriever:
     def _quality_score(self, question: str, chunks: list[DocumentChunk]) -> float:
         if not chunks:
             return 0.0
-        query_tokens = set(self._tokens(question))
+        query_tokens = set(tokenize(question))
         if not query_tokens:
             return 0.0
-        context_tokens = set(self._tokens("\n".join(chunk.content for chunk in chunks)))
+        context_text = "\n".join(
+            f"{chunk.metadata.get('source', '')}\n{chunk.content}"
+            for chunk in chunks
+        )
+        context_tokens = set(tokenize(context_text))
         overlap = query_tokens & context_tokens
         source_bonus = 0.12 if self._source_matches(question, chunks) else 0.0
         return min(1.0, len(overlap) / len(query_tokens) + source_bonus)
@@ -113,7 +123,7 @@ class AgenticRetriever:
         question: str,
         chunks: list[DocumentChunk],
     ) -> list[DocumentChunk]:
-        device_models = self._extract_device_models(question)
+        device_models = extract_device_models(question)
         if not device_models or not chunks:
             return chunks
 
@@ -136,18 +146,18 @@ class AgenticRetriever:
         device_models: list[str],
     ) -> bool:
         source = str(chunk.metadata.get("source", ""))
-        haystack = self._normalize_device_text(f"{source}\n{chunk.content}")
-        return any(self._normalize_device_text(device) in haystack for device in device_models)
+        haystack = normalize_device_text(f"{source}\n{chunk.content}")
+        return any(normalize_device_text(device) in haystack for device in device_models)
 
     def _specificity_score(self, question: str, chunk: DocumentChunk) -> float:
         haystack = f"{chunk.metadata.get('source', '')}\n{chunk.content}"
-        normalized_haystack = self._normalize_device_text(haystack)
-        score = 0.0
-        for model in self._extract_device_models(question):
-            if self._normalize_device_text(model) in normalized_haystack:
-                score += 3.0
+        normalized_haystack = normalize_device_text(haystack)
+        score = score_chunk_relevance(question, chunk)
+        for model in extract_device_models(question):
+            if normalize_device_text(model) in normalized_haystack:
+                score += 1.5
         for code in self._extract_fault_codes(question):
-            normalized_code = self._normalize_device_text(code)
+            normalized_code = normalize_device_text(code)
             if normalized_code in normalized_haystack:
                 score += 4.0
             if re.search(rf"故障代码\s*{re.escape(code)}", haystack, flags=re.IGNORECASE):
@@ -165,30 +175,6 @@ class AgenticRetriever:
             if code not in codes:
                 codes.append(code)
         return codes
-
-    def _extract_device_models(self, text: str) -> list[str]:
-        patterns = [
-            r"\bUPS[-_]?\d+[A-Z]?\b",
-            r"\bVFD[-_]?\d{2,4}\b",
-            r"\bVFD\d{2,4}\b",
-            r"\bPFX\d{2,4}\b",
-            r"\bPLCLOGO\b",
-            r"\bPLC\d{2,4}\b",
-            r"\bPLC[-_]?[A-Z]?\d{2,4}\b",
-            r"\bCW\d{2,4}\b",
-            r"\bA\d{2,4}\b",
-            r"\bZX[-_]?\d{2,4}\b",
-        ]
-        models: list[str] = []
-        for pattern in patterns:
-            for match in re.finditer(pattern, text, flags=re.IGNORECASE):
-                model = match.group(0).upper()
-                if model not in models:
-                    models.append(model)
-        return models
-
-    def _normalize_device_text(self, text: str) -> str:
-        return re.sub(r"[^A-Z0-9]", "", text.upper())
 
     def _tokens(self, text: str) -> list[str]:
         ascii_tokens = re.findall(r"[A-Za-z]+[-_]?\d*|\d{2,4}", text.upper())

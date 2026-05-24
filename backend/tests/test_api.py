@@ -1,4 +1,10 @@
+import os
 from pathlib import Path
+
+os.environ["STORAGE_BACKEND"] = "sqlite"
+os.environ["VECTOR_BACKEND"] = "chroma"
+os.environ["CACHE_ENABLED"] = "false"
+os.environ["GRAPH_RETRIEVAL_ENABLED"] = "false"
 
 from app.main import create_app
 from fastapi.testclient import TestClient
@@ -32,7 +38,7 @@ def test_api_ingest_and_chat(tmp_path: Path):
         json={"question": "UPS-30K 逆变器过温怎么办？"},
     )
 
-    assert health_response.json()["version"] == "v1.0"
+    assert health_response.json()["version"] == "v2.0"
     assert ingest_response.status_code == 200
     assert ingest_response.json()["chunk_count"] >= 1
     assert chat_response.status_code == 200
