@@ -13,7 +13,11 @@ Project A 是一个面向 AI 大模型 / RAG 开发求职展示的企业设备�
 -> 工单与人工升级闭环
 ```
 
-当前项目已经进入 **A-v3.2 远端 CI 与公开展示复核阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，README 已按招聘方首次阅读路径整理，并开始对 GitHub 远端 CI 和公开页面做闭环检查。
+当前项目已经进入 **A-v3.3 轻量作品集入口增强阶段**：主链可本地演示，验收证据可追溯，前端演示中心可直接讲项目状态，真实评测样本已扩容并转绿，GitHub 远端 CI 已完成复核，README 已按招聘方和作品集首次阅读路径整理。
+
+## 作品集摘要
+
+Project A 是一个企业设备售后诊断 RAG 平台，把设备型号、故障码和现场现象转成可引用的排障建议，并在资料不足或高风险操作时拒答/升级人工。项目覆盖 FastAPI、Vue、Chroma、SQLite、LangChain/LangGraph、Provider 验收、多模态边界、evaluation、bad case、trace 和工单闭环。A-v2.9 后真实回归扩容到 `30/30`、真实对抗扩容到 `20/20`，并达到 `context_precision=0.8667`、`faithfulness=0.6983`、`context_recall=0.9778`。
 
 ## 30 秒看懂项目
 
@@ -196,6 +200,7 @@ A-v2.1 交付文档：
 - [A-v3.0 最终公开发布复核](docs/A-v3.0-public-release-verification.md)
 - [A-v3.1 公开展示与面试讲法收口](docs/A-v3.1-public-readability-review.md)
 - [A-v3.2 远端 CI 与公开展示复核](docs/A-v3.2-remote-ci-display-review.md)
+- [A-v3.3 轻量作品集入口增强](docs/A-v3.3-portfolio-entry-review.md)
 
 截图资产：
 
@@ -228,5 +233,5 @@ A-v2.1 交付文档：
 
 推荐顺序：
 
-1. **A-v3.3 轻量作品集入口增强**：在不新增功能的前提下，补一段更适合简历/作品集引用的项目摘要。
+1. **A-v3.4 简历投递材料收口**：把项目摘要压缩成简历 bullet、GitHub pinned repo 描述和面试开场白三种口径。
 2. **可选 OCR spike**：单独开 Docker clean runtime matrix，再决定是否重新启用 PaddleOCR。
