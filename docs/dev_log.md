@@ -1,5 +1,18 @@
 # 开发日志
 
+## 2026-05-27 A-v5.2 认证与最小权限边界
+
+本轮目标：用 FastAPI Dependency 实现 API Key + 三层角色权限（viewer < operator < admin）。
+
+关键改动：
+
+- 新增 `backend/app/auth.py`：`require_role(min_role)` dependency，AUTH_ENABLED=false 时放行
+- `config.py` 新增 `auth_enabled`、`viewer_api_key`、`operator_api_key`、`admin_api_key`
+- `main.py` 所有业务路由加 `Depends(require_role(...))`，健康检查端点不加
+- 认证失败：缺 key → 401，key 无效 → 401，角色不足 → 403，key 未配置 → 503
+- 新增 `backend/tests/test_auth.py`（9 个测试）
+- 日志不记录 key 值
+
 ## 2026-05-27 A-v5.1 生产部署健康检查与优雅关闭
 
 本轮目标：补齐生产部署最基础能力——liveness/readiness 健康检查和 graceful shutdown。

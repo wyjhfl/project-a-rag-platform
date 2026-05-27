@@ -39,6 +39,10 @@ class Settings:
     vision_llm_model: str = ""
     vision_llm_api_key: str = ""
     vision_llm_base_url: str = ""
+    auth_enabled: bool = False
+    viewer_api_key: str = ""
+    operator_api_key: str = ""
+    admin_api_key: str = ""
 
 
 def get_settings() -> Settings:
@@ -82,6 +86,10 @@ def get_settings() -> Settings:
         vision_llm_model=os.getenv("VISION_LLM_MODEL", os.getenv("LLM_MODEL", "")),
         vision_llm_api_key=os.getenv("VISION_LLM_API_KEY", os.getenv("LLM_API_KEY", "")),
         vision_llm_base_url=os.getenv("VISION_LLM_BASE_URL", os.getenv("LLM_BASE_URL", "")),
+        auth_enabled=_env_bool("AUTH_ENABLED"),
+        viewer_api_key=os.getenv("VIEWER_API_KEY", ""),
+        operator_api_key=os.getenv("OPERATOR_API_KEY", ""),
+        admin_api_key=os.getenv("ADMIN_API_KEY", ""),
     )
 
 

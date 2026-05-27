@@ -1,5 +1,24 @@
 # 调试日志
 
+## 2026-05-27 A-v5.2 认证边界与风险
+
+风险：
+
+- AUTH_ENABLED=true 但三个 key 都为空时返回 503，不是静默放行。部署时必须配置至少一个 key。
+- admin key 隐含 operator + viewer 权限，operator 隐含 viewer 权限。如果三个 key 相同，角色为最高匹配。
+- 日志只记录角色名（`auth ok: role=viewer`），不记录 key 值。
+- /healthz、/readyz、/health 不经过认证，始终公开。
+- 本轮不支持 Authorization Bearer，只支持 X-API-Key。
+- 测试使用硬编码 key（test-viewer-key 等），不依赖真实密钥。
+
+边界：
+
+- 未实现 key 轮换机制
+- 未实现 rate limiting
+- 未实现 JWT/OAuth
+- 未实现审计日志
+- 未实现 IP 白名单
+
 ## 2026-05-27 A-v5.1 风险与边界记录
 
 风险：

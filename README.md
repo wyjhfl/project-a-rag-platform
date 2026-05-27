@@ -144,22 +144,34 @@ prompts/            版本推进 prompt
 ## 核心接口
 
 ```text
-GET  /healthz              liveness（进程存活）
-GET  /readyz               readiness（依赖就绪）
-GET  /health               legacy 健康检查
-GET  /api/v1/system/status
-GET  /api/v1/acceptance/overview
-POST /api/v1/documents/ingest
-POST /api/v1/documents/upload
-POST /api/v1/chat
-POST /api/v1/chat/session
-POST /api/v1/chat/stream
-POST /api/v1/tickets/start
-GET  /api/v1/tickets
-POST /api/v1/tickets/{ticket_id}/resume
-POST /api/v1/tickets/{ticket_id}/close
-POST /api/v1/evaluations/run
+GET  /healthz              liveness（进程存活）       公开
+GET  /readyz               readiness（依赖就绪）      公开
+GET  /health               legacy 健康检查            公开
+GET  /api/v1/system/status                           viewer
+GET  /api/v1/acceptance/overview                      viewer
+POST /api/v1/documents/ingest                         operator
+POST /api/v1/documents/upload                         operator
+POST /api/v1/chat                                     viewer
+POST /api/v1/chat/session                             viewer
+POST /api/v1/chat/stream                              viewer
+POST /api/v1/tickets/start                            operator
+GET  /api/v1/tickets                                   viewer
+POST /api/v1/tickets/{ticket_id}/resume               operator
+POST /api/v1/tickets/{ticket_id}/close                operator
+POST /api/v1/evaluations/run                          admin
 ```
+
+## 认证
+
+默认 `AUTH_ENABLED=false`，所有接口无需认证。
+
+开启后通过 `X-API-Key` 请求头认证，角色层级 viewer < operator < admin：
+
+```bash
+curl -X POST -H "X-API-Key: your-operator-key" -H "Content-Type: application/json" -d "{}" http://localhost:8000/api/v1/documents/ingest
+```
+
+健康检查端点（/healthz、/readyz、/health）始终公开，不要求 API Key。
 
 ## 证据索引
 

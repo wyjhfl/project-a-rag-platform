@@ -5,11 +5,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import Depends, FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.acceptance.service import build_acceptance_overview
+from app.auth import require_role
 from app.cache.redis_cache import RedisCache, RedisCacheConfig
 from app.config import get_settings
 from app.models import (
@@ -204,7 +205,7 @@ def create_app(
         return {"status": "ok", "version": APP_VERSION}
 
     @app.get("/api/v1/system/status", response_model=SystemStatusResponse)
-    def system_status() -> SystemStatusResponse:
+    def system_status(_role: str = Depends(require_role("viewer"))) -> SystemStatusResponse:
         return SystemStatusResponse(
             status="ok",
             version=APP_VERSION,
@@ -216,18 +217,18 @@ def create_app(
         )
 
     @app.get("/api/v1/acceptance/overview", response_model=AcceptanceOverviewResponse)
-    def acceptance_overview() -> AcceptanceOverviewResponse:
+    def acceptance_overview(_role: str = Depends(require_role("viewer"))) -> AcceptanceOverviewResponse:
         return build_acceptance_overview(version=APP_VERSION)
 
     @app.post("/api/v1/documents/ingest", response_model=IngestResponse)
-    def ingest_documents(request: IngestRequest | None = None) -> IngestResponse:
+    def ingest_documents(request: IngestRequest | None = None, _role: str = Depends(require_role("operator"))) -> IngestResponse:
         request = request or IngestRequest()
         docs_dir = _resolve_docs_dir(app, request.docs_source)
         app.state.current_docs_source = request.docs_source
         return app.state.pipeline.ingest_directory(docs_dir)
 
     @app.post("/api/v1/documents/upload", response_model=UploadResponse)
-    def upload_document(file: Annotated[UploadFile, File()]) -> UploadResponse:
+    def upload_document(file: Annotated[UploadFile, File()], _role: str = Depends(require_role("operator"))) -> UploadResponse:
         target_dir = app.state.docs_sources["uploaded_docs"]
         target_dir.mkdir(parents=True, exist_ok=True)
         filename = Path(file.filename or "uploaded.txt").name
@@ -250,11 +251,11 @@ def create_app(
         return UploadResponse(filename=filename, path=str(target_path))
 
     @app.post("/api/v1/chat", response_model=ChatResponse)
-    def chat(request: ChatRequest) -> ChatResponse:
+    def chat(request: ChatRequest, _role: str = Depends(require_role("viewer"))) -> ChatResponse:
         return app.state.pipeline.answer(request.question)
 
     @app.post("/api/v1/chat/session", response_model=SessionChatResponse)
-    def session_chat(request: SessionChatRequest) -> SessionChatResponse:
+    def session_chat(request: SessionChatRequest, _role: str = Depends(require_role("viewer"))) -> SessionChatResponse:
         resolved_question = app.state.conversation_memory.resolve_question(
             request.session_id,
             request.question,
@@ -268,7 +269,7 @@ def create_app(
         )
 
     @app.post("/api/v1/chat/stream")
-    def chat_stream(request: ChatRequest) -> StreamingResponse:
+    def chat_stream(request: ChatRequest, _role: str = Depends(require_role("viewer"))) -> StreamingResponse:
         def events():
             for token in app.state.pipeline.stream_answer(request.question):
                 yield f"data: {token}\n\n"
@@ -277,14 +278,14 @@ def create_app(
         return StreamingResponse(events(), media_type="text/event-stream")
 
     @app.post("/api/v1/tickets/start", response_model=TicketWorkflowResult)
-    def start_ticket(request: TicketStartRequest) -> TicketWorkflowResult:
+    def start_ticket(request: TicketStartRequest, _role: str = Depends(require_role("operator"))) -> TicketWorkflowResult:
         return app.state.ticket_workflow.start(
             question=request.question,
             idempotency_key=request.idempotency_key,
         )
 
     @app.post("/api/v1/tickets/{ticket_id}/resume", response_model=TicketWorkflowResult)
-    def resume_ticket(ticket_id: str, request: TicketResumeRequest) -> TicketWorkflowResult:
+    def resume_ticket(ticket_id: str, request: TicketResumeRequest, _role: str = Depends(require_role("operator"))) -> TicketWorkflowResult:
         return app.state.ticket_workflow.resume_after_human_review(
             ticket_id=ticket_id,
             reviewer=request.reviewer,
@@ -292,18 +293,18 @@ def create_app(
         )
 
     @app.post("/api/v1/tickets/{ticket_id}/close", response_model=TicketRecord)
-    def close_ticket(ticket_id: str, request: TicketCloseRequest) -> TicketRecord:
+    def close_ticket(ticket_id: str, request: TicketCloseRequest, _role: str = Depends(require_role("operator"))) -> TicketRecord:
         return app.state.ticket_workflow.close_ticket(
             ticket_id=ticket_id,
             closed_by=request.closed_by,
         )
 
     @app.get("/api/v1/tickets", response_model=list[TicketRecord])
-    def list_tickets() -> list[TicketRecord]:
+    def list_tickets(_role: str = Depends(require_role("viewer"))) -> list[TicketRecord]:
         return app.state.ticket_workflow.list_tickets()
 
     @app.post("/api/v1/evaluations/run", response_model=EvaluationRunResponse)
-    def run_evaluation(request: EvaluationRunRequest) -> EvaluationRunResponse:
+    def run_evaluation(request: EvaluationRunRequest, _role: str = Depends(require_role("admin"))) -> EvaluationRunResponse:
         docs_dir = _resolve_docs_dir(app, request.docs_source)
         app.state.pipeline.ingest_directory(docs_dir)
         cases = json.loads(Path(request.cases_path).read_text(encoding="utf-8"))
