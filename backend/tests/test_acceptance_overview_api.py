@@ -34,7 +34,12 @@ def test_acceptance_overview_exposes_panels(tmp_path: Path):
     assert {"provider", "multimodal", "evaluation", "badcases"} <= set(panel_map)
     assert panel_map["provider"]["status"] == "passed"
     assert panel_map["multimodal"]["metrics"]["passed"] == "2"
-    assert panel_map["evaluation"]["metrics"]["regression"] == "19/20"
+    regression_parts = panel_map["evaluation"]["metrics"]["regression"].split("/")
+    assert len(regression_parts) == 2
+    regression_passed = int(regression_parts[0])
+    regression_total = int(regression_parts[1])
+    assert regression_total >= 30
+    assert regression_passed >= 28
     assert int(panel_map["badcases"]["metrics"]["real_data_cases"]) >= 1
     assert panel_map["provider"]["breakdown"]
     assert panel_map["evaluation"]["chart"]

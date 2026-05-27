@@ -1,11 +1,93 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
+import time
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 DEFAULT_TARGET = PROJECT_DIR.parent / "project-a-rag-platform-public"
+
+SANITIZE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (
+        re.compile(
+            r"[A-Z]:\\\\[^\\\\]+\\\\我的学习计划\\\\天空没有极限",
+            re.IGNORECASE,
+        ),
+        "<LOCAL_REPO_ROOT>",
+    ),
+    (
+        re.compile(
+            r"[A-Z]:\\[^\\]+\\我的学习计划\\天空没有极限",
+            re.IGNORECASE,
+        ),
+        "<LOCAL_REPO_ROOT>",
+    ),
+    (
+        re.compile(
+            r"[A-Z]:/[^/]+/我的学习计划/天空没有极限",
+            re.IGNORECASE,
+        ),
+        "<LOCAL_REPO_ROOT>",
+    ),
+    (
+        re.compile(
+            r"/mnt/[a-z]/[^/]+/我的学习计划/天空没有极限",
+            re.IGNORECASE,
+        ),
+        "<LOCAL_REPO_ROOT>",
+    ),
+    (
+        re.compile(r"/home/[a-zA-Z_][a-zA-Z0-9_-]*"),
+        "<WSL_HOME>",
+    ),
+    (
+        re.compile(r"[A-Z]:\\\\[^\\\\]*[Dd]ownload", re.IGNORECASE),
+        "<LOCAL_DOWNLOAD_DIR>",
+    ),
+    (
+        re.compile(r"[A-Z]:\\[^\\]*[Dd]ownload", re.IGNORECASE),
+        "<LOCAL_DOWNLOAD_DIR>",
+    ),
+    (
+        re.compile(r"[A-Z]:/[^/]*[Dd]ownload", re.IGNORECASE),
+        "<LOCAL_DOWNLOAD_DIR>",
+    ),
+]
+
+TEXT_EXTENSIONS: frozenset[str] = frozenset({
+    ".md", ".txt", ".json", ".js", ".ts", ".vue", ".css",
+    ".html", ".yml", ".yaml", ".toml", ".cfg", ".ini", ".sh",
+    ".ps1", ".env", ".example", ".gitignore",
+})
+
+
+def sanitize_text(text: str) -> str:
+    for pattern, replacement in SANITIZE_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+_CACHE_DIRS = frozenset({".ruff_cache", ".pytest_cache", "__pycache__"})
+
+
+def robust_rmtree(path: Path, max_retries: int = 3) -> None:
+    for cache_name in _CACHE_DIRS:
+        for cache_dir in path.rglob(cache_name):
+            try:
+                shutil.rmtree(cache_dir)
+            except OSError:
+                pass
+    for attempt in range(max_retries):
+        try:
+            shutil.rmtree(path)
+            return
+        except OSError:
+            if attempt < max_retries - 1:
+                time.sleep(0.5)
+            else:
+                raise
 
 FILES_TO_COPY = [
     ".env.example",
@@ -95,6 +177,7 @@ FILES_TO_COPY = [
     "docs/A-v3.4-resume-delivery-pack.md",
     "docs/A-v3.5-final-remote-audit.md",
     "docs/A-v3.6-public-release-notes.md",
+    "docs/A-v4_engineering_baseline_report.md",
     "docs/A-vue-fastapi_preflight_2026-05-17.json",
     "docs/demo_assets_checklist.md",
     "docs/demo_guide.md",
@@ -140,6 +223,7 @@ TEST_FILES_TO_COPY = [
     "backend/tests/test_av24_provider_comparison.py",
     "backend/tests/test_enterprise_api.py",
     "backend/tests/test_hybrid_retrieval.py",
+    "backend/tests/test_public_release_sanitization.py",
     "backend/tests/test_rag_security.py",
     "backend/tests/test_release_scenarios.py",
     "backend/tests/test_ticket_workflow.py",
@@ -159,7 +243,7 @@ def main() -> int:
     if target.exists():
         if not args.force:
             raise FileExistsError(f"Target already exists: {target}")
-        shutil.rmtree(target)
+        robust_rmtree(target)
 
     target.mkdir(parents=True, exist_ok=True)
 
@@ -186,7 +270,12 @@ def _copy_file(relative_path: str, target_root: Path) -> None:
         raise FileNotFoundError(f"Missing required file: {source}")
     target = target_root / relative_path
     target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, target)
+    if source.suffix.lower() in TEXT_EXTENSIONS:
+        raw = source.read_text(encoding="utf-8", errors="replace")
+        sanitized = sanitize_text(raw)
+        target.write_text(sanitized, encoding="utf-8")
+    else:
+        shutil.copy2(source, target)
 
 
 def _copy_directory(relative_path: str, target_root: Path) -> None:
@@ -208,6 +297,11 @@ def _copy_directory(relative_path: str, target_root: Path) -> None:
             "*.pyo",
         ),
     )
+    for child in target.rglob("*"):
+        if child.is_file() and child.suffix.lower() in TEXT_EXTENSIONS:
+            raw = child.read_text(encoding="utf-8", errors="replace")
+            sanitized = sanitize_text(raw)
+            child.write_text(sanitized, encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from argparse import ArgumentParser
 from datetime import date
@@ -12,8 +13,14 @@ DEFAULT_OUTPUT = (
     PROJECT_DIR / "docs" / f"A-v1.5_multimodal_linux_runtime_{date.today().isoformat()}.json"
 )
 WSL_DISTRO = "Ubuntu-24.04"
-WSL_REPO_PATH = "/mnt/e/githubshizhanxiangmu666/'鎴戠殑瀛︿範璁″垝'/'澶╃┖娌℃湁鏋侀檺'/project-a-rag-platform"
-WSL_USER_LIBGOMP_PATH = "/home/wei_yanjie/project_a_wsl_libgomp/usr/lib/x86_64-linux-gnu"
+WSL_REPO_PATH = os.environ.get(
+    "WSL_PROJECT_A_REPO_PATH",
+    "/mnt/e/project-a-rag-platform",
+)
+WSL_USER_LIBGOMP_PATH = os.environ.get(
+    "WSL_PROJECT_A_LIBGOMP_PATH",
+    "$HOME/project_a_wsl_libgomp/usr/lib/x86_64-linux-gnu",
+)
 
 
 def main() -> int:

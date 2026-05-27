@@ -67,3 +67,10 @@ temp/
 Thumbs.db
 .idea/
 .vscode/
+
+# IDE agent cache (preserve project-level skill rules)
+.codex/*
+!.codex/skills/
+.codex/skills/*
+!.codex/skills/project-a-rag-mentor/
+!.codex/skills/project-a-rag-mentor/SKILL.md
