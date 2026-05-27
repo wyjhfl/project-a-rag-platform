@@ -37,6 +37,7 @@ jobs:
             backend/tests/test_acceptance_overview_api.py \
             backend/tests/test_enterprise_api.py \
             backend/tests/test_hybrid_retrieval.py \
+            backend/tests/test_health_readiness.py \
             backend/tests/test_rag_security.py \
             backend/tests/test_release_scenarios.py \
             backend/tests/test_ticket_workflow.py \

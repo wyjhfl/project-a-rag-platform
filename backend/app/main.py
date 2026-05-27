@@ -1,11 +1,13 @@
 import json
+import logging
 import shutil
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.acceptance.service import build_acceptance_overview
 from app.cache.redis_cache import RedisCache, RedisCacheConfig
@@ -36,6 +38,62 @@ from app.ticketing.models import TicketRecord, TicketWorkflowResult
 from app.ticketing.workflow import TicketWorkflowService
 
 APP_VERSION = "v2.0"
+
+logger = logging.getLogger("project_a")
+
+
+def _check_config(settings) -> dict:
+    try:
+        return {"status": "ok", "provider": settings.llm_provider}
+    except Exception as exc:
+        return {"status": "error", "reason": str(exc)}
+
+
+def _check_storage(settings, store) -> dict:
+    try:
+        store.list_chat_records()
+        return {"status": "ok", "backend": settings.storage_backend}
+    except Exception as exc:
+        return {"status": "error", "reason": str(exc)}
+
+
+def _check_vector_store(pipeline) -> dict:
+    try:
+        if pipeline.hybrid_retriever is not None:
+            return {"status": "ok"}
+        return {"status": "degraded", "reason": "hybrid_retriever not initialized"}
+    except Exception as exc:
+        return {"status": "error", "reason": str(exc)}
+
+
+def _check_optional_dependencies(settings, cache) -> dict:
+    checks: dict[str, str] = {}
+    if settings.cache_enabled:
+        try:
+            if cache is not None and hasattr(cache, "client"):
+                cache.client.ping()
+                checks["redis"] = "ok"
+            else:
+                checks["redis"] = "degraded: client not initialized"
+        except Exception as exc:
+            checks["redis"] = f"error: {exc}"
+    else:
+        checks["redis"] = "disabled"
+    if settings.vector_backend.strip().lower() == "milvus":
+        try:
+            from pymilvus import MilvusClient
+
+            MilvusClient(uri=settings.milvus_uri, token=settings.milvus_token or None)
+            checks["milvus"] = "ok"
+        except Exception as exc:
+            checks["milvus"] = f"error: {exc}"
+    else:
+        checks["milvus"] = "disabled"
+    if settings.graph_retrieval_enabled:
+        checks["neo4j"] = "enabled"
+    else:
+        checks["neo4j"] = "disabled"
+    return checks
 
 
 def create_app(
@@ -68,7 +126,18 @@ def create_app(
         "uploaded_docs": uploaded_docs_dir or settings.uploaded_docs_dir,
     }
 
-    app = FastAPI(title=f"Project A {APP_VERSION} Enterprise RAG")
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        logger.info("Project A starting up (version %s)", APP_VERSION)
+        yield
+        logger.info("Project A shutting down")
+        if cache is not None and hasattr(cache, "client"):
+            try:
+                cache.client.close()
+            except Exception:
+                pass
+
+    app = FastAPI(title=f"Project A {APP_VERSION} Enterprise RAG", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -80,6 +149,55 @@ def create_app(
     app.state.current_docs_source = "seed_docs"
     app.state.conversation_memory = ConversationMemory(cache=cache)
     app.state.ticket_workflow = TicketWorkflowService(store=store, rag_pipeline=pipeline)
+    app.state._settings = settings
+    app.state._store = store
+    app.state._cache = cache
+
+    @app.get("/healthz")
+    def healthz() -> dict[str, str]:
+        return {"status": "ok", "service": "project-a-rag-platform", "version": APP_VERSION}
+
+    @app.get("/readyz")
+    def readyz():
+        s = app.state._settings
+        st = app.state._store
+        c = app.state._cache
+        p = app.state.pipeline
+        config_check = _check_config(s)
+        storage_check = _check_storage(s, st)
+        vector_check = _check_vector_store(p)
+        optional_checks = _check_optional_dependencies(s, c)
+        checks = {
+            "config": config_check,
+            "storage": storage_check,
+            "vector_store": vector_check,
+            "optional_dependencies": optional_checks,
+        }
+        core_has_error = (
+            config_check["status"] == "error"
+            or storage_check["status"] == "error"
+            or vector_check["status"] == "error"
+        )
+        if core_has_error:
+            overall = "error"
+            return JSONResponse(
+                status_code=503,
+                content={"status": overall, "version": APP_VERSION, "checks": checks},
+            )
+        all_core_ok = (
+            config_check["status"] == "ok"
+            and storage_check["status"] == "ok"
+            and vector_check["status"] in ("ok", "degraded")
+        )
+        opt_degraded = any(
+            v.startswith("error:") or v.startswith("degraded:")
+            for v in optional_checks.values()
+        )
+        if all_core_ok and not opt_degraded:
+            overall = "ok"
+        else:
+            overall = "degraded"
+        return {"status": overall, "version": APP_VERSION, "checks": checks}
 
     @app.get("/health")
     def health() -> dict[str, str]:

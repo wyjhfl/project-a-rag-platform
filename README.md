@@ -144,7 +144,9 @@ prompts/            版本推进 prompt
 ## 核心接口
 
 ```text
-GET  /health
+GET  /healthz              liveness（进程存活）
+GET  /readyz               readiness（依赖就绪）
+GET  /health               legacy 健康检查
 GET  /api/v1/system/status
 GET  /api/v1/acceptance/overview
 POST /api/v1/documents/ingest
