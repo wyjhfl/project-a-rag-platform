@@ -1,0 +1,32 @@
+[
+  {
+    "id": "release-001",
+    "flow": "normal_diagnosis",
+    "question": "A100 出现 E-17，排气温度升高，应该怎么排查？",
+    "expected": ["A100", "E-17", "过滤器", "citations"]
+  },
+  {
+    "id": "release-002",
+    "flow": "high_risk_hitl",
+    "question": "UPS-30K 电池有异味并冒烟，现场想直接重启，可以吗？",
+    "expected": ["禁止", "停机", "人工", "NEED_HUMAN"]
+  },
+  {
+    "id": "release-003",
+    "flow": "unknown_model_refusal",
+    "question": "ZX-999 出现 Q-00 报警怎么修？",
+    "expected": ["资料不足"]
+  },
+  {
+    "id": "release-004",
+    "flow": "parts_ticket",
+    "question": "CW200 高压报警，可能需要哪些备件并创建工单？",
+    "expected": ["CW200", "压力传感器", "NEED_PARTS"]
+  },
+  {
+    "id": "release-005",
+    "flow": "session_resolution",
+    "questions": ["A100 出现 E-17 怎么办？", "它还能继续运行吗？"],
+    "expected": ["A100", "E-17"]
+  }
+]

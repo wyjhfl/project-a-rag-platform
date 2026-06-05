@@ -1,0 +1,138 @@
+services:
+  api:
+    build: .
+    ports:
+      - "18081:8000"
+    volumes:
+      - ./data:/app/data
+      - ./prompts:/app/prompts:ro
+    environment:
+      APP_DATABASE_PATH: /app/data/app.db
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-postgres}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://project_a:project_a_dev@postgres:5432/project_a}
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-milvus}
+      MILVUS_URI: ${MILVUS_URI:-http://milvus:19530}
+      MILVUS_COLLECTION: ${MILVUS_COLLECTION:-project_a_v1}
+      MULTIMODAL_BACKEND: ${MULTIMODAL_BACKEND:-sidecar}
+      MINERU_COMMAND: ${MINERU_COMMAND:-mineru}
+      MINERU_OUTPUT_DIR: /app/data/mineru_output
+      VISION_LLM_MODEL: ${VISION_LLM_MODEL:-}
+      VISION_LLM_API_KEY: ${VISION_LLM_API_KEY:-}
+      VISION_LLM_BASE_URL: ${VISION_LLM_BASE_URL:-}
+      CHROMA_PERSIST_DIR: /app/data/chroma
+      SEED_DOCS_DIR: /app/data/seed_docs
+      REAL_DOCS_DIR: /app/data/real_manuals_sanitized
+      UPLOADED_DOCS_DIR: /app/data/uploaded_docs
+      RAG_PROMPT_PATH: /app/prompts/rag_prompt_v0.1.txt
+      LLM_PROVIDER: ${LLM_PROVIDER:-xiaomi_mimo}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      GRAPH_RETRIEVAL_ENABLED: ${GRAPH_RETRIEVAL_ENABLED:-false}
+      NEO4J_URI: ${NEO4J_URI:-}
+      NEO4J_USERNAME: ${NEO4J_USERNAME:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-}
+      NEO4J_DATABASE: ${NEO4J_DATABASE:-neo4j}
+      CACHE_ENABLED: ${CACHE_ENABLED:-false}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-1800}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      VIEWER_API_KEY: ${VIEWER_API_KEY:-}
+      OPERATOR_API_KEY: ${OPERATOR_API_KEY:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      JOB_EXECUTION_MODE: ${JOB_EXECUTION_MODE:-worker}
+      JOB_POLL_INTERVAL_SECONDS: ${JOB_POLL_INTERVAL_SECONDS:-5}
+      JOB_DEFAULT_TIMEOUT_SECONDS: ${JOB_DEFAULT_TIMEOUT_SECONDS:-300}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_REQUESTS_PER_MINUTE: ${RATE_LIMIT_REQUESTS_PER_MINUTE:-60}
+      RATE_LIMIT_BURST: ${RATE_LIMIT_BURST:-30}
+      METRICS_ENABLED: ${METRICS_ENABLED:-true}
+    depends_on:
+      - postgres
+      - redis
+      - milvus
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  worker:
+    build: .
+    command: ["python", "-m", "app.job_worker"]
+    environment:
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-postgres}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://project_a:project_a_dev@postgres:5432/project_a}
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-milvus}
+      MILVUS_URI: ${MILVUS_URI:-http://milvus:19530}
+      MILVUS_COLLECTION: ${MILVUS_COLLECTION:-project_a_v1}
+      CHROMA_PERSIST_DIR: /app/data/chroma
+      SEED_DOCS_DIR: /app/data/seed_docs
+      REAL_DOCS_DIR: /app/data/real_manuals_sanitized
+      UPLOADED_DOCS_DIR: /app/data/uploaded_docs
+      RAG_PROMPT_PATH: /app/prompts/rag_prompt_v0.1.txt
+      LLM_PROVIDER: ${LLM_PROVIDER:-xiaomi_mimo}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      JOB_EXECUTION_MODE: worker
+      WORKER_ID: ${WORKER_ID:-worker-1}
+      JOB_POLL_INTERVAL_SECONDS: ${JOB_POLL_INTERVAL_SECONDS:-5}
+      JOB_DEFAULT_TIMEOUT_SECONDS: ${JOB_DEFAULT_TIMEOUT_SECONDS:-300}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-false}
+      METRICS_ENABLED: ${METRICS_ENABLED:-true}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      VIEWER_API_KEY: ${VIEWER_API_KEY:-}
+      OPERATOR_API_KEY: ${OPERATOR_API_KEY:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+      - ./prompts:/app/prompts:ro
+    depends_on:
+      - postgres
+      - redis
+      - milvus
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:18081
+    ports:
+      - "18080:80"
+    depends_on:
+      - api
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-project_a}
+      POSTGRES_USER: ${POSTGRES_USER:-project_a}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-project_a_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  milvus:
+    image: milvusdb/milvus:v2.5.4
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_USE_EMBED: "true"
+      COMMON_STORAGETYPE: "local"
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/var/lib/milvus
+
+volumes:
+  postgres_data:
+  milvus_data:

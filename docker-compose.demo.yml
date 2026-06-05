@@ -1,0 +1,52 @@
+services:
+  api:
+    build: .
+    ports:
+      - "18081:8000"
+    volumes:
+      - ./data:/app/data
+      - ./prompts:/app/prompts:ro
+    environment:
+      STORAGE_BACKEND: sqlite
+      APP_DATABASE_PATH: /app/data/app.demo.db
+      VECTOR_BACKEND: chroma
+      CHROMA_PERSIST_DIR: /app/data/chroma_demo
+      SEED_DOCS_DIR: /app/data/seed_docs
+      REAL_DOCS_DIR: /app/data/real_manuals_sanitized
+      UPLOADED_DOCS_DIR: /app/data/uploaded_docs
+      RAG_PROMPT_PATH: /app/prompts/rag_prompt_v0.1.txt
+      LLM_PROVIDER: ${LLM_PROVIDER:-xiaomi_mimo}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      MULTIMODAL_BACKEND: ${MULTIMODAL_BACKEND:-sidecar}
+      MINERU_COMMAND: ${MINERU_COMMAND:-mineru}
+      MINERU_OUTPUT_DIR: /app/data/mineru_output
+      VISION_LLM_MODEL: ${VISION_LLM_MODEL:-}
+      VISION_LLM_API_KEY: ${VISION_LLM_API_KEY:-}
+      VISION_LLM_BASE_URL: ${VISION_LLM_BASE_URL:-}
+      GRAPH_RETRIEVAL_ENABLED: "false"
+      CACHE_ENABLED: "false"
+      AUTH_ENABLED: "false"
+      CORS_ALLOW_ORIGINS: ""
+      UPLOAD_MAX_BYTES: "10485760"
+      JOB_EXECUTION_MODE: inprocess
+      RATE_LIMIT_ENABLED: "false"
+      METRICS_ENABLED: "false"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:18081
+    ports:
+      - "18080:80"
+    depends_on:
+      - api

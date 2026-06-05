@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and caches
+.venv/
+venv/
+.uv-cache/
+.pip_local/
+
+# Python packaging artifacts
+*.egg-info/
+backend/*.egg-info/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.demo.example
+!.env.production.example
+
+# Local acceptance tool config (copy from acceptance.defaults.example.json)
+scripts/acceptance.defaults.json
+
+# Runtime databases and process files
+*.db
+*.sqlite
+*.sqlite3
+*.pid
+
+# Logs
+logs/
+*.log
+
+# Vector stores and generated retrieval state
+chroma/
+chroma_db/
+vector_store/
+/storage/
+.pg_deps/
+data/chroma/
+data/chroma_demo/
+data/v05_eval/
+data/neo4j_real_probe_chroma/
+data/mineru_probe_output/
+data/mineru_output_*/
+data/model_cache/
+data/manual_test_uploads/
+
+# Uploads and downloaded raw files
+data/uploaded_docs/*
+!data/uploaded_docs/.gitkeep
+data/raw_manuals_downloaded/*
+!data/raw_manuals_downloaded/.gitkeep
+!data/raw_manuals_downloaded/README.md
+
+# Frontend outputs
+frontend/dist/
+frontend/node_modules/
+frontend/test-results/
+frontend/playwright-report/
+
+# Generated reports and temp files
+reports/
+outputs/
+tmp/
+temp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# IDE agent cache (preserve project-level skill rules)
+.codex/*
+!.codex/skills/
+.codex/skills/*
+!.codex/skills/project-a-rag-mentor/
+!.codex/skills/project-a-rag-mentor/SKILL.md
