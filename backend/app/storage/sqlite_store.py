@@ -91,6 +91,14 @@ class SqliteStore(Store):
         job["updated_at"] = datetime.now(timezone.utc).isoformat()
         self.create_job(job)
 
+    def upsert_job(self, job: dict) -> None:
+        """Insert or update a job. If job_id exists, update; otherwise insert."""
+        existing = self.get_job(job.get("job_id", ""))
+        if existing is not None:
+            self.update_job(job)
+        else:
+            self.create_job(job)
+
     def list_jobs(self, limit: int = 100) -> list[dict]:
         rows = self._conn.execute("SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
         return [self._row_to_job(r) for r in rows]
@@ -103,7 +111,7 @@ class SqliteStore(Store):
             # Already in a transaction
             pass
         row = self._conn.execute(
-            "SELECT job_id FROM jobs WHERE status = 'PENDING' ORDER BY created_at ASC LIMIT 1"
+            "SELECT job_id FROM jobs WHERE status IN ('PENDING', 'RETRYING') AND (locked_by IS NULL OR locked_by = '') ORDER BY created_at ASC LIMIT 1"
         ).fetchone()
         if row is None:
             try:
@@ -115,7 +123,7 @@ class SqliteStore(Store):
         cursor = self._conn.execute(
             """UPDATE jobs SET status = 'RUNNING', locked_by = ?,
                locked_at = ?, heartbeat_at = ?, started_at = ?, updated_at = ?
-               WHERE job_id = ? AND status = 'PENDING'""",
+               WHERE job_id = ? AND status IN ('PENDING', 'RETRYING')""",
             (worker_id, now, now, now, now, row[0]),
         )
         if cursor.rowcount == 0:

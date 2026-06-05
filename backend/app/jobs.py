@@ -35,8 +35,8 @@ class JobService:
         self._store = store
         self._execution_mode = execution_mode
 
-    def create_job(self, job_type, payload=None, runner=None, actor_role="", on_succeeded=None, on_failed=None):
-        record = JobRecord(job_type=job_type, payload=payload or {})
+    def create_job(self, job_type, payload=None, runner=None, actor_role="", on_succeeded=None, on_failed=None, max_retries=3):
+        record = JobRecord(job_type=job_type, payload=payload or {}, max_retries=max_retries)
         if hasattr(self._store, "create_job"):
             self._store.create_job(record.to_dict())
 
@@ -75,7 +75,9 @@ class JobService:
                 return None
             if isinstance(result, JobRecord):
                 return result
-            return JobRecord(**result) if isinstance(result, dict) else result
+            if isinstance(result, dict):
+                return result
+            return result
         return None
 
     def list_jobs(self, limit=100):
@@ -93,10 +95,18 @@ class JobService:
             status = getattr(job, "status", "")
         if status in ("SUCCEEDED", "FAILED", "CANCELLED"):
             return None
-        if isinstance(job, dict):
-            job["status"] = "CANCELLED"
+        if status == "RUNNING":
+            # For RUNNING jobs, just set the flag — don't change status
+            if isinstance(job, dict):
+                job["cancel_requested"] = True
+            else:
+                job.cancel_requested = True
         else:
-            job.status = "CANCELLED"
+            # For PENDING / RETRYING jobs, cancel directly
+            if isinstance(job, dict):
+                job["status"] = "CANCELLED"
+            else:
+                job.status = "CANCELLED"
         self._update_job(job)
         return job if isinstance(job, dict) else job.to_dict()
 
@@ -109,41 +119,51 @@ class JobService:
                 return result.to_dict() if hasattr(result, "to_dict") else result
         return None
 
+    claim_job = claim_next_job  # alias
+
     def complete_job(self, job_id, worker_id, result):
         job = self.get_job(job_id)
         if job is None:
-            return None
+            return False
         if isinstance(job, dict):
+            if job.get("locked_by") != worker_id:
+                return False
             job["status"] = "SUCCEEDED"
             job["result"] = result
+            job["locked_by"] = None
         else:
+            if job.locked_by != worker_id:
+                return False
             job.status = "SUCCEEDED"
             job.result = result
+            job.locked_by = None
         self._update_job(job)
-        return job if isinstance(job, dict) else job.to_dict()
+        return True
 
     def fail_job(self, job_id, worker_id, error):
         job = self.get_job(job_id)
         if job is None:
-            return None
+            return False
         if isinstance(job, dict):
             retry_count = job.get("retry_count", 0) + 1
             max_retries = job.get("max_retries", 3)
             if retry_count >= max_retries:
                 job["status"] = "FAILED"
             else:
-                job["status"] = "PENDING"
+                job["status"] = "RETRYING"
             job["retry_count"] = retry_count
             job["error"] = str(error)
+            job["locked_by"] = None
         else:
             job.retry_count += 1
             if job.retry_count >= job.max_retries:
                 job.status = "FAILED"
             else:
-                job.status = "PENDING"
+                job.status = "RETRYING"
             job.error = str(error)
+            job.locked_by = None
         self._update_job(job)
-        return job if isinstance(job, dict) else job.to_dict()
+        return True
 
     def heartbeat(self, job_id, worker_id):
         job = self.get_job(job_id)
@@ -157,7 +177,7 @@ class JobService:
         self._update_job(job)
         return True
 
-    def timeout_stale_jobs(self, timeout_seconds):
+    def timeout_stale_jobs(self, timeout_seconds=300):
         count = 0
         jobs = self.list_jobs(limit=1000)
         now = time.time()
@@ -165,44 +185,73 @@ class JobService:
             if isinstance(job, dict):
                 status = job.get("status", "")
                 heartbeat_at = job.get("heartbeat_at")
+                locked_at = job.get("locked_at")
             else:
                 status = getattr(job, "status", "")
                 heartbeat_at = getattr(job, "heartbeat_at", None)
-            if status == "RUNNING" and heartbeat_at:
-                try:
-                    ht = datetime.fromisoformat(heartbeat_at).timestamp()
-                    if now - ht > timeout_seconds:
-                        if isinstance(job, dict):
+                locked_at = getattr(job, "locked_at", None)
+            if status != "RUNNING":
+                continue
+            # Use heartbeat_at if available, otherwise fall back to locked_at
+            ts = heartbeat_at or locked_at
+            if not ts:
+                continue
+            try:
+                ht = datetime.fromisoformat(ts).timestamp()
+                if now - ht > timeout_seconds:
+                    if isinstance(job, dict):
+                        retry_count = job.get("retry_count", 0) + 1
+                        max_retries = job.get("max_retries", 3)
+                        job["retry_count"] = retry_count
+                        if retry_count >= max_retries:
                             job["status"] = "FAILED"
-                            job["error"] = "Job timed out"
                         else:
+                            job["status"] = "RETRYING"
+                        job["error"] = "Job timed out"
+                        job["locked_by"] = None
+                    else:
+                        job.retry_count += 1
+                        if job.retry_count >= job.max_retries:
                             job.status = "FAILED"
-                            job.error = "Job timed out"
-                        self._update_job(job)
-                        count += 1
-                except (ValueError, TypeError):
-                    pass
+                        else:
+                            job.status = "RETRYING"
+                        job.error = "Job timed out"
+                        job.locked_by = None
+                    self._update_job(job)
+                    count += 1
+            except (ValueError, TypeError):
+                pass
         return count
 
-    def cancel_running_job(self, job_id: str, worker_id: str = "") -> dict | None:
+    def cancel_running_job(self, job_id: str, worker_id: str = "", reason=None) -> bool:
         """Cancel a RUNNING job, bypassing retry (goes directly to CANCELLED)."""
         job = self.get_job(job_id)
         if job is None:
-            return None
+            return False
         if isinstance(job, dict):
             status = job.get("status", "")
+            locked_by = job.get("locked_by")
         else:
             status = getattr(job, "status", "")
+            locked_by = getattr(job, "locked_by", None)
         if status != "RUNNING":
-            return None
+            return False
+        if locked_by != worker_id:
+            return False
         if isinstance(job, dict):
             job["status"] = "CANCELLED"
             job["cancel_requested"] = True
+            job["locked_by"] = None
+            if reason is not None:
+                job["error"] = reason
         else:
             job.status = "CANCELLED"
             job.cancel_requested = True
+            job.locked_by = None
+            if reason is not None:
+                job.error = reason
         self._update_job(job)
-        return job if isinstance(job, dict) else job.to_dict()
+        return True
 
     def _update_job(self, job):
         if isinstance(job, dict):
@@ -215,7 +264,7 @@ class JobService:
                 self._store.update_job(job.to_dict())
 
 
-def cancel_running_job(store, job_id: str) -> dict | None:
+def cancel_running_job(store, job_id: str, worker_id: str = "", reason=None) -> dict | None:
     """Cancel a RUNNING job, bypassing retry (goes directly to CANCELLED)."""
     job = store.get_job(job_id) if hasattr(store, "get_job") else None
     if job is None:
@@ -229,9 +278,13 @@ def cancel_running_job(store, job_id: str) -> dict | None:
     if isinstance(job, dict):
         job["status"] = "CANCELLED"
         job["cancel_requested"] = True
+        if reason is not None:
+            job["error"] = reason
     else:
         job.status = "CANCELLED"
         job.cancel_requested = True
+        if reason is not None:
+            job.error = reason
     if hasattr(store, "update_job"):
         store.update_job(job if isinstance(job, dict) else job.to_dict())
     return job if isinstance(job, dict) else job.to_dict()

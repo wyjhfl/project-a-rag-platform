@@ -8,10 +8,10 @@
 
 $ErrorActionPreference = "Stop"
 
-$BackendHost   = $env:BACKEND_HOST   ?? "localhost"
-$BackendPort   = $env:BACKEND_PORT   ?? "8000"
-$FrontendHost  = $env:FRONTEND_HOST  ?? "localhost"
-$FrontendPort  = $env:FRONTEND_PORT  ?? "5173"
+$BackendHost   = if ($env:BACKEND_HOST) { $env:BACKEND_HOST } else { "localhost" }
+$BackendPort   = if ($env:BACKEND_PORT) { $env:BACKEND_PORT } else { "8000" }
+$FrontendHost  = if ($env:FRONTEND_HOST) { $env:FRONTEND_HOST } else { "localhost" }
+$FrontendPort  = if ($env:FRONTEND_PORT) { $env:FRONTEND_PORT } else { "5173" }
 
 $BackendBase   = "http://${BackendHost}:${BackendPort}"
 $FrontendBase  = "http://${FrontendHost}:${FrontendPort}"

@@ -7,7 +7,10 @@ behaviour.  Exits 0 if all tests pass, 1 otherwise.
 from __future__ import annotations
 
 import atexit
+import contextlib
 import hashlib
+import io
+import logging
 import os
 import subprocess
 import sys
@@ -72,6 +75,9 @@ _ensure_module("app.observability", {
 # ---------------------------------------------------------------------------
 from app.rate_limit import MemoryRateLimiter, RateLimitMiddleware, RedisRateLimiter  # noqa: E402
 from app.config import Settings, get_settings  # noqa: E402
+
+# Suppress noisy logging from rate_limit module during tests
+logging.getLogger("project_a").setLevel(logging.CRITICAL)
 
 try:
     from app.main import create_app  # noqa: F401
@@ -314,7 +320,9 @@ def test_redis_unavailable_readyz(app: FastAPI) -> bool:
     time.sleep(1)
     try:
         client = _make_client(app)
-        resp = client.get("/readyz")
+        stderr_capture = io.StringIO()
+        with contextlib.redirect_stderr(stderr_capture):
+            resp = client.get("/readyz")
         # Accept 503, or any non-200, or JSON with status=error/degraded
         if resp.status_code == 503:
             return True
@@ -336,7 +344,9 @@ def test_redis_unavailable_request_rejected(app: FastAPI) -> bool:
     time.sleep(1)
     try:
         client = _make_client(app)
-        resp = client.get("/api/v1/test")
+        stderr_capture = io.StringIO()
+        with contextlib.redirect_stderr(stderr_capture):
+            resp = client.get("/api/v1/test")
         # Must NOT be 200 (which would mean silent degradation to memory).
         # Expected: 429 (rate-limited because Redis is down) or 5xx.
         return resp.status_code != 200

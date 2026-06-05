@@ -226,8 +226,8 @@ Run-Step "12. PostgreSQL Worker Stress" {
 # Full E2E (required for v1.0.0 tag gate)
 if ($RunFullE2E) {
     Run-Step "13. Full E2E" {
-        Set-Location "$ProjectRoot\frontend"
-        & $NpmCmd run e2e 2>&1 | Out-Null
+        Set-Location $ProjectRoot
+        & powershell -ExecutionPolicy Bypass -File "$ProjectRoot\scripts\run_full_e2e_demo.ps1" -PythonExe $PythonExe -NpmCmd $NpmCmd 2>&1 | Out-Null
     }
 }
 
@@ -242,8 +242,8 @@ Write-Host "=====================================" -ForegroundColor Cyan
 $allPassed = $true
 foreach ($key in $StepNames.Keys) {
     $val = $StepNames[$key]
-    $status = if ($val) { "PASSED" } else { "FAILED" }
-    $color = if ($val) { "Green" } else { "Red" }
+    if ($val) { $status = "PASSED" } else { $status = "FAILED" }
+    if ($val) { $color = "Green" } else { $color = "Red" }
     Write-Host "  ${key}: $status" -ForegroundColor $color
     if (-not $val) { $allPassed = $false }
 }

@@ -34,6 +34,7 @@ _SKIP_DIRS = {
 _SKIP_FILES = {
     ".env.example", ".env.production.example", "acceptance.defaults.json",
     "secret_scan.py",  # Don't scan ourselves
+    "test_production_landing.py",  # Contains test fixture keys, not real secrets
 }
 
 # Known safe patterns (false positives to ignore)
@@ -47,7 +48,6 @@ _SAFE_PATTERNS = [
     "example",
     "placeholder",
     "default",
-    "sk-abc123def456ghi789",  # test fixture
     "project_a_api_key",  # localStorage key name, not a secret
 ]
 

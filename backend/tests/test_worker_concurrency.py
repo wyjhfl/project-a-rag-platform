@@ -90,9 +90,9 @@ class TestWorkerConcurrency:
         )
 
     def test_claim_timeout_recovery(self, service: JobService) -> None:
-        """Timed-out jobs can be reclaimed by another worker."""
-        # Create a job and claim it
-        record = service.create_job(job_type="timeout_test")
+        """Timed-out jobs with exhausted retries become FAILED."""
+        # Create a job with max_retries=1 so timeout goes directly to FAILED
+        record = service.create_job(job_type="timeout_test", max_retries=1)
         job_id = record.job_id
         service.claim_next_job("worker-A")
 
