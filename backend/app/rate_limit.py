@@ -17,8 +17,37 @@ logger = logging.getLogger("project_a")
 
 _DEFAULT_EXEMPT_PATHS = frozenset({"/healthz", "/readyz", "/health", "/metrics"})
 
+# ---------------------------------------------------------------------------
+# Optional redis dependency
+# ---------------------------------------------------------------------------
+try:
+    import redis as _redis
+except ImportError:
+    _redis = None  # type: ignore[assignment]
 
-class _RateLimiter:
+
+# ---------------------------------------------------------------------------
+# Lua script for atomic INCR + EXPIRE (used by RedisRateLimiter)
+# ---------------------------------------------------------------------------
+_LUA_INCR_SCRIPT = """\
+local key = KEYS[1]
+local ttl = tonumber(ARGV[1])
+local count = redis.call('INCR', key)
+if count == 1 then
+    redis.call('EXPIRE', key, ttl)
+end
+return count
+"""
+
+
+# ---------------------------------------------------------------------------
+# MemoryRateLimiter
+# ---------------------------------------------------------------------------
+
+
+class MemoryRateLimiter:
+    """In-memory rate limiter using sliding window counters."""
+
     def __init__(self, requests_per_minute: int, burst: int) -> None:
         self._rpm = requests_per_minute
         self._burst = burst
@@ -52,6 +81,72 @@ class _RateLimiter:
         for key in empty_keys:
             del self._buckets[key]
 
+    def ping(self) -> bool:
+        """Health check -- always returns True for in-memory limiter."""
+        return True
+
+
+# Backward-compatible alias
+_RateLimiter = MemoryRateLimiter
+
+
+# ---------------------------------------------------------------------------
+# RedisRateLimiter
+# ---------------------------------------------------------------------------
+
+
+class RedisRateLimiter:
+    """Redis-backed rate limiter using INCR + EXPIRE per time window.
+
+    When Redis is unavailable, ``is_allowed`` returns ``False`` -- no silent
+    degradation to in-memory fallback.
+    """
+
+    def __init__(
+        self,
+        redis_url: str = "redis://localhost:6379/0",
+        requests_per_minute: int = 60,
+        burst: int = 30,
+    ) -> None:
+        if _redis is None:
+            raise RuntimeError(
+                "redis package is required for RedisRateLimiter. "
+                "Install it with: pip install redis"
+            )
+        self._rpm = requests_per_minute
+        self._burst = burst
+        self._redis_url = redis_url
+        self._client = _redis.Redis.from_url(redis_url, decode_responses=True)
+        self._script = self._client.register_script(_LUA_INCR_SCRIPT)
+
+    def is_allowed(self, key: str) -> bool:
+        now = time.time()
+        burst_key = f"project_a:ratelimit:burst:{key}:{int(now)}"
+        rpm_key = f"project_a:ratelimit:rpm:{key}:{int(now // 60)}"
+        try:
+            burst_count = int(self._script(keys=[burst_key], args=[2]))
+            if burst_count > self._burst:
+                return False
+            rpm_count = int(self._script(keys=[rpm_key], args=[61]))
+            if rpm_count > self._rpm:
+                return False
+            return True
+        except Exception:
+            logger.exception("Redis rate limit check failed -- denying request")
+            return False
+
+    def ping(self) -> bool:
+        """Check Redis connectivity."""
+        try:
+            return self._client.ping()
+        except Exception:
+            return False
+
+
+# ---------------------------------------------------------------------------
+# RateLimitMiddleware
+# ---------------------------------------------------------------------------
+
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
@@ -61,10 +156,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         requests_per_minute: int = 60,
         burst: int = 30,
         exempt_paths: set[str] | None = None,
+        backend: str = "memory",
+        redis_url: str = "",
     ) -> None:
         super().__init__(app)
         self._enabled = enabled
-        self._limiter = _RateLimiter(requests_per_minute, burst)
+        if backend == "redis" and redis_url:
+            self._limiter = RedisRateLimiter(
+                redis_url=redis_url,
+                requests_per_minute=requests_per_minute,
+                burst=burst,
+            )
+        else:
+            self._limiter = MemoryRateLimiter(
+                requests_per_minute=requests_per_minute,
+                burst=burst,
+            )
         self._exempt_paths = exempt_paths or _DEFAULT_EXEMPT_PATHS
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:

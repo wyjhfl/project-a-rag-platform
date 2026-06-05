@@ -69,6 +69,8 @@ class Settings:
     rate_limit_requests_per_minute: int = 60
     rate_limit_burst: int = 30
     rate_limit_exempt_paths: list[str] = field(default_factory=list)
+    rate_limit_backend: str = "memory"
+    rate_limit_redis_url: str = ""
     metrics_enabled: bool = False
 
     def validate(self) -> list[str]:
@@ -112,6 +114,8 @@ class Settings:
             errors.append(
                 f"UPLOAD_MAX_BYTES must be between {_MIN_UPLOAD_BYTES} and {_MAX_UPLOAD_BYTES}"
             )
+        if self.rate_limit_backend == "redis" and not self.rate_limit_redis_url:
+            errors.append("RATE_LIMIT_REDIS_URL is required when RATE_LIMIT_BACKEND=redis")
         return errors
 
 
@@ -172,6 +176,8 @@ def get_settings() -> Settings:
         rate_limit_requests_per_minute=_env_int("RATE_LIMIT_REQUESTS_PER_MINUTE", 60),
         rate_limit_burst=_env_int("RATE_LIMIT_BURST", 30),
         rate_limit_exempt_paths=_parse_list(os.getenv("RATE_LIMIT_EXEMPT_PATHS", "")),
+        rate_limit_backend=os.getenv("RATE_LIMIT_BACKEND", "memory"),
+        rate_limit_redis_url=os.getenv("RATE_LIMIT_REDIS_URL", ""),
         metrics_enabled=_env_bool("METRICS_ENABLED"),
     )
 

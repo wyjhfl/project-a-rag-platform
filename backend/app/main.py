@@ -44,7 +44,7 @@ from app.rag.graph import Neo4jGraphRetriever
 from app.rag.llm import LLMConfig
 from app.rag.pipeline import RagPipeline
 from app.rag.vector_factory import build_vector_store
-from app.rate_limit import RateLimitMiddleware
+from app.rate_limit import MemoryRateLimiter, RateLimitMiddleware, RedisRateLimiter
 from app.storage.factory import build_store
 from app.ticketing.models import TicketRecord, TicketWorkflowResult
 from app.ticketing.workflow import TicketWorkflowService
@@ -79,7 +79,7 @@ def _check_vector_store(pipeline) -> dict:
         return {"status": "error", "reason": str(exc)}
 
 
-def _check_optional_dependencies(settings, cache) -> dict:
+def _check_optional_dependencies(settings, cache, rate_limiter=None) -> dict:
     checks: dict[str, str] = {}
     if settings.cache_enabled:
         try:
@@ -106,6 +106,19 @@ def _check_optional_dependencies(settings, cache) -> dict:
         checks["neo4j"] = "enabled"
     else:
         checks["neo4j"] = "disabled"
+    if settings.rate_limit_backend == "redis":
+        try:
+            if rate_limiter is not None and isinstance(rate_limiter, RedisRateLimiter):
+                if rate_limiter.ping():
+                    checks["rate_limit_redis"] = "ok"
+                else:
+                    checks["rate_limit_redis"] = "error: ping failed"
+            else:
+                checks["rate_limit_redis"] = "error: limiter not initialized"
+        except Exception as exc:
+            checks["rate_limit_redis"] = f"error: {exc}"
+    else:
+        checks["rate_limit_redis"] = "disabled"
     return checks
 
 
@@ -203,6 +216,19 @@ def create_app(
         "uploaded_docs": uploaded_docs_dir or settings.uploaded_docs_dir,
     }
 
+    # Rate limiter (shared between middleware and health checks)
+    if settings.rate_limit_backend == "redis" and settings.rate_limit_redis_url:
+        rate_limiter = RedisRateLimiter(
+            redis_url=settings.rate_limit_redis_url,
+            requests_per_minute=settings.rate_limit_requests_per_minute,
+            burst=settings.rate_limit_burst,
+        )
+    else:
+        rate_limiter = MemoryRateLimiter(
+            requests_per_minute=settings.rate_limit_requests_per_minute,
+            burst=settings.rate_limit_burst,
+        )
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("Project A starting up (version %s)", APP_VERSION)
@@ -236,6 +262,8 @@ def create_app(
         requests_per_minute=settings.rate_limit_requests_per_minute,
         burst=settings.rate_limit_burst,
         exempt_paths=set(settings.rate_limit_exempt_paths) if settings.rate_limit_exempt_paths else None,
+        backend=settings.rate_limit_backend,
+        redis_url=settings.rate_limit_redis_url,
     )
     app.state.pipeline = pipeline
     app.state.docs_sources = docs_sources
@@ -246,6 +274,7 @@ def create_app(
     app.state._settings = settings
     app.state._store = store
     app.state._cache = cache
+    app.state._rate_limiter = rate_limiter
     app.state.job_service = JobService(store, execution_mode=settings.job_execution_mode)
 
     configure_logging(settings.log_level)
@@ -263,7 +292,7 @@ def create_app(
         config_check = _check_config(s)
         storage_check = _check_storage(s, st)
         vector_check = _check_vector_store(p)
-        optional_checks = _check_optional_dependencies(s, c)
+        optional_checks = _check_optional_dependencies(s, c, app.state._rate_limiter)
         checks = {
             "config": config_check,
             "storage": storage_check,
@@ -290,10 +319,15 @@ def create_app(
             v.startswith("error:") or v.startswith("degraded:")
             for v in optional_checks.values()
         )
-        if all_core_ok and not opt_degraded:
+        rate_limit_error = (
+            optional_checks.get("rate_limit_redis", "").startswith("error:")
+        )
+        if all_core_ok and not opt_degraded and not rate_limit_error:
             overall = "ok"
-        else:
+        elif all_core_ok and (opt_degraded or rate_limit_error):
             overall = "degraded"
+        else:
+            overall = "error"
         return {"status": overall, "version": APP_VERSION, "checks": checks}
 
     @app.get("/health")

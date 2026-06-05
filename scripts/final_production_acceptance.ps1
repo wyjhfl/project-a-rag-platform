@@ -206,9 +206,26 @@ Run-Step "9. PostgreSQL Smoke" {
     & $PythonExe scripts/postgres_job_smoke.py 2>&1 | Out-Null
 }
 
+Run-Step "10. Redis Rate Limit Unit Tests" {
+    Set-Location $ProjectRoot
+    & $PythonExe -m pytest backend/tests/test_redis_rate_limit.py -q 2>&1 | Out-Null
+}
+
+Run-Step "11. Redis Rate Limit Smoke" {
+    Set-Location $ProjectRoot
+    $env:PYTHONPATH = "$ProjectRoot;$ProjectRoot\backend;$ProjectRoot\.pg_deps;" + $env:PYTHONPATH
+    & $PythonExe scripts/redis_rate_limit_smoke.py 2>&1 | Out-Null
+}
+
+Run-Step "12. PostgreSQL Worker Stress" {
+    Set-Location $ProjectRoot
+    $env:PYTHONPATH = "$ProjectRoot\.pg_deps;" + $env:PYTHONPATH
+    & $PythonExe scripts/postgres_worker_stress.py --jobs 20 --workers 4 2>&1 | Out-Null
+}
+
 # Full E2E (required for v1.0.0 tag gate)
 if ($RunFullE2E) {
-    Run-Step "10. Full E2E" {
+    Run-Step "13. Full E2E" {
         Set-Location "$ProjectRoot\frontend"
         & $NpmCmd run e2e 2>&1 | Out-Null
     }
