@@ -28,20 +28,17 @@ Project A 是一个企业设备售后诊断 RAG 平台，把设备型号、故�
 完整投递材料见：[docs/A-v3.4-resume-delivery-pack.md](docs/A-v3.4-resume-delivery-pack.md)。
 
 ## 当前发布版本
-
-- Release tag：`v3.5-public-delivery`
-- Release notes：[docs/A-v3.6-public-release-notes.md](docs/A-v3.6-public-release-notes.md)
-- 最终巡检：[docs/A-v3.5-final-remote-audit.md](docs/A-v3.5-final-remote-audit.md)
-- **v1.0.1-rc.1 Release Notes**：[docs/release_notes_v1.0.1_rc1.md](docs/release_notes_v1.0.1_rc1.md)
-
-
-- **v1.0.1 Release Notes**?[docs/release_notes_v1.0.1.md](docs/release_notes_v1.0.1.md)
-- **v1.0.1 Release Artifacts**?[docs/release_artifacts_v1.0.1.md](docs/release_artifacts_v1.0.1.md)
-- **Canonical Repo Decision**?[docs/canonical_repo_decision.md](docs/canonical_repo_decision.md)
+- Production release tag: `v1.0.2`
+- Production branch: `production/v1.0.2` on `https://github.com/wyjhfl/project-a-rag-platform`
+- Release notes: [docs/release_notes_v1.0.2.md](docs/release_notes_v1.0.2.md)
+- Enterprise landing checklist: [docs/enterprise_landing_checklist.md](docs/enterprise_landing_checklist.md)
+- Final production acceptance checklist: [docs/final_acceptance_checklist.md](docs/final_acceptance_checklist.md)
+- Release lineage notice: [docs/release_lineage_notice.md](docs/release_lineage_notice.md)
+- Historical v1.0.1 notes: [docs/release_notes_v1.0.1.md](docs/release_notes_v1.0.1.md)
 
 ### Git Lineage Notice
 
-> **重要**：当前仓库的 Git 历史经历过 `.git` 目录损毁和重建。v1.0.0 tag 是 reconstructed tag，不是原始 `e64b095`。远程 origin 指向不同的公开交付仓库。详见 [docs/release_lineage_notice.md](docs/release_lineage_notice.md)。
+> Important: this production line is based on reconstructed Git history. The `v1.0.0` tag is not the original `e64b095`. The project owner approved `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote; production handoff is on `production/v1.0.2` and tag `v1.0.2`. See [docs/release_lineage_notice.md](docs/release_lineage_notice.md).
 
 ## 30 秒看懂项目
 
@@ -111,26 +108,28 @@ powershell -ExecutionPolicy Bypass -File .\scripts\stop_demo_stack.ps1
 
 更完整的启动和排查说明见：[docs/demo_guide.md](docs/demo_guide.md)。
 
-生产部署指南：[docs/deployment_guide.md](docs/deployment_guide.md)。
-最终验收清单：[docs/final_acceptance_checklist.md](docs/final_acceptance_checklist.md)。
-生产化路线图：[docs/production_roadmap.md](docs/production_roadmap.md)。
-Release Notes：[docs/release_notes_v1.0.0_rc1.md](docs/release_notes_v1.0.0_rc1.md)。
-- [v1.0.0 Release Notes](docs/release_notes_v1.0.0.md)
-Production Release Notes：[docs/release_notes_v1.0.0_production.md](docs/release_notes_v1.0.0_production.md)。
-E2E 测试指南：[docs/e2e_guide.md](docs/e2e_guide.md)。
+Production deployment guide: [docs/deployment_guide.md](docs/deployment_guide.md).
+Final production acceptance checklist: [docs/final_acceptance_checklist.md](docs/final_acceptance_checklist.md).
+Enterprise landing checklist: [docs/enterprise_landing_checklist.md](docs/enterprise_landing_checklist.md).
+Production roadmap: [docs/production_roadmap.md](docs/production_roadmap.md).
+v1.0.2 Release Notes: [docs/release_notes_v1.0.2.md](docs/release_notes_v1.0.2.md).
+E2E guide: [docs/e2e_guide.md](docs/e2e_guide.md).
 
-## 最终验收脚本
+## Final Production Acceptance Script
 
-一键运行全部验收检查（后端测试、ruff、前端构建、Docker compose 配置）：
+Production releases use `scripts/final_production_acceptance.ps1` as the single final gate. It covers backend tests, ruff, frontend build, OpenAPI types, secret scan, Docker Compose validation, PostgreSQL smoke, Redis smoke, worker stress, and Full E2E.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\final_acceptance.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\final_production_acceptance.ps1 `
+  -PythonExe "D:\path\to\Python312\python.exe" `
+  -NpmCmd "D:\path\to\nodejs\npm.cmd" `
+  -RunFullE2E
 ```
 
-本地工具路径配置说明：
-- `scripts/acceptance.defaults.json` 是本地私有配置，不提交到 Git。
-- 可从 example 文件复制：`copy .\scripts\acceptance.defaults.example.json .\scripts\acceptance.defaults.json`，然后填入本机实际路径。
-- 也可用参数运行：`powershell -ExecutionPolicy Bypass -File .\scripts\final_acceptance.ps1 -PythonExe "..." -NpmCmd "..."`
+Local tool path notes:
+- `scripts/acceptance.defaults.json` is local/private and is not committed.
+- Copy from `scripts/acceptance.defaults.example.json` if needed.
+- `-PythonExe` and `-NpmCmd` can override local defaults.
 
 ## 演示顺序
 
@@ -201,7 +200,7 @@ GET  /api/v1/admin/audit/events                       admin
 
 ## 认证
 
-默认 `AUTH_ENABLED=false`，所有接口无需认证。
+Demo can use `AUTH_ENABLED=false`. Production compose and `.env.production.example` default to `AUTH_ENABLED=true`; protected APIs require `X-API-Key` with viewer/operator/admin role mapping.
 
 开启后通过 `X-API-Key` 请求头认证，角色层级 viewer < operator < admin：
 

@@ -310,7 +310,7 @@ D:\codex安装\tools\Python312\python.exe -m ruff check backend
 - [x] Release artifact policy documented: `docs/release_artifacts_v1.0.1.md`
 - [x] Final release notes added: `docs/release_notes_v1.0.1.md`
 - [x] `dist_release/` ignored as generated local artifact output
-- [x] Current `origin` explicitly marked as not suitable for production push
+- [x] At v1.0.1 time, `origin` was not used for production push until owner approval; v1.0.2 later uses versioned `production/v1.0.2` branch on origin
 - [x] Release requires final production acceptance 13/13 before `v1.0.1` tag
 
 ---
@@ -370,3 +370,14 @@ D:\codex安装\tools\Python312\python.exe -m ruff check backend
 | Docker compose config | production + demo 两个配置均已在本地验证通过（2026-05-31） |
 | 前端需先 npm install | `npm run build` 前需执行 `npm install`，CI 使用 `npm ci`（基于 package-lock.json） |
 | 网络下载慢 | chromadb（23.5MB）、onnxruntime（13MB）等大包下载缓慢，首次安装耗时较长 |
+
+### v1.0.2 Enterprise Landing Hardening ✅ DONE
+
+- [x] Production compose fail-closed defaults: `AUTH_ENABLED=true`, `CACHE_ENABLED=true`, Redis-backed rate limit enabled.
+- [x] Real PostgreSQL storage backend: `STORAGE_BACKEND=postgres` uses `PostgresStore`, no silent SQLite fallback.
+- [x] Docker production image installs cache/postgres/vector extras.
+- [x] Worker executable path restored: `python -m app.job_worker` claims and processes jobs.
+- [x] PostgreSQL smoke validates the real `PostgresStore` + `JobService` path.
+- [x] Final production acceptance passed: 13/13 with `-RunFullE2E`.
+- [x] Hosted handoff completed: `origin/production/v1.0.2` and `v1.0.2` tag pushed to `https://github.com/wyjhfl/project-a-rag-platform`.
+- [x] Documentation reconciled: README, final acceptance checklist, canonical repo decision, lineage notice, enterprise landing checklist, release notes.

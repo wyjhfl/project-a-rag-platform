@@ -1,4 +1,4 @@
-﻿# Release Notes — v1.0.2
+# Release Notes — v1.0.2
 
 ## Summary
 
@@ -61,3 +61,19 @@ production/v1.0.2
 ```
 
 Do not force-push over the older public-delivery `main` branch.
+
+
+## Final validation evidence
+
+Before the hosted branch/tag handoff, the final production acceptance gate passed:
+
+```text
+13/13 ALL CHECKS PASSED
+```
+
+The remote handoff target is:
+
+```text
+origin/production/v1.0.2 -> 4090e4d initially; updated by documentation consistency commit before final handoff.
+v1.0.2 tag -> final documentation-consistent commit.
+```

@@ -1,111 +1,61 @@
-# Canonical Repository Decision ? v1.0.1
+# Canonical Repository Decision — v1.0.2
 
 ## Decision status
 
-**Decision**: Treat the current local repository as the new canonical engineering baseline for Project A production releases, starting from the reconstructed `v1.0.0` lineage and the `v1.0.1` release.
+**Decision**: Treat the current repository contents as the accepted reconstructed production baseline for Project A, with `v1.0.2` as the current enterprise landing release.
 
-This decision is pragmatic, not historical: the current codebase has passed the production acceptance gate, but the original Git lineage is not available locally.
+This is a pragmatic engineering decision, not a claim that the original pre-recovery Git history was preserved.
 
 ## Current facts
 
 - The original `e64b095` release-gate commit is **not present** in the current local Git history.
 - The current `v1.0.0` tag points to reconstructed commit `111066c`.
-- The current `v1.0.1-rc.1` tag points to `19c3467`.
-- The remote `origin` points to `https://github.com/wyjhfl/project-a-rag-platform.git`, which is a different public delivery / portfolio repository.
-- The current `origin` must **not** be used as the production canonical remote for this reconstructed engineering history.
+- The current `v1.0.1` tag points to `3c2ce62`.
+- The current `v1.0.2` tag points to `4090e4d`.
+- The project owner approved using `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote for this production handoff.
+- The older public-delivery `main` branch must not be force-overwritten. Production releases are published on versioned production branches.
 
-## Recommended canonical strategy
+## Hosted production remote
 
-Use the current local repository as the new canonical source of truth **only after explicitly accepting the reconstructed-history risk**.
+Production handoff branch:
 
-Recommended next step:
-
-1. Create a new private or production Git repository dedicated to this production-ready Project A lineage.
-2. Push the current `main` branch and tags to that new remote.
-3. Keep `docs/release_lineage_notice.md` and this decision document in the repository permanently.
-4. Do not force-push or overwrite the current public `origin` repository.
-
-## Allowed options
-
-### Option A ? New canonical remote (recommended)
-
-Create a new remote repository and push current `main` plus tags:
-
-```powershell
-git remote add production-origin <NEW_CANONICAL_REMOTE_URL>
-git push production-origin main
-git push production-origin --tags
+```text
+origin/production/v1.0.2 -> 4090e4d
 ```
 
-Use this only with a newly created repository intended for this reconstructed production lineage.
+Release tag:
 
-### Option B ? Local canonical with release bundle backup
-
-Keep the local repository as canonical for now and distribute/backup via `git bundle`:
-
-```powershell
-git bundle create dist_release/project-a-v1.0.1.bundle --all
+```text
+v1.0.2 -> 4090e4d
 ```
 
-This is acceptable for local handoff, but weaker than a managed remote repository.
+Remote URL:
 
-### Option C ? Restore original history if found later
+```text
+https://github.com/wyjhfl/project-a-rag-platform
+```
 
-If a trusted backup containing the original `e64b095` lineage is later found:
+## Release readiness rule
 
-1. Restore that repository separately.
-2. Re-apply post-v1.0 changes as patches or cherry-picks.
-3. Re-run the full production acceptance gate.
-4. Re-issue release tags from the restored lineage.
+Do **not** create or move a production release tag unless the full production gate passes:
 
-## Prohibited actions
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\final_production_acceptance.ps1 `
+  -RunFullE2E
+```
 
-- Do **not** push `main` or release tags to the current `origin`.
-- Do **not** force-push over the public delivery repository.
-- Do **not** delete `docs/release_lineage_notice.md`.
-- Do **not** claim that the current `v1.0.0` tag is the original `e64b095` tag.
-- Do **not** create further release tags without passing `scripts/final_production_acceptance.ps1 -RunFullE2E`.
+For `v1.0.2`, the final gate passed 13/13 checks before the tag and branch were pushed.
 
-## Release readiness impact
+## Lineage warning
 
-The reconstructed lineage is a release-management risk, not a current-runtime correctness failure. Current production readiness depends on:
+Keep `docs/release_lineage_notice.md` permanently. All release notes must state that the release is based on reconstructed history.
 
-- backend test suite passing,
-- ruff passing,
-- frontend build passing,
-- Docker compose production/demo config passing,
-- PostgreSQL smoke passing,
-- Redis rate-limit smoke passing,
-- PostgreSQL worker stress passing,
-- Full Playwright E2E passing,
-- final production acceptance passing.
+## Local canonical backup
 
-As of the `v1.0.1` readiness process, these checks must be re-run before the final tag is considered valid.
-
-## Local canonical remote created
-
-A local bare canonical remote has been created for safe handoff without touching the existing public `origin`:
+A local bare backup may still exist at:
 
 ```text
 D:\wyj-hfl-shizhanxiangmu\project-a-rag-platform-canonical.git
 ```
 
-It contains the production release tags and the current handoff branch:
-
-```text
-v1.0.1 tag -> 3c2ce62
-main -> current handoff branch tip
-tags: v1.0.0, v1.0.1-rc.1, v1.0.1
-```
-
-The `v1.0.1` release tag remains fixed at `3c2ce62`. Later documentation-only handoff commits may exist on `main` without moving the release tag.
-
-Verification clone path used during release readiness:
-
-```text
-D:\wyj-hfl-shizhanxiangmu\project-a-rag-platform-canonical-verify
-```
-
-The bare repository `HEAD` has been set to `refs/heads/main`, and clone verification succeeds.
-
-This local remote is a safe staging canonical. If a hosted canonical repository is later created, push from this local `production-origin` or from the working tree to the new hosted remote. Do not push to the current public `origin`.
+The hosted GitHub production branch/tag are now the practical handoff target for `v1.0.2`.

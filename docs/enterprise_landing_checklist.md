@@ -1,8 +1,8 @@
-﻿# Enterprise Landing Checklist — v1.0.2
+# Enterprise Landing Checklist — v1.0.2
 
 ## Current go/no-go
 
-Project A is suitable for a controlled enterprise pilot and small production landing after the v1.0.2 hardening gate passes.
+Project A is suitable for a controlled enterprise pilot and small production landing. The v1.0.2 hardening gate has passed.
 
 It is not yet a regulated/high-scale enterprise platform without additional SSO, backup, observability dashboarding, and formal migration governance.
 
