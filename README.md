@@ -32,6 +32,11 @@ Project A 是一个企业设备售后诊断 RAG 平台，把设备型号、故�
 - Release tag：`v3.5-public-delivery`
 - Release notes：[docs/A-v3.6-public-release-notes.md](docs/A-v3.6-public-release-notes.md)
 - 最终巡检：[docs/A-v3.5-final-remote-audit.md](docs/A-v3.5-final-remote-audit.md)
+- **v1.0.1-rc.1 Release Notes**：[docs/release_notes_v1.0.1_rc1.md](docs/release_notes_v1.0.1_rc1.md)
+
+### Git Lineage Notice
+
+> **重要**：当前仓库的 Git 历史经历过 `.git` 目录损毁和重建。v1.0.0 tag 是 reconstructed tag，不是原始 `e64b095`。远程 origin 指向不同的公开交付仓库。详见 [docs/release_lineage_notice.md](docs/release_lineage_notice.md)。
 
 ## 30 秒看懂项目
 

@@ -267,6 +267,43 @@ D:\codex安装\tools\Python312\python.exe -m ruff check backend
 - [x] 无真实密钥泄露
 - [x] Release Notes 已发布：docs/release_notes_v1.0.0.md
 
+### Post-v1.0 Sprint 1：Redis Rate Limit + Worker Stress
+
+- [x] Redis-backed rate limiting: MemoryRateLimiter + RedisRateLimiter (Lua script)
+- [x] PostgreSQL worker stress validation: 50 jobs / 6 workers, 0 duplicates
+- [x] Redis rate limit smoke: 7/7 PASSED (Docker Redis)
+- [x] PostgreSQL job smoke: 10/10 PASSED (Docker PostgreSQL)
+- [x] Final production acceptance: 13 steps including Redis/PostgreSQL smoke
+
+### Production Recovery Sprint：Consistency Fix
+
+- [x] JobService API unified: claim_job, complete_job (bool), fail_job (bool), cancel_running_job (bool)
+- [x] SqliteStore: upsert_job, atomic claim_next_job (BEGIN IMMEDIATE)
+- [x] Missing modules restored: job_worker.py, migrations.py
+- [x] Metrics: Prometheus-style naming (project_a_request_total, etc.)
+- [x] Secret scan: OpenAI key pattern detection, skip test files
+- [x] PowerShell 5 compatibility: no `??` operators
+- [x] Redis smoke clean output: no traceback, no absolute paths
+- [x] Full E2E auto-start: backend + frontend preview + Playwright + cleanup
+
+### Production Recovery Sprint 1.1：Test Coverage Restoration
+
+- [x] 13 test files restored from recovered backup (3 → 16 files)
+- [x] SqliteStore methods: add_document, add_chat_record, add_token_usage, upsert_ticket, get_ticket, get_ticket_by_idempotency_key, list_tickets
+- [x] Readyz: optional dep failure → 200 degraded (not 503)
+- [x] Acceptance overview: provider panel returns "passed" when LLM configured
+- [x] Backend scripts restored: create_public_release_repo, run_av13/av23/av24, run_provider_acceptance
+- [x] 147 passed, 1 warning — all green
+
+### v1.0.1 RC 1 — Release Metadata
+
+- [x] Release notes: docs/release_notes_v1.0.1_rc1.md
+- [x] Release lineage notice: docs/release_lineage_notice.md
+- [x] README: v1.0.1-rc.1 entry + Git lineage notice
+- [x] Roadmap: v1.0.1 RC 1 completion items
+- [x] Final production acceptance: 13/13 PASSED
+- [x] RC tag: v1.0.1-rc.1
+
 ---
 
 ## 5. 验收标准
