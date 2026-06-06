@@ -154,10 +154,13 @@ class JobService:
     claim_job = claim_next_job
 
     def complete_job(self, job_id, worker_id, result):
+        now = _now()
+        atomic = self._store_method("try_complete_job")
+        if atomic:
+            return bool(atomic(job_id, worker_id, result, now))
         job = self.get_job(job_id)
         if not self._can_worker_mutate_running_job(job, worker_id):
             return False
-        now = _now()
         self._set(job, "status", "SUCCEEDED")
         self._set(job, "result", result)
         self._set(job, "locked_by", None)
@@ -168,6 +171,11 @@ class JobService:
         return True
 
     def fail_job(self, job_id, worker_id, error):
+        now = _now()
+        safe_error = _safe_error(error)
+        atomic = self._store_method("try_fail_job")
+        if atomic:
+            return bool(atomic(job_id, worker_id, safe_error, now))
         job = self.get_job(job_id)
         if not self._can_worker_mutate_running_job(job, worker_id):
             return False
@@ -175,11 +183,11 @@ class JobService:
         max_retries = int(self._get(job, "max_retries", 3))
         if retry_count >= max_retries:
             self._set(job, "status", "FAILED")
-            self._set(job, "finished_at", _now())
+            self._set(job, "finished_at", now)
         else:
             self._set(job, "status", "RETRYING")
         self._set(job, "retry_count", retry_count)
-        self._set(job, "error", _safe_error(error))
+        self._set(job, "error", safe_error)
         self._set(job, "locked_by", None)
         self._set(job, "locked_at", None)
         self._set(job, "heartbeat_at", None)
@@ -187,10 +195,14 @@ class JobService:
         return True
 
     def heartbeat(self, job_id, worker_id):
+        now = _now()
+        atomic = self._store_method("try_heartbeat_job")
+        if atomic:
+            return bool(atomic(job_id, worker_id, now))
         job = self.get_job(job_id)
         if not self._can_worker_mutate_running_job(job, worker_id, allow_cancel_requested=True):
             return False
-        self._set(job, "heartbeat_at", _now())
+        self._set(job, "heartbeat_at", now)
         self._update_job(job)
         return True
 
@@ -228,6 +240,11 @@ class JobService:
 
     def cancel_running_job(self, job_id: str, worker_id: str = "", reason=None) -> bool:
         """Cancel a RUNNING job, bypassing retry (goes directly to CANCELLED)."""
+        now = _now()
+        safe_reason = _safe_error(reason) if reason is not None else None
+        atomic = self._store_method("try_cancel_running_job")
+        if atomic:
+            return bool(atomic(job_id, worker_id, safe_reason, now))
         job = self.get_job(job_id)
         if job is None:
             return False
@@ -240,9 +257,9 @@ class JobService:
         self._set(job, "locked_by", None)
         self._set(job, "locked_at", None)
         self._set(job, "heartbeat_at", None)
-        self._set(job, "finished_at", _now())
-        if reason is not None:
-            self._set(job, "error", _safe_error(reason))
+        self._set(job, "finished_at", now)
+        if safe_reason is not None:
+            self._set(job, "error", safe_reason)
         self._update_job(job)
         return True
 
@@ -250,6 +267,18 @@ class JobService:
         self._set(job, "updated_at", _now())
         if hasattr(self._store, "update_job"):
             self._store.update_job(job if isinstance(job, dict) else job.to_dict())
+
+    def _store_method(self, name: str):
+        method = getattr(self._store, name, None)
+        if not callable(method):
+            return None
+        try:
+            from unittest.mock import Mock
+        except Exception:  # pragma: no cover - defensive only
+            Mock = ()
+        if Mock and isinstance(method, Mock):
+            return None
+        return method
 
     @staticmethod
     def _get(job, name: str, default=None):

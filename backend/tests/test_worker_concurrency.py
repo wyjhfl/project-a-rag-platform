@@ -309,3 +309,69 @@ class TestJobErrorSanitization:
 
     def test_safe_error_truncates_to_300_chars(self) -> None:
         assert len(_safe_error("x" * 500)) == 300
+
+
+class TestAtomicStoreTransitions:
+    def test_sqlite_try_complete_requires_running_owner_and_no_cancel(self, store: SqliteStore) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="atomic_complete")
+
+        assert not store.try_complete_job(record.job_id, "worker-1", {"done": True}, "2026-01-01T00:00:00+00:00")
+
+        service.claim_next_job("worker-1")
+        assert not store.try_complete_job(record.job_id, "worker-2", {"done": True}, "2026-01-01T00:00:00+00:00")
+        assert store.try_complete_job(record.job_id, "worker-1", {"done": True}, "2026-01-01T00:00:01+00:00")
+
+        final = store.get_job(record.job_id)
+        assert final is not None
+        assert final["status"] == "SUCCEEDED"
+        assert final["result"] == {"done": True}
+        assert final["locked_by"] is None
+        assert final["finished_at"] == "2026-01-01T00:00:01+00:00"
+
+    def test_sqlite_try_fail_retries_then_fails_atomically(self, store: SqliteStore) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="atomic_fail", max_retries=2)
+        service.claim_next_job("worker-1")
+
+        assert store.try_fail_job(record.job_id, "worker-1", "first", "2026-01-01T00:00:00+00:00")
+        retrying = store.get_job(record.job_id)
+        assert retrying is not None
+        assert retrying["status"] == "RETRYING"
+        assert retrying["retry_count"] == 1
+        assert retrying["finished_at"] is None
+
+        service.claim_next_job("worker-2")
+        assert store.try_fail_job(record.job_id, "worker-2", "second", "2026-01-01T00:00:01+00:00")
+        failed = store.get_job(record.job_id)
+        assert failed is not None
+        assert failed["status"] == "FAILED"
+        assert failed["retry_count"] == 2
+        assert failed["finished_at"] == "2026-01-01T00:00:01+00:00"
+
+    def test_sqlite_try_cancel_running_requires_owner(self, store: SqliteStore) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="atomic_cancel")
+        service.claim_next_job("worker-1")
+
+        assert not store.try_cancel_running_job(record.job_id, "worker-2", "wrong", "2026-01-01T00:00:00+00:00")
+        assert store.try_cancel_running_job(record.job_id, "worker-1", "cancelled", "2026-01-01T00:00:01+00:00")
+
+        final = store.get_job(record.job_id)
+        assert final is not None
+        assert final["status"] == "CANCELLED"
+        assert final["error"] == "cancelled"
+        assert final["locked_by"] is None
+
+    def test_job_service_uses_atomic_store_transition(self, store: SqliteStore) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="service_atomic")
+        service.claim_next_job("worker-1")
+        service.cancel_job(record.job_id)
+
+        assert not service.complete_job(record.job_id, "worker-1", {"done": True})
+        final = service.get_job(record.job_id)
+        assert final is not None
+        assert final["status"] == "RUNNING"
+        assert final["cancel_requested"] is True
+        assert final["result"] == {}

@@ -199,6 +199,72 @@ class SqliteStore(Store):
         self._conn.commit()
         return self.get_job(row[0])
 
+    def try_complete_job(self, job_id: str, worker_id: str, result: dict, now: str) -> bool:
+        cursor = self._conn.execute(
+            """UPDATE jobs
+               SET status = 'SUCCEEDED', result = ?, locked_by = NULL,
+                   locked_at = NULL, heartbeat_at = NULL, finished_at = ?, updated_at = ?
+               WHERE job_id = ?
+                 AND status = 'RUNNING'
+                 AND locked_by = ?
+                 AND COALESCE(cancel_requested, 0) = 0""",
+            (json.dumps(result), now, now, job_id, worker_id),
+        )
+        self._conn.commit()
+        return cursor.rowcount == 1
+
+    def try_fail_job(self, job_id: str, worker_id: str, error: str, now: str) -> bool:
+        row = self._conn.execute(
+            """SELECT retry_count, max_retries FROM jobs
+               WHERE job_id = ? AND status = 'RUNNING' AND locked_by = ?
+                 AND COALESCE(cancel_requested, 0) = 0""",
+            (job_id, worker_id),
+        ).fetchone()
+        if row is None:
+            return False
+        retry_count = int(row["retry_count"] or 0) + 1
+        max_retries = int(row["max_retries"] if row["max_retries"] is not None else 3)
+        status = "FAILED" if retry_count >= max_retries else "RETRYING"
+        finished_at = now if status == "FAILED" else None
+        cursor = self._conn.execute(
+            """UPDATE jobs
+               SET status = ?, retry_count = ?, error = ?, locked_by = NULL,
+                   locked_at = NULL, heartbeat_at = NULL, finished_at = ?, updated_at = ?
+               WHERE job_id = ? AND status = 'RUNNING' AND locked_by = ?
+                 AND COALESCE(cancel_requested, 0) = 0""",
+            (status, retry_count, error, finished_at, now, job_id, worker_id),
+        )
+        self._conn.commit()
+        return cursor.rowcount == 1
+
+    def try_heartbeat_job(self, job_id: str, worker_id: str, now: str) -> bool:
+        cursor = self._conn.execute(
+            """UPDATE jobs SET heartbeat_at = ?, updated_at = ?
+               WHERE job_id = ? AND status = 'RUNNING' AND locked_by = ?""",
+            (now, now, job_id, worker_id),
+        )
+        self._conn.commit()
+        return cursor.rowcount == 1
+
+    def try_cancel_running_job(
+        self,
+        job_id: str,
+        worker_id: str,
+        reason: str | None,
+        now: str,
+    ) -> bool:
+        cursor = self._conn.execute(
+            """UPDATE jobs
+               SET status = 'CANCELLED', cancel_requested = 1, error = COALESCE(?, error),
+                   locked_by = NULL, locked_at = NULL, heartbeat_at = NULL,
+                   finished_at = ?, updated_at = ?
+               WHERE job_id = ? AND status = 'RUNNING' AND locked_by = ?""",
+            (reason, now, now, job_id, worker_id),
+        )
+        self._conn.commit()
+        return cursor.rowcount == 1
+
+
     def list_chat_records(self) -> list:
         rows = self._conn.execute("SELECT * FROM chat_records ORDER BY id DESC LIMIT 100").fetchall()
         return [dict(r) for r in rows]

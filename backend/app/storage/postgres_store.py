@@ -303,6 +303,100 @@ class PostgresStore(Store):
             conn.commit()
         return self._row_to_job(row) if row else None
 
+    def try_complete_job(self, job_id: str, worker_id: str, result: dict, now: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                UPDATE jobs
+                SET status = 'SUCCEEDED', result = %s, locked_by = NULL,
+                    locked_at = NULL, heartbeat_at = NULL, finished_at = %s, updated_at = %s
+                WHERE job_id = %s
+                  AND status = 'RUNNING'
+                  AND locked_by = %s
+                  AND COALESCE(cancel_requested, 0) = 0
+                RETURNING job_id
+                """,
+                (Jsonb(result), now, now, job_id, worker_id),
+            ).fetchone()
+            conn.commit()
+        return row is not None
+
+    def try_fail_job(self, job_id: str, worker_id: str, error: str, now: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                WITH current_job AS (
+                    SELECT retry_count, max_retries
+                    FROM jobs
+                    WHERE job_id = %s
+                      AND status = 'RUNNING'
+                      AND locked_by = %s
+                      AND COALESCE(cancel_requested, 0) = 0
+                    FOR UPDATE
+                )
+                UPDATE jobs
+                SET retry_count = current_job.retry_count + 1,
+                    status = CASE
+                        WHEN current_job.retry_count + 1 >= current_job.max_retries
+                        THEN 'FAILED'
+                        ELSE 'RETRYING'
+                    END,
+                    error = %s,
+                    locked_by = NULL,
+                    locked_at = NULL,
+                    heartbeat_at = NULL,
+                    finished_at = CASE
+                        WHEN current_job.retry_count + 1 >= current_job.max_retries
+                        THEN %s
+                        ELSE NULL
+                    END,
+                    updated_at = %s
+                FROM current_job
+                WHERE jobs.job_id = %s
+                RETURNING jobs.job_id
+                """,
+                (job_id, worker_id, error, now, now, job_id),
+            ).fetchone()
+            conn.commit()
+        return row is not None
+
+    def try_heartbeat_job(self, job_id: str, worker_id: str, now: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                UPDATE jobs
+                SET heartbeat_at = %s, updated_at = %s
+                WHERE job_id = %s AND status = 'RUNNING' AND locked_by = %s
+                RETURNING job_id
+                """,
+                (now, now, job_id, worker_id),
+            ).fetchone()
+            conn.commit()
+        return row is not None
+
+    def try_cancel_running_job(
+        self,
+        job_id: str,
+        worker_id: str,
+        reason: str | None,
+        now: str,
+    ) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                UPDATE jobs
+                SET status = 'CANCELLED', cancel_requested = 1, error = COALESCE(%s, error),
+                    locked_by = NULL, locked_at = NULL, heartbeat_at = NULL,
+                    finished_at = %s, updated_at = %s
+                WHERE job_id = %s AND status = 'RUNNING' AND locked_by = %s
+                RETURNING job_id
+                """,
+                (reason, now, now, job_id, worker_id),
+            ).fetchone()
+            conn.commit()
+        return row is not None
+
+
     def list_chat_records(self) -> list:
         with self._connect() as conn:
             rows = conn.execute(

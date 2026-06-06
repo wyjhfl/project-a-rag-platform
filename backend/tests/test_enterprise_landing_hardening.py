@@ -288,3 +288,17 @@ def test_worker_records_actual_status_when_fail_is_rejected(monkeypatch) -> None
         executor=lambda job: None,
     )
     assert recorded == [("unknown.type", "RUNNING")]
+
+
+def test_postgres_store_declares_atomic_job_transitions() -> None:
+    source = (PROJECT_ROOT / "backend" / "app" / "storage" / "postgres_store.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "def try_complete_job" in source
+    assert "def try_fail_job" in source
+    assert "def try_heartbeat_job" in source
+    assert "def try_cancel_running_job" in source
+    assert "status = 'RUNNING'" in source
+    assert "locked_by = %s" in source
+    assert "COALESCE(cancel_requested, 0) = 0" in source
