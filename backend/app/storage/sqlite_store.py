@@ -199,6 +199,68 @@ class SqliteStore(Store):
         self._conn.commit()
         return self.get_job(row[0])
 
+    @staticmethod
+    def _timestamp_seconds(value: str | None) -> float | None:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(value).timestamp()
+        except (TypeError, ValueError):
+            return None
+
+    def timeout_stale_jobs(self, timeout_seconds: int = 300, now: str | None = None) -> int:
+        """Atomically recover stale RUNNING jobs without overwriting fresh state."""
+        now_dt = datetime.fromisoformat(now) if now else datetime.now(timezone.utc)
+        now_ts = now_dt.timestamp()
+        now_value = now_dt.isoformat()
+        try:
+            self._conn.execute("BEGIN IMMEDIATE")
+        except Exception:
+            pass
+
+        rows = self._conn.execute(
+            """SELECT job_id, heartbeat_at, locked_at, retry_count, max_retries,
+                      cancel_requested
+               FROM jobs
+               WHERE status = 'RUNNING'"""
+        ).fetchall()
+        count = 0
+        for row in rows:
+            last_seen = self._timestamp_seconds(row["heartbeat_at"] or row["locked_at"])
+            if last_seen is None or now_ts - last_seen <= timeout_seconds:
+                continue
+
+            if bool(row["cancel_requested"]):
+                cursor = self._conn.execute(
+                    """UPDATE jobs
+                       SET status = 'CANCELLED', locked_by = NULL, locked_at = NULL,
+                           heartbeat_at = NULL, finished_at = ?, updated_at = ?,
+                           error = COALESCE(error, 'Job timed out after cancellation request')
+                       WHERE job_id = ? AND status = 'RUNNING'
+                         AND COALESCE(cancel_requested, 0) = 1""",
+                    (now_value, now_value, row["job_id"]),
+                )
+                count += cursor.rowcount
+                continue
+
+            retry_count = int(row["retry_count"] or 0) + 1
+            max_retries = int(row["max_retries"] if row["max_retries"] is not None else 3)
+            status = "FAILED" if retry_count >= max_retries else "RETRYING"
+            finished_at = now_value if status == "FAILED" else None
+            cursor = self._conn.execute(
+                """UPDATE jobs
+                   SET status = ?, retry_count = ?, error = 'Job timed out',
+                       locked_by = NULL, locked_at = NULL, heartbeat_at = NULL,
+                       finished_at = ?, updated_at = ?
+                   WHERE job_id = ? AND status = 'RUNNING'
+                     AND COALESCE(cancel_requested, 0) = 0""",
+                (status, retry_count, finished_at, now_value, row["job_id"]),
+            )
+            count += cursor.rowcount
+
+        self._conn.commit()
+        return count
+
     def try_request_cancel_job(self, job_id: str, now: str) -> dict | None:
         """Atomically request cancellation without overwriting terminal jobs."""
         try:

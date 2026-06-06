@@ -303,6 +303,59 @@ class PostgresStore(Store):
             conn.commit()
         return self._row_to_job(row) if row else None
 
+    def timeout_stale_jobs(self, timeout_seconds: int = 300, now: str | None = None) -> int:
+        """Atomically recover stale RUNNING jobs without overwriting fresh state."""
+        now_value = now or self._now()
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                WITH stale AS (
+                    SELECT job_id,
+                           COALESCE(retry_count, 0) AS retry_count,
+                           COALESCE(max_retries, 3) AS max_retries,
+                           COALESCE(cancel_requested, 0) AS cancel_requested
+                    FROM jobs
+                    WHERE status = 'RUNNING'
+                      AND COALESCE(heartbeat_at, locked_at) IS NOT NULL
+                      AND EXTRACT(EPOCH FROM (
+                          %s::timestamptz - COALESCE(heartbeat_at, locked_at)::timestamptz
+                      )) > %s
+                    FOR UPDATE SKIP LOCKED
+                )
+                UPDATE jobs
+                SET retry_count = CASE
+                        WHEN stale.cancel_requested = 1 THEN jobs.retry_count
+                        ELSE stale.retry_count + 1
+                    END,
+                    status = CASE
+                        WHEN stale.cancel_requested = 1 THEN 'CANCELLED'
+                        WHEN stale.retry_count + 1 >= stale.max_retries THEN 'FAILED'
+                        ELSE 'RETRYING'
+                    END,
+                    error = CASE
+                        WHEN stale.cancel_requested = 1
+                        THEN COALESCE(jobs.error, 'Job timed out after cancellation request')
+                        ELSE 'Job timed out'
+                    END,
+                    locked_by = NULL,
+                    locked_at = NULL,
+                    heartbeat_at = NULL,
+                    finished_at = CASE
+                        WHEN stale.cancel_requested = 1 THEN %s
+                        WHEN stale.retry_count + 1 >= stale.max_retries THEN %s
+                        ELSE NULL
+                    END,
+                    updated_at = %s
+                FROM stale
+                WHERE jobs.job_id = stale.job_id
+                  AND jobs.status = 'RUNNING'
+                RETURNING jobs.job_id
+                """,
+                (now_value, timeout_seconds, now_value, now_value, now_value),
+            ).fetchall()
+            conn.commit()
+        return len(rows)
+
     def try_request_cancel_job(self, job_id: str, now: str) -> dict | None:
         """Atomically request cancellation without overwriting terminal jobs."""
         with self._connect() as conn:

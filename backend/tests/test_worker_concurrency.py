@@ -312,6 +312,94 @@ class TestJobErrorSanitization:
 
 
 class TestAtomicStoreTransitions:
+    def test_sqlite_timeout_stale_jobs_retries_or_fails_atomically(
+        self,
+        store: SqliteStore,
+    ) -> None:
+        service = JobService(store, execution_mode="worker")
+        retrying = service.create_job(job_type="timeout_retry", max_retries=2)
+        failed = service.create_job(job_type="timeout_fail", max_retries=1)
+        service.claim_next_job("worker-1")
+        service.claim_next_job("worker-2")
+        stale = "2020-01-01T00:00:00+00:00"
+        for job_id in (retrying.job_id, failed.job_id):
+            job = store.get_job(job_id)
+            assert job is not None
+            job["heartbeat_at"] = stale
+            store.update_job(job)
+
+        count = store.timeout_stale_jobs(
+            timeout_seconds=1,
+            now="2026-01-01T00:00:00+00:00",
+        )
+
+        assert count == 2
+        retrying_final = store.get_job(retrying.job_id)
+        failed_final = store.get_job(failed.job_id)
+        assert retrying_final is not None
+        assert failed_final is not None
+        assert retrying_final["status"] == "RETRYING"
+        assert retrying_final["retry_count"] == 1
+        assert retrying_final["finished_at"] is None
+        assert failed_final["status"] == "FAILED"
+        assert failed_final["retry_count"] == 1
+        assert failed_final["finished_at"] == "2026-01-01T00:00:00+00:00"
+
+    def test_sqlite_timeout_stale_jobs_cancels_cancel_requested_running(
+        self,
+        store: SqliteStore,
+    ) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="timeout_cancel_requested", max_retries=3)
+        service.claim_next_job("worker-1")
+        assert service.cancel_job(record.job_id) is not None
+        job = store.get_job(record.job_id)
+        assert job is not None
+        job["heartbeat_at"] = "2020-01-01T00:00:00+00:00"
+        store.update_job(job)
+
+        count = store.timeout_stale_jobs(
+            timeout_seconds=1,
+            now="2026-01-01T00:00:00+00:00",
+        )
+
+        assert count == 1
+        final = store.get_job(record.job_id)
+        assert final is not None
+        assert final["status"] == "CANCELLED"
+        assert final["cancel_requested"] is True
+        assert final["retry_count"] == 0
+        assert final["finished_at"] == "2026-01-01T00:00:00+00:00"
+
+    def test_sqlite_timeout_stale_jobs_does_not_touch_fresh_or_terminal_jobs(
+        self,
+        store: SqliteStore,
+    ) -> None:
+        service = JobService(store, execution_mode="worker")
+        fresh = service.create_job(job_type="timeout_fresh")
+        terminal = service.create_job(job_type="timeout_terminal")
+        service.claim_next_job("worker-1")
+        service.claim_next_job("worker-2")
+        assert store.try_complete_job(
+            terminal.job_id,
+            "worker-2",
+            {"done": True},
+            "2026-01-01T00:00:00+00:00",
+        )
+
+        count = store.timeout_stale_jobs(
+            timeout_seconds=300,
+            now="2026-01-01T00:00:01+00:00",
+        )
+
+        assert count == 0
+        fresh_final = store.get_job(fresh.job_id)
+        terminal_final = store.get_job(terminal.job_id)
+        assert fresh_final is not None
+        assert terminal_final is not None
+        assert fresh_final["status"] == "RUNNING"
+        assert terminal_final["status"] == "SUCCEEDED"
+
     def test_sqlite_try_request_cancel_job_marks_running_without_terminal_overwrite(
         self,
         store: SqliteStore,

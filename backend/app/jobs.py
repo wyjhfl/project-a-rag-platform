@@ -211,6 +211,9 @@ class JobService:
         return True
 
     def timeout_stale_jobs(self, timeout_seconds=300):
+        atomic = self._store_method("timeout_stale_jobs")
+        if atomic:
+            return int(atomic(timeout_seconds=timeout_seconds, now=_now()))
         count = 0
         jobs = self.list_jobs(limit=1000)
         now = time.time()
