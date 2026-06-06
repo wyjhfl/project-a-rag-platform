@@ -173,3 +173,50 @@ def test_worker_cancels_running_job_when_cancel_requested() -> None:
     assert store.job["status"] == "CANCELLED"
     assert store.job["retry_count"] == 0
     assert store.job["locked_by"] is None
+
+
+def test_postgres_store_jobs_column_migration_is_idempotent() -> None:
+    from app.storage.postgres_store import PostgresStore
+
+    class FakeConn:
+        def __init__(self) -> None:
+            self.statements: list[str] = []
+
+        def execute(self, sql: str) -> None:
+            self.statements.append(sql)
+
+    conn = FakeConn()
+    PostgresStore._ensure_jobs_columns(conn)
+
+    assert any("ADD COLUMN IF NOT EXISTS finished_at TEXT" in s for s in conn.statements)
+    assert all("ADD COLUMN IF NOT EXISTS" in s for s in conn.statements)
+
+
+def test_sqlite_store_migrates_existing_jobs_table_finished_at(tmp_path) -> None:
+    import sqlite3
+
+    from app.storage.sqlite_store import SqliteStore
+
+    db_path = tmp_path / "legacy_jobs.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE jobs (
+            job_id TEXT PRIMARY KEY,
+            job_type TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'PENDING',
+            payload TEXT DEFAULT '{}',
+            result TEXT DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            started_at TEXT
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+    store = SqliteStore(db_path)
+    columns = {row["name"] for row in store._conn.execute("PRAGMA table_info(jobs)")}
+
+    assert "finished_at" in columns

@@ -44,7 +44,8 @@ class SqliteStore(Store):
                 cancel_requested INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                started_at TEXT
+                started_at TEXT,
+                finished_at TEXT
             );
             CREATE TABLE IF NOT EXISTS documents (
                 id TEXT PRIMARY KEY,
@@ -99,7 +100,13 @@ class SqliteStore(Store):
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        self._ensure_column("jobs", "finished_at", "TEXT")
         conn.commit()
+
+    def _ensure_column(self, table: str, column: str, definition: str) -> None:
+        existing = {row["name"] for row in self._conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            self._conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def add_document(self, document_id: str, source: str, path: str, chunk_count: int) -> None:
         self._conn.execute(
@@ -115,13 +122,18 @@ class SqliteStore(Store):
         job.setdefault("created_at", now)
         job.setdefault("updated_at", now)
         self._conn.execute(
-            "INSERT OR REPLACE INTO jobs (job_id, job_type, status, payload, result, error, retry_count, max_retries, locked_by, locked_at, heartbeat_at, timeout_seconds, cancel_requested, created_at, updated_at, started_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            """INSERT OR REPLACE INTO jobs (
+                job_id, job_type, status, payload, result, error, retry_count,
+                max_retries, locked_by, locked_at, heartbeat_at, timeout_seconds,
+                cancel_requested, created_at, updated_at, started_at, finished_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (job.get("job_id"), job.get("job_type",""), job.get("status","PENDING"),
              json.dumps(job.get("payload",{})), json.dumps(job.get("result",{})),
              job.get("error"), job.get("retry_count",0), job.get("max_retries",3),
              job.get("locked_by"), job.get("locked_at"), job.get("heartbeat_at"),
              job.get("timeout_seconds",300), 1 if job.get("cancel_requested") else 0,
-             job.get("created_at",now), job.get("updated_at",now), job.get("started_at"))
+             job.get("created_at",now), job.get("updated_at",now), job.get("started_at"),
+             job.get("finished_at"))
         )
         self._conn.commit()
 
@@ -133,6 +145,8 @@ class SqliteStore(Store):
 
     def update_job(self, job: dict) -> None:
         job["updated_at"] = datetime.now(timezone.utc).isoformat()
+        if job.get("status") in {"SUCCEEDED", "FAILED", "CANCELLED"} and not job.get("finished_at"):
+            job["finished_at"] = job["updated_at"]
         self.create_job(job)
 
     def upsert_job(self, job: dict) -> None:

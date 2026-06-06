@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox } from '../plugins/element-plus'
 
 import { formatApiError } from '../api/client'
 import { closeTicket, listTickets, resumeTicket, startTicket } from '../api/endpoints'

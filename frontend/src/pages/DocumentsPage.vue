@@ -80,7 +80,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox } from '../plugins/element-plus'
 
 import { formatApiError } from '../api/client'
 import { createIngestJob, ingestDocuments, uploadDocument } from '../api/endpoints'

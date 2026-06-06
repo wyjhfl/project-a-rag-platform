@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -16,8 +17,15 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+_WINDOWS_ABS_PATH_RE = re.compile(r'[A-Za-z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*')
+_UNIX_ABS_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])/(?:[^/\s\r\n]+/)*[^/\s\r\n]+")
+
+
 def _safe_error(error: Any) -> str:
     text = str(error).replace("\r", " ").replace("\n", " ")
+    text = text.replace("Traceback", "...")
+    text = _WINDOWS_ABS_PATH_RE.sub("<path>", text)
+    text = _UNIX_ABS_PATH_RE.sub("<path>", text)
     return text[:300]
 
 
@@ -257,8 +265,7 @@ class JobService:
             setattr(job, name, value)
 
     def _is_owner(self, job, worker_id: str) -> bool:
-        locked_by = self._get(job, "locked_by")
-        return locked_by is None or locked_by == "" or locked_by == worker_id
+        return self._get(job, "locked_by") == worker_id
 
 
 def cancel_running_job(store, job_id: str, worker_id: str = "", reason=None) -> dict | None:

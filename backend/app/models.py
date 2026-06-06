@@ -173,6 +173,7 @@ class JobRecord(BaseModel):
     created_at: str = ""
     updated_at: str = ""
     started_at: Optional[str] = None
+    finished_at: Optional[str] = None
 
 
 class JobCancelRequest(BaseModel):

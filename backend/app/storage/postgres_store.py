@@ -146,7 +146,24 @@ class PostgresStore(Store):
                 )
                 """
             )
+            self._ensure_jobs_columns(conn)
             conn.commit()
+
+    @staticmethod
+    def _ensure_jobs_columns(conn) -> None:
+        columns = {
+            "retry_count": "INTEGER DEFAULT 0",
+            "max_retries": "INTEGER DEFAULT 3",
+            "locked_by": "TEXT",
+            "locked_at": "TEXT",
+            "heartbeat_at": "TEXT",
+            "timeout_seconds": "INTEGER DEFAULT 300",
+            "cancel_requested": "INTEGER DEFAULT 0",
+            "started_at": "TEXT",
+            "finished_at": "TEXT",
+        }
+        for column, definition in columns.items():
+            conn.execute(f"ALTER TABLE jobs ADD COLUMN IF NOT EXISTS {column} {definition}")
 
     @staticmethod
     def _now() -> str:
