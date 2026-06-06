@@ -81,3 +81,31 @@ The reconstructed lineage is a release-management risk, not a current-runtime co
 - final production acceptance passing.
 
 As of the `v1.0.1` readiness process, these checks must be re-run before the final tag is considered valid.
+
+## Local canonical remote created
+
+A local bare canonical remote has been created for safe handoff without touching the existing public `origin`:
+
+```text
+D:\wyj-hfl-shizhanxiangmu\project-a-rag-platform-canonical.git
+```
+
+It contains the production release tags and the current handoff branch:
+
+```text
+v1.0.1 tag -> 3c2ce62
+main -> current handoff branch tip
+tags: v1.0.0, v1.0.1-rc.1, v1.0.1
+```
+
+The `v1.0.1` release tag remains fixed at `3c2ce62`. Later documentation-only handoff commits may exist on `main` without moving the release tag.
+
+Verification clone path used during release readiness:
+
+```text
+D:\wyj-hfl-shizhanxiangmu\project-a-rag-platform-canonical-verify
+```
+
+The bare repository `HEAD` has been set to `refs/heads/main`, and clone verification succeeds.
+
+This local remote is a safe staging canonical. If a hosted canonical repository is later created, push from this local `production-origin` or from the working tree to the new hosted remote. Do not push to the current public `origin`.
