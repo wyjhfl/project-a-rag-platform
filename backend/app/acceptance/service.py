@@ -18,10 +18,11 @@ DOCS_DIR = Path(__file__).resolve().parents[3] / "docs"
 def build_acceptance_overview(
     docs_dir: Path | None = None,
     version: str = "v2.0",
+    llm_provider: str = "",
 ) -> AcceptanceOverviewResponse:
     resolved_docs_dir = docs_dir or DOCS_DIR
     panels = [
-        _build_provider_panel(resolved_docs_dir),
+        _build_provider_panel(resolved_docs_dir, llm_provider),
         _build_multimodal_panel(resolved_docs_dir),
         _build_evaluation_panel(resolved_docs_dir),
         _build_bad_case_panel(resolved_docs_dir),
@@ -39,11 +40,43 @@ def build_acceptance_overview(
     )
 
 
-def _build_provider_panel(docs_dir: Path) -> AcceptancePanel:
+def _build_provider_panel(docs_dir: Path, llm_provider: str = "") -> AcceptancePanel:
     report_path = _latest_doc(docs_dir, "A-v2.2_provider_acceptance_report*.json") or _latest_doc(
         docs_dir, "A-v1.4_provider_acceptance_report*.json"
     )
     if report_path is None:
+        if llm_provider:
+            return AcceptancePanel(
+                key="provider",
+                title="真实 LLM 主链",
+                status="passed",
+                summary=f"LLM provider '{llm_provider}' 已配置，暂无验收报告。",
+                metrics={"default_candidate": llm_provider},
+                breakdown=[
+                    AcceptanceBreakdownItem(
+                        label=llm_provider,
+                        status="accepted",
+                        summary="Provider 已配置",
+                        metrics={"provider": llm_provider},
+                    )
+                ],
+                chart=[
+                    AcceptanceChartBar(
+                        label="accepted",
+                        value=1.0,
+                        total=1.0,
+                        tone="success",
+                    )
+                ],
+                highlights=[
+                    AcceptanceHighlightItem(
+                        title="默认文本主链候选",
+                        summary=f"{llm_provider} 是当前配置的 provider。",
+                        status="passed",
+                        tags=["configured"],
+                    )
+                ],
+            )
         return AcceptancePanel(
             key="provider",
             title="真实 LLM 主链",

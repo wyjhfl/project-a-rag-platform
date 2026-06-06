@@ -55,11 +55,17 @@ APP_VERSION = "v2.0"
 logger = logging.getLogger("project_a")
 
 
+_OPTIONAL_CONFIG_KEYWORDS = ("REDIS_URL", "NEO4J_", "RATE_LIMIT_REDIS_URL")
+
+
 def _check_config(settings) -> dict:
     errors = settings.validate()
-    if errors:
+    if not errors:
+        return {"status": "ok", "provider": settings.llm_provider}
+    core_errors = [e for e in errors if not any(kw in e for kw in _OPTIONAL_CONFIG_KEYWORDS)]
+    if core_errors:
         return {"status": "error", "errors": errors}
-    return {"status": "ok", "provider": settings.llm_provider}
+    return {"status": "degraded", "errors": errors, "provider": settings.llm_provider}
 
 
 def _check_storage(settings, store) -> dict:
@@ -311,11 +317,12 @@ def create_app(
                 content={"status": overall, "version": APP_VERSION, "checks": checks},
             )
         all_core_ok = (
-            config_check["status"] == "ok"
+            config_check["status"] in ("ok", "degraded")
             and storage_check["status"] == "ok"
             and vector_check["status"] in ("ok", "degraded")
         )
-        opt_degraded = any(
+        config_degraded = config_check["status"] == "degraded"
+        opt_degraded = config_degraded or any(
             v.startswith("error:") or v.startswith("degraded:")
             for v in optional_checks.values()
         )
@@ -355,7 +362,7 @@ def create_app(
     @app.get("/api/v1/acceptance/overview", response_model=AcceptanceOverviewResponse)
     def acceptance_overview(_role: str = Depends(require_role("viewer"))) -> AcceptanceOverviewResponse:
         acceptance_docs = getattr(app.state, "acceptance_docs_dir", None)
-        return build_acceptance_overview(docs_dir=acceptance_docs, version=APP_VERSION)
+        return build_acceptance_overview(docs_dir=acceptance_docs, version=APP_VERSION, llm_provider=settings.llm_provider)
 
     @app.post("/api/v1/documents/ingest", response_model=IngestResponse)
     def ingest_documents(request: IngestRequest | None = None, _role: str = Depends(require_role("operator"))) -> IngestResponse:

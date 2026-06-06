@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from app.rag.costing import TokenUsage
 from app.storage.base import Store
 
 
@@ -45,6 +46,13 @@ class SqliteStore(Store):
                 updated_at TEXT NOT NULL,
                 started_at TEXT
             );
+            CREATE TABLE IF NOT EXISTS documents (
+                id TEXT PRIMARY KEY,
+                source TEXT NOT NULL,
+                path TEXT NOT NULL,
+                chunk_count INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             CREATE TABLE IF NOT EXISTS audit_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 action TEXT NOT NULL,
@@ -57,12 +65,48 @@ class SqliteStore(Store):
             );
             CREATE TABLE IF NOT EXISTS chat_records (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                question TEXT,
-                answer TEXT,
-                created_at TEXT
+                question TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                citations TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS tickets (
+                ticket_id TEXT PRIMARY KEY,
+                idempotency_key TEXT NOT NULL UNIQUE,
+                question TEXT NOT NULL,
+                diagnosis TEXT NOT NULL,
+                citations TEXT NOT NULL,
+                device_model TEXT,
+                fault_code TEXT,
+                risk_level TEXT NOT NULL,
+                status TEXT NOT NULL,
+                required_parts TEXT NOT NULL,
+                human_required INTEGER NOT NULL,
+                human_decision TEXT,
+                human_reviewer TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                closed_by TEXT,
+                closed_at TEXT
+            );
+            CREATE TABLE IF NOT EXISTS token_usage (
+                request_id TEXT PRIMARY KEY,
+                module TEXT NOT NULL,
+                prompt_tokens INTEGER NOT NULL,
+                completion_tokens INTEGER NOT NULL,
+                total_tokens INTEGER NOT NULL,
+                estimated_cost REAL NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
         """)
         conn.commit()
+
+    def add_document(self, document_id: str, source: str, path: str, chunk_count: int) -> None:
+        self._conn.execute(
+            "INSERT OR REPLACE INTO documents (id, source, path, chunk_count) VALUES (?, ?, ?, ?)",
+            (document_id, source, path, chunk_count),
+        )
+        self._conn.commit()
 
     def create_job(self, job: dict) -> None:
         if "job_id" not in job:
@@ -138,6 +182,101 @@ class SqliteStore(Store):
     def list_chat_records(self) -> list:
         rows = self._conn.execute("SELECT * FROM chat_records ORDER BY id DESC LIMIT 100").fetchall()
         return [dict(r) for r in rows]
+
+    def add_chat_record(self, question: str, answer: str, citations: str) -> None:
+        self._conn.execute(
+            "INSERT INTO chat_records (question, answer, citations) VALUES (?, ?, ?)",
+            (question, answer, citations),
+        )
+        self._conn.commit()
+
+    def add_token_usage(self, usage: TokenUsage) -> None:
+        self._conn.execute(
+            """INSERT INTO token_usage (
+                request_id, module, prompt_tokens, completion_tokens,
+                total_tokens, estimated_cost
+            ) VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                usage.request_id,
+                usage.module,
+                usage.prompt_tokens,
+                usage.completion_tokens,
+                usage.total_tokens,
+                usage.estimated_cost,
+            ),
+        )
+        self._conn.commit()
+
+    def upsert_ticket(self, ticket: dict) -> None:
+        self._conn.execute(
+            """INSERT INTO tickets (
+                ticket_id, idempotency_key, question, diagnosis, citations,
+                device_model, fault_code, risk_level, status, required_parts,
+                human_required, human_decision, human_reviewer,
+                created_at, updated_at, closed_by, closed_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(ticket_id) DO UPDATE SET
+                question = excluded.question,
+                diagnosis = excluded.diagnosis,
+                citations = excluded.citations,
+                device_model = excluded.device_model,
+                fault_code = excluded.fault_code,
+                risk_level = excluded.risk_level,
+                status = excluded.status,
+                required_parts = excluded.required_parts,
+                human_required = excluded.human_required,
+                human_decision = excluded.human_decision,
+                human_reviewer = excluded.human_reviewer,
+                updated_at = excluded.updated_at,
+                closed_by = excluded.closed_by,
+                closed_at = excluded.closed_at""",
+            (
+                ticket["ticket_id"],
+                ticket["idempotency_key"],
+                ticket["question"],
+                ticket["diagnosis"],
+                json.dumps(ticket["citations"], ensure_ascii=False),
+                ticket.get("device_model"),
+                ticket.get("fault_code"),
+                ticket["risk_level"],
+                ticket["status"],
+                json.dumps(ticket["required_parts"], ensure_ascii=False),
+                int(ticket["human_required"]),
+                ticket.get("human_decision"),
+                ticket.get("human_reviewer"),
+                ticket["created_at"],
+                ticket["updated_at"],
+                ticket.get("closed_by"),
+                ticket.get("closed_at"),
+            ),
+        )
+        self._conn.commit()
+
+    def get_ticket(self, ticket_id: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM tickets WHERE ticket_id = ?", (ticket_id,)
+        ).fetchone()
+        return self._ticket_row_to_dict(row) if row else None
+
+    def get_ticket_by_idempotency_key(self, idempotency_key: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM tickets WHERE idempotency_key = ?", (idempotency_key,)
+        ).fetchone()
+        return self._ticket_row_to_dict(row) if row else None
+
+    def list_tickets(self) -> list[dict]:
+        rows = self._conn.execute(
+            "SELECT * FROM tickets ORDER BY created_at, ticket_id"
+        ).fetchall()
+        return [self._ticket_row_to_dict(row) for row in rows]
+
+    @staticmethod
+    def _ticket_row_to_dict(row: sqlite3.Row) -> dict:
+        ticket = dict(row)
+        ticket["citations"] = json.loads(ticket["citations"])
+        ticket["required_parts"] = json.loads(ticket["required_parts"])
+        ticket["human_required"] = bool(ticket["human_required"])
+        return ticket
 
     def list_audit_events(self, limit: int = 100) -> list[dict]:
         rows = self._conn.execute("SELECT * FROM audit_events ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
