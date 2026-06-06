@@ -127,6 +127,10 @@ class JobService:
         return []
 
     def cancel_job(self, job_id):
+        now = _now()
+        atomic = self._store_method("try_request_cancel_job")
+        if atomic:
+            return atomic(job_id, now)
         job = self.get_job(job_id)
         if job is None:
             return None
@@ -138,7 +142,7 @@ class JobService:
         else:
             self._set(job, "status", "CANCELLED")
             self._set(job, "cancel_requested", True)
-            self._set(job, "finished_at", _now())
+            self._set(job, "finished_at", now)
         self._update_job(job)
         return job if isinstance(job, dict) else job.to_dict()
 

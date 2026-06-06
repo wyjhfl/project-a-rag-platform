@@ -199,6 +199,55 @@ class SqliteStore(Store):
         self._conn.commit()
         return self.get_job(row[0])
 
+    def try_request_cancel_job(self, job_id: str, now: str) -> dict | None:
+        """Atomically request cancellation without overwriting terminal jobs."""
+        try:
+            self._conn.execute("BEGIN IMMEDIATE")
+        except Exception:
+            pass
+        row = self._conn.execute(
+            "SELECT status FROM jobs WHERE job_id = ?",
+            (job_id,),
+        ).fetchone()
+        if row is None:
+            try:
+                self._conn.rollback()
+            except Exception:
+                pass
+            return None
+        if row["status"] in {"SUCCEEDED", "FAILED", "CANCELLED"}:
+            try:
+                self._conn.rollback()
+            except Exception:
+                pass
+            return None
+
+        if row["status"] == "RUNNING":
+            cursor = self._conn.execute(
+                """UPDATE jobs
+                   SET cancel_requested = 1, updated_at = ?
+                   WHERE job_id = ? AND status = 'RUNNING'""",
+                (now, job_id),
+            )
+        else:
+            cursor = self._conn.execute(
+                """UPDATE jobs
+                   SET status = 'CANCELLED', cancel_requested = 1,
+                       locked_by = NULL, locked_at = NULL, heartbeat_at = NULL,
+                       finished_at = ?, updated_at = ?
+                   WHERE job_id = ?
+                     AND status NOT IN ('RUNNING', 'SUCCEEDED', 'FAILED', 'CANCELLED')""",
+                (now, now, job_id),
+            )
+        if cursor.rowcount != 1:
+            try:
+                self._conn.rollback()
+            except Exception:
+                pass
+            return None
+        self._conn.commit()
+        return self.get_job(job_id)
+
     def try_complete_job(self, job_id: str, worker_id: str, result: dict, now: str) -> bool:
         cursor = self._conn.execute(
             """UPDATE jobs

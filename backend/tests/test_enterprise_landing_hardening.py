@@ -295,6 +295,7 @@ def test_postgres_store_declares_atomic_job_transitions() -> None:
         encoding="utf-8"
     )
 
+    assert "def try_request_cancel_job" in source
     assert "def try_complete_job" in source
     assert "def try_fail_job" in source
     assert "def try_heartbeat_job" in source
@@ -302,3 +303,4 @@ def test_postgres_store_declares_atomic_job_transitions() -> None:
     assert "status = 'RUNNING'" in source
     assert "locked_by = %s" in source
     assert "COALESCE(cancel_requested, 0) = 0" in source
+    assert "status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')" in source

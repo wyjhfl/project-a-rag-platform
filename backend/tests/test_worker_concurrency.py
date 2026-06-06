@@ -312,6 +312,69 @@ class TestJobErrorSanitization:
 
 
 class TestAtomicStoreTransitions:
+    def test_sqlite_try_request_cancel_job_marks_running_without_terminal_overwrite(
+        self,
+        store: SqliteStore,
+    ) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="atomic_request_cancel")
+        service.claim_next_job("worker-1")
+
+        result = store.try_request_cancel_job(record.job_id, "2026-01-01T00:00:00+00:00")
+
+        assert result is not None
+        assert result["status"] == "RUNNING"
+        assert result["cancel_requested"] is True
+        assert result["locked_by"] == "worker-1"
+        assert result["finished_at"] is None
+
+        assert not store.try_complete_job(
+            record.job_id,
+            "worker-1",
+            {"done": True},
+            "2026-01-01T00:00:01+00:00",
+        )
+        final = store.get_job(record.job_id)
+        assert final is not None
+        assert final["status"] == "RUNNING"
+        assert final["result"] == {}
+
+    def test_sqlite_try_request_cancel_job_cancels_pending(
+        self,
+        store: SqliteStore,
+    ) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="atomic_cancel_pending")
+
+        result = store.try_request_cancel_job(record.job_id, "2026-01-01T00:00:00+00:00")
+
+        assert result is not None
+        assert result["status"] == "CANCELLED"
+        assert result["cancel_requested"] is True
+        assert result["finished_at"] == "2026-01-01T00:00:00+00:00"
+        assert service.claim_next_job("worker-1") is None
+
+    def test_sqlite_try_request_cancel_job_does_not_overwrite_terminal(
+        self,
+        store: SqliteStore,
+    ) -> None:
+        service = JobService(store, execution_mode="worker")
+        record = service.create_job(job_type="atomic_cancel_terminal")
+        service.claim_next_job("worker-1")
+        assert store.try_complete_job(
+            record.job_id,
+            "worker-1",
+            {"done": True},
+            "2026-01-01T00:00:00+00:00",
+        )
+
+        assert store.try_request_cancel_job(record.job_id, "2026-01-01T00:00:01+00:00") is None
+        final = store.get_job(record.job_id)
+        assert final is not None
+        assert final["status"] == "SUCCEEDED"
+        assert final["cancel_requested"] is False
+        assert final["result"] == {"done": True}
+
     def test_sqlite_try_complete_requires_running_owner_and_no_cancel(self, store: SqliteStore) -> None:
         service = JobService(store, execution_mode="worker")
         record = service.create_job(job_type="atomic_complete")

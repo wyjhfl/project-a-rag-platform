@@ -303,6 +303,31 @@ class PostgresStore(Store):
             conn.commit()
         return self._row_to_job(row) if row else None
 
+    def try_request_cancel_job(self, job_id: str, now: str) -> dict | None:
+        """Atomically request cancellation without overwriting terminal jobs."""
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                UPDATE jobs
+                SET cancel_requested = 1,
+                    status = CASE
+                        WHEN status = 'RUNNING' THEN status
+                        ELSE 'CANCELLED'
+                    END,
+                    locked_by = CASE WHEN status = 'RUNNING' THEN locked_by ELSE NULL END,
+                    locked_at = CASE WHEN status = 'RUNNING' THEN locked_at ELSE NULL END,
+                    heartbeat_at = CASE WHEN status = 'RUNNING' THEN heartbeat_at ELSE NULL END,
+                    finished_at = CASE WHEN status = 'RUNNING' THEN finished_at ELSE %s END,
+                    updated_at = %s
+                WHERE job_id = %s
+                  AND status NOT IN ('SUCCEEDED', 'FAILED', 'CANCELLED')
+                RETURNING *
+                """,
+                (now, now, job_id),
+            ).fetchone()
+            conn.commit()
+        return self._row_to_job(row) if row else None
+
     def try_complete_job(self, job_id: str, worker_id: str, result: dict, now: str) -> bool:
         with self._connect() as conn:
             row = conn.execute(
@@ -335,9 +360,9 @@ class PostgresStore(Store):
                     FOR UPDATE
                 )
                 UPDATE jobs
-                SET retry_count = current_job.retry_count + 1,
+                SET retry_count = COALESCE(current_job.retry_count, 0) + 1,
                     status = CASE
-                        WHEN current_job.retry_count + 1 >= current_job.max_retries
+                        WHEN COALESCE(current_job.retry_count, 0) + 1 >= COALESCE(current_job.max_retries, 3)
                         THEN 'FAILED'
                         ELSE 'RETRYING'
                     END,
@@ -346,7 +371,7 @@ class PostgresStore(Store):
                     locked_at = NULL,
                     heartbeat_at = NULL,
                     finished_at = CASE
-                        WHEN current_job.retry_count + 1 >= current_job.max_retries
+                        WHEN COALESCE(current_job.retry_count, 0) + 1 >= COALESCE(current_job.max_retries, 3)
                         THEN %s
                         ELSE NULL
                     END,
