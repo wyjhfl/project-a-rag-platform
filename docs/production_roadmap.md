@@ -304,6 +304,15 @@ D:\codex安装\tools\Python312\python.exe -m ruff check backend
 - [x] Final production acceptance: 13/13 PASSED
 - [x] RC tag: v1.0.1-rc.1
 
+### v1.0.1 Final Release Readiness
+
+- [x] Canonical repo decision documented: `docs/canonical_repo_decision.md`
+- [x] Release artifact policy documented: `docs/release_artifacts_v1.0.1.md`
+- [x] Final release notes added: `docs/release_notes_v1.0.1.md`
+- [x] `dist_release/` ignored as generated local artifact output
+- [x] Current `origin` explicitly marked as not suitable for production push
+- [x] Release requires final production acceptance 13/13 before `v1.0.1` tag
+
 ---
 
 ## 5. 验收标准

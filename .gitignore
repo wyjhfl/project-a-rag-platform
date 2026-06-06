@@ -84,3 +84,6 @@ Thumbs.db
 .codex/skills/*
 !.codex/skills/project-a-rag-mentor/
 !.codex/skills/project-a-rag-mentor/SKILL.md
+
+# Local release artifacts (generated, not committed)
+dist_release/

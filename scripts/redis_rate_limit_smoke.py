@@ -16,6 +16,7 @@ import subprocess
 import sys
 import time
 import types
+import warnings
 
 # ---------------------------------------------------------------------------
 # sys.path setup – must happen before any app.* imports
@@ -78,6 +79,10 @@ from app.config import Settings, get_settings  # noqa: E402
 
 # Suppress noisy logging from rate_limit module during tests
 logging.getLogger("project_a").setLevel(logging.CRITICAL)
+warnings.filterwarnings(
+    "ignore",
+    message=r".*Using `httpx` with `starlette\.testclient` is deprecated.*",
+)
 
 try:
     from app.main import create_app  # noqa: F401
