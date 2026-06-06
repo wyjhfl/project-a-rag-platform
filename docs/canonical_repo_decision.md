@@ -11,7 +11,7 @@ This is a pragmatic engineering decision, not a claim that the original pre-reco
 - The original `e64b095` release-gate commit is **not present** in the current local Git history.
 - The current `v1.0.0` tag points to reconstructed commit `111066c`.
 - The current `v1.0.1` tag points to `3c2ce62`.
-- The current `v1.0.2` tag points to `4090e4d`.
+- The current `v1.0.2` tag points to `d0c4f94`.
 - The project owner approved using `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote for this production handoff.
 - The older public-delivery `main` branch must not be force-overwritten. Production releases are published on versioned production branches.
 
@@ -20,13 +20,15 @@ This is a pragmatic engineering decision, not a claim that the original pre-reco
 Production handoff branch:
 
 ```text
-origin/production/v1.0.2 -> 4090e4d
+origin/production/v1.0.2
 ```
+
+This branch may include post-tag handoff documentation commits. The immutable release tag remains the production code baseline.
 
 Release tag:
 
 ```text
-v1.0.2 -> 4090e4d
+v1.0.2 -> d0c4f94
 ```
 
 Remote URL:

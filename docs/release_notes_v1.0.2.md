@@ -74,6 +74,6 @@ Before the hosted branch/tag handoff, the final production acceptance gate passe
 The remote handoff target is:
 
 ```text
-origin/production/v1.0.2 -> 4090e4d initially; updated by documentation consistency commit before final handoff.
-v1.0.2 tag -> final documentation-consistent commit.
+origin/production/v1.0.2 -> versioned production handoff branch
+v1.0.2 tag -> d0c4f94
 ```

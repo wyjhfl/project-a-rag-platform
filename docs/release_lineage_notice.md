@@ -1,39 +1,41 @@
 # Release Lineage Notice
 
-## 概述
+## Overview
 
-当前仓库的 Git 历史经历过 `.git` 目录损毁和重建，**不是原始的连续提交历史**。任何基于此仓库的 release 都必须明确此风险。
+The current repository history was reconstructed after a local `.git` directory loss. It is **not** the original continuous pre-recovery Git history. Every release from this repository must state this risk clearly.
 
-## 关键事实
+## Key facts
 
-- 原始 v1.0.0 release-gate commit `e64b095` 不在当前本地历史中。
-- 当前 `v1.0.0` tag 是 reconstructed tag，指向 `111066c`，不是原始 `e64b095`。
-- 当前 `v1.0.1` tag 指向 `3c2ce62`。
-- 当前 `v1.0.2` tag 指向 `4090e4d`。
-- 项目 owner 已确认使用 `https://github.com/wyjhfl/project-a-rag-platform` 作为托管远程。
-- 为避免覆盖历史 public-delivery `main`，生产版本发布在 `production/v1.0.2` 等 versioned production branches。
+- The original v1.0.0 release-gate commit `e64b095` is not present in the current local history.
+- The current `v1.0.0` tag is a reconstructed tag pointing to `111066c`, not the original `e64b095`.
+- The current `v1.0.1` tag points to `3c2ce62`.
+- The current `v1.0.2` tag points to `d0c4f94`.
+- The project owner approved using `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote.
+- To avoid overwriting the older public-delivery `main` branch, production releases are published on versioned production branches such as `production/v1.0.2`.
 
-## 当前生产线
+## Current production line
 
 ```text
-4090e4d  (tag: v1.0.2, origin/production/v1.0.2) enterprise landing hardening
+production/v1.0.2  versioned production handoff branch; may include post-tag handoff documentation commits
+d0c4f94  (tag: v1.0.2) documentation-consistent v1.0.2 release baseline
+4090e4d  enterprise landing release checklist
 4309e9f  PostgreSQL Store + Redis/compose/worker hardening
 6aa1a44  v1.0.1 handoff docs
 3c2ce62  (tag: v1.0.1)
 111066c  (tag: v1.0.0 reconstructed)
 ```
 
-## 治理结论
+## Governance conclusion
 
-这是一条 reconstructed production lineage。它可以作为新的生产交付基线使用，但不能声称保留了原始 `e64b095` 之前的可信 Git 历史。
+This is a reconstructed production lineage. It can be used as the new production handoff baseline, but it must not be represented as preserving the original Git history before `e64b095`.
 
-## 发布规则
+## Release rules
 
-- 不要强推覆盖远程 `main`。
-- 生产版本使用 `production/vX.Y.Z` 分支。
-- 正式 tag 必须在 `scripts/final_production_acceptance.ps1 -RunFullE2E` 全绿后创建/推送。
-- release notes 必须保留 reconstructed history 说明。
+- Do not force-push over remote `main`.
+- Use `production/vX.Y.Z` branches for production releases.
+- Create and push release tags only after `scripts/final_production_acceptance.ps1 -RunFullE2E` passes.
+- Keep the reconstructed-history notice in release notes.
 
 ---
 
-*最后更新：2026-06-06*
+Last updated: 2026-06-06
