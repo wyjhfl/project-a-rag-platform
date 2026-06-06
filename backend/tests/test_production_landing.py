@@ -30,6 +30,17 @@ class TestJobServiceWorkerMode:
         time.sleep(0.1)
         runner.assert_not_called()
 
+    def test_create_job_accepts_timeout_seconds(self):
+        record = self.service.create_job(
+            job_type="document.ingest",
+            payload={"docs_source": "seed_docs"},
+            timeout_seconds=42,
+        )
+
+        assert record.timeout_seconds == 42
+        created = self.store.create_job.call_args.args[0]
+        assert created["timeout_seconds"] == 42
+
     def test_claim_job_picks_pending(self):
         claimed_job = {
             "job_id": "JOB-test123",

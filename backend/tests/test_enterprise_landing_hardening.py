@@ -1,6 +1,7 @@
 """Enterprise landing guardrails for production configuration."""
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -124,6 +125,71 @@ def test_worker_processes_one_claimed_job_to_success() -> None:
     assert store.job["result"]["chunk_count"] == 2
     assert store.job["locked_by"] is None
     assert store.job["finished_at"]
+
+
+def test_worker_heartbeats_during_long_execution() -> None:
+    from app.job_worker import process_one_job
+    from app.jobs import JobService
+
+    class Store:
+        def __init__(self) -> None:
+            self.heartbeat_count = 0
+            self.job = {
+                "job_id": "JOB-heartbeat",
+                "job_type": "document.ingest",
+                "status": "PENDING",
+                "payload": {},
+                "result": {},
+                "error": None,
+                "retry_count": 0,
+                "max_retries": 1,
+                "locked_by": None,
+                "locked_at": None,
+                "heartbeat_at": None,
+                "timeout_seconds": 3,
+                "cancel_requested": False,
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "started_at": None,
+            }
+
+        def claim_next_job(self, worker_id: str):
+            self.job["status"] = "RUNNING"
+            self.job["locked_by"] = worker_id
+            return dict(self.job)
+
+        def get_job(self, job_id: str):
+            return dict(self.job) if job_id == self.job["job_id"] else None
+
+        def update_job(self, job: dict) -> None:
+            if job.get("heartbeat_at"):
+                self.heartbeat_count += 1
+            self.job.update(job)
+
+    store = Store()
+    service = JobService(store, execution_mode="worker")
+
+    assert process_one_job(
+        service=service,
+        worker_id="worker-1",
+        executor=lambda job: (time.sleep(1.2) or {"document_count": 1}),
+    )
+    assert store.heartbeat_count >= 1
+    assert store.job["status"] == "SUCCEEDED"
+
+
+def test_worker_heartbeat_interval_is_bounded() -> None:
+    from app.job_worker import _heartbeat_interval_seconds
+
+    assert _heartbeat_interval_seconds({"timeout_seconds": 3}) == 1.0
+    assert _heartbeat_interval_seconds({"timeout_seconds": 300}) == 30.0
+    assert _heartbeat_interval_seconds({"timeout_seconds": "bad"}) == 30.0
+
+
+def test_async_job_endpoints_pass_configured_timeout() -> None:
+    source = (PROJECT_ROOT / "backend" / "app" / "main.py").read_text(encoding="utf-8")
+
+    assert source.count("timeout_seconds=settings.job_default_timeout_seconds") >= 2
 
 
 def test_worker_cancels_running_job_when_cancel_requested() -> None:

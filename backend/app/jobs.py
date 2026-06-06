@@ -68,8 +68,14 @@ class JobService:
         on_succeeded=None,
         on_failed=None,
         max_retries=3,
+        timeout_seconds=300,
     ):
-        record = JobRecord(job_type=job_type, payload=payload or {}, max_retries=max_retries)
+        record = JobRecord(
+            job_type=job_type,
+            payload=payload or {},
+            max_retries=max_retries,
+            timeout_seconds=timeout_seconds,
+        )
         if hasattr(self._store, "create_job"):
             self._store.create_job(record.to_dict())
 

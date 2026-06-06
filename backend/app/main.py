@@ -597,6 +597,7 @@ def create_app(
             actor_role=_role,
             on_succeeded=_on_succeeded,
             on_failed=_on_failed,
+            timeout_seconds=settings.job_default_timeout_seconds,
         )
         record_audit_event(
             store,
@@ -677,6 +678,7 @@ def create_app(
             actor_role=_role,
             on_succeeded=_on_succeeded,
             on_failed=_on_failed,
+            timeout_seconds=settings.job_default_timeout_seconds,
         )
         record_audit_event(
             store,

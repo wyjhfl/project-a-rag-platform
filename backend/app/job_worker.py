@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Callable
@@ -96,7 +97,8 @@ def process_one_job(service, worker_id: str, executor: JobExecutor) -> bool:
             _cancel_running_or_warn(service, job_id, worker_id, job_type, "Job cancelled before execution")
             return True
 
-        result = executor(job)
+        with _heartbeat_during_execution(service, job_id, worker_id, job):
+            result = executor(job)
         latest = service.get_job(job_id) or job
         if isinstance(latest, dict) and latest.get("cancel_requested"):
             _cancel_running_or_warn(service, job_id, worker_id, job_type, "Job cancelled during execution")
@@ -117,6 +119,58 @@ def process_one_job(service, worker_id: str, executor: JobExecutor) -> bool:
         logger.exception("Job execution failed: %s", job_id)
         _fail_running_or_warn(service, job_id, worker_id, job_type, str(exc)[:300])
         return True
+
+
+def _heartbeat_interval_seconds(job: dict) -> float:
+    try:
+        timeout = int(job.get("timeout_seconds") or 300)
+    except (TypeError, ValueError):
+        timeout = 300
+    return float(max(1, min(30, timeout // 3 or 1)))
+
+
+class _heartbeat_during_execution:
+    """Keep a claimed RUNNING job fresh while the executor is still running."""
+
+    def __init__(self, service, job_id: str, worker_id: str, job: dict):
+        self._service = service
+        self._job_id = job_id
+        self._worker_id = worker_id
+        self._interval = _heartbeat_interval_seconds(job)
+        self._stop = threading.Event()
+        self._thread = threading.Thread(
+            target=self._run,
+            name=f"job-heartbeat-{job_id}",
+            daemon=True,
+        )
+
+    def __enter__(self):
+        self._thread.start()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self._stop.set()
+        self._thread.join(timeout=1)
+        return False
+
+    def _run(self) -> None:
+        while not self._stop.wait(self._interval):
+            try:
+                if not self._service.heartbeat(self._job_id, self._worker_id):
+                    logger.warning(
+                        "Worker heartbeat failed: job_id=%s worker_id=%s",
+                        self._job_id,
+                        self._worker_id,
+                    )
+                    return
+            except Exception:
+                logger.warning(
+                    "Worker heartbeat raised: job_id=%s worker_id=%s",
+                    self._job_id,
+                    self._worker_id,
+                    exc_info=True,
+                )
+                return
 
 
 def _cancel_running_or_warn(service, job_id: str, worker_id: str, job_type: str, reason: str) -> None:
