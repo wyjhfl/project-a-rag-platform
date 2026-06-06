@@ -220,3 +220,71 @@ def test_sqlite_store_migrates_existing_jobs_table_finished_at(tmp_path) -> None
     columns = {row["name"] for row in store._conn.execute("PRAGMA table_info(jobs)")}
 
     assert "finished_at" in columns
+
+
+def test_worker_does_not_record_success_when_complete_is_rejected(monkeypatch) -> None:
+    from app import job_worker
+
+    class Service:
+        def claim_next_job(self, worker_id: str):
+            return {
+                "job_id": "JOB-rejected",
+                "job_type": "document.ingest",
+                "status": "RUNNING",
+                "cancel_requested": False,
+            }
+
+        def complete_job(self, job_id: str, worker_id: str, result: dict) -> bool:
+            return False
+
+        def get_job(self, job_id: str):
+            return {
+                "job_id": job_id,
+                "job_type": "document.ingest",
+                "status": "RUNNING",
+                "cancel_requested": False,
+            }
+
+    recorded: list[tuple[str, str]] = []
+    monkeypatch.setattr(job_worker, "_record_worker_job_metric", lambda jt, st: recorded.append((jt, st)))
+
+    assert job_worker.process_one_job(
+        service=Service(),
+        worker_id="worker-1",
+        executor=lambda job: {"document_count": 1},
+    )
+    assert recorded == [("document.ingest", "RUNNING")]
+
+
+def test_worker_records_actual_status_when_fail_is_rejected(monkeypatch) -> None:
+    from app import job_worker
+
+    class Service:
+        def claim_next_job(self, worker_id: str):
+            return {
+                "job_id": "JOB-fail-rejected",
+                "job_type": "unknown.type",
+                "status": "RUNNING",
+                "cancel_requested": False,
+            }
+
+        def fail_job(self, job_id: str, worker_id: str, error: str) -> bool:
+            return False
+
+        def get_job(self, job_id: str):
+            return {
+                "job_id": job_id,
+                "job_type": "unknown.type",
+                "status": "RUNNING",
+                "cancel_requested": False,
+            }
+
+    recorded: list[tuple[str, str]] = []
+    monkeypatch.setattr(job_worker, "_record_worker_job_metric", lambda jt, st: recorded.append((jt, st)))
+
+    assert job_worker.process_one_job(
+        service=Service(),
+        worker_id="worker-1",
+        executor=lambda job: None,
+    )
+    assert recorded == [("unknown.type", "RUNNING")]

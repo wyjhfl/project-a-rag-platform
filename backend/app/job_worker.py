@@ -93,32 +93,44 @@ def process_one_job(service, worker_id: str, executor: JobExecutor) -> bool:
 
     try:
         if job.get("cancel_requested"):
-            service.cancel_running_job(job_id, worker_id, "Job cancelled before execution")
-            _record_worker_job_metric(job_type, "CANCELLED")
+            _cancel_running_or_warn(service, job_id, worker_id, job_type, "Job cancelled before execution")
             return True
 
         result = executor(job)
         latest = service.get_job(job_id) or job
         if isinstance(latest, dict) and latest.get("cancel_requested"):
-            service.cancel_running_job(job_id, worker_id, "Job cancelled during execution")
-            _record_worker_job_metric(job_type, "CANCELLED")
+            _cancel_running_or_warn(service, job_id, worker_id, job_type, "Job cancelled during execution")
             return True
 
         if result is None:
-            service.fail_job(job_id, worker_id, f"Unknown or cancelled job type: {job_type}")
-            final = service.get_job(job_id) or {}
-            _record_worker_job_metric(job_type, final.get("status", "FAILED"))
+            _fail_running_or_warn(service, job_id, worker_id, job_type, f"Unknown or cancelled job type: {job_type}")
             return True
 
-        service.complete_job(job_id, worker_id, result)
+        if not service.complete_job(job_id, worker_id, result):
+            logger.warning("Worker could not complete job: job_id=%s worker_id=%s", job_id, worker_id)
+            final = service.get_job(job_id) or {}
+            _record_worker_job_metric(job_type, final.get("status", "NOT_COMPLETED"))
+            return True
         _record_worker_job_metric(job_type, "SUCCEEDED")
         return True
     except Exception as exc:
         logger.exception("Job execution failed: %s", job_id)
-        service.fail_job(job_id, worker_id, str(exc)[:300])
-        final = service.get_job(job_id) or {}
-        _record_worker_job_metric(job_type, final.get("status", "FAILED"))
+        _fail_running_or_warn(service, job_id, worker_id, job_type, str(exc)[:300])
         return True
+
+
+def _cancel_running_or_warn(service, job_id: str, worker_id: str, job_type: str, reason: str) -> None:
+    if not service.cancel_running_job(job_id, worker_id, reason):
+        logger.warning("Worker could not cancel job: job_id=%s worker_id=%s", job_id, worker_id)
+    final = service.get_job(job_id) or {}
+    _record_worker_job_metric(job_type, final.get("status", "NOT_CANCELLED"))
+
+
+def _fail_running_or_warn(service, job_id: str, worker_id: str, job_type: str, error: str) -> None:
+    if not service.fail_job(job_id, worker_id, error):
+        logger.warning("Worker could not fail job: job_id=%s worker_id=%s", job_id, worker_id)
+    final = service.get_job(job_id) or {}
+    _record_worker_job_metric(job_type, final.get("status", "NOT_FAILED"))
 
 
 def _record_worker_job_metric(job_type: str, status: str) -> None:
