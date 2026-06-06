@@ -169,7 +169,11 @@ class SqliteStore(Store):
             # Already in a transaction
             pass
         row = self._conn.execute(
-            "SELECT job_id FROM jobs WHERE status IN ('PENDING', 'RETRYING') AND (locked_by IS NULL OR locked_by = '') ORDER BY created_at ASC LIMIT 1"
+            """SELECT job_id FROM jobs
+               WHERE status IN ('PENDING', 'RETRYING')
+                 AND COALESCE(cancel_requested, 0) = 0
+                 AND (locked_by IS NULL OR locked_by = '')
+               ORDER BY created_at ASC LIMIT 1"""
         ).fetchone()
         if row is None:
             try:
@@ -181,7 +185,9 @@ class SqliteStore(Store):
         cursor = self._conn.execute(
             """UPDATE jobs SET status = 'RUNNING', locked_by = ?,
                locked_at = ?, heartbeat_at = ?, started_at = ?, updated_at = ?
-               WHERE job_id = ? AND status IN ('PENDING', 'RETRYING')""",
+               WHERE job_id = ?
+                 AND status IN ('PENDING', 'RETRYING')
+                 AND COALESCE(cancel_requested, 0) = 0""",
             (worker_id, now, now, now, now, row[0]),
         )
         if cursor.rowcount == 0:

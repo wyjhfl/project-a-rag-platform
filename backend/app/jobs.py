@@ -155,7 +155,7 @@ class JobService:
 
     def complete_job(self, job_id, worker_id, result):
         job = self.get_job(job_id)
-        if job is None or not self._is_owner(job, worker_id):
+        if not self._can_worker_mutate_running_job(job, worker_id):
             return False
         now = _now()
         self._set(job, "status", "SUCCEEDED")
@@ -169,7 +169,7 @@ class JobService:
 
     def fail_job(self, job_id, worker_id, error):
         job = self.get_job(job_id)
-        if job is None or not self._is_owner(job, worker_id):
+        if not self._can_worker_mutate_running_job(job, worker_id):
             return False
         retry_count = int(self._get(job, "retry_count", 0)) + 1
         max_retries = int(self._get(job, "max_retries", 3))
@@ -188,7 +188,7 @@ class JobService:
 
     def heartbeat(self, job_id, worker_id):
         job = self.get_job(job_id)
-        if job is None or not self._is_owner(job, worker_id):
+        if not self._can_worker_mutate_running_job(job, worker_id, allow_cancel_requested=True):
             return False
         self._set(job, "heartbeat_at", _now())
         self._update_job(job)
@@ -266,6 +266,21 @@ class JobService:
 
     def _is_owner(self, job, worker_id: str) -> bool:
         return self._get(job, "locked_by") == worker_id
+
+    def _can_worker_mutate_running_job(
+        self,
+        job,
+        worker_id: str,
+        *,
+        allow_cancel_requested: bool = False,
+    ) -> bool:
+        if job is None or not self._is_owner(job, worker_id):
+            return False
+        if self._get(job, "status", "") != "RUNNING":
+            return False
+        if not allow_cancel_requested and self._get(job, "cancel_requested", False):
+            return False
+        return True
 
 
 def cancel_running_job(store, job_id: str, worker_id: str = "", reason=None) -> dict | None:

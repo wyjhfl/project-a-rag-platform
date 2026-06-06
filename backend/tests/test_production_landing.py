@@ -526,11 +526,10 @@ class TestCancelSemantics:
         }
         store.get_job.return_value = job
         service = JobService(store, execution_mode="worker")
-        # complete_job should still work (worker checks cancel before calling)
-        # but the contract is: worker should check cancel_requested first
         result = service.complete_job("JOB-001", "worker-1", {"ok": True})
-        # complete_job succeeds but the worker should have checked cancel first
-        assert result is True
+        assert result is False
+        assert job["status"] == "RUNNING"
+        assert job["result"] == {}
 
 
 class TestWorkerJobTypes:

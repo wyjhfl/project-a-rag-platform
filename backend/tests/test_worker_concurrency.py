@@ -178,6 +178,63 @@ class TestWorkerConcurrency:
         assert job_dict["locked_by"] == "worker-A"
         assert job_dict["error"] is None
 
+    def test_cancel_requested_running_job_cannot_complete_or_fail(
+        self,
+        service: JobService,
+    ) -> None:
+        """Cancellation requests win over normal worker terminal transitions."""
+        record = service.create_job(job_type="cancel_requested")
+        service.claim_next_job("worker-A")
+        service.cancel_job(record.job_id)
+
+        assert not service.complete_job(record.job_id, "worker-A", {"done": True})
+        assert not service.fail_job(record.job_id, "worker-A", "should not retry")
+
+        job = service.get_job(record.job_id)
+        job_dict = job.to_dict() if hasattr(job, "to_dict") else job
+        assert job_dict["status"] == "RUNNING"
+        assert job_dict["cancel_requested"] is True
+        assert job_dict["retry_count"] == 0
+
+    def test_non_running_job_cannot_be_completed_failed_or_heartbeated(
+        self,
+        service: JobService,
+    ) -> None:
+        """Owner checks alone are insufficient; worker mutations require RUNNING."""
+        record = service.create_job(job_type="not_running")
+        job = service.get_job(record.job_id)
+        job_dict = job.to_dict() if hasattr(job, "to_dict") else job
+        job_dict["status"] = "RETRYING"
+        job_dict["locked_by"] = "worker-A"
+        service._store.update_job(job_dict)
+
+        assert not service.complete_job(record.job_id, "worker-A", {"done": True})
+        assert not service.fail_job(record.job_id, "worker-A", "should not fail")
+        assert not service.heartbeat(record.job_id, "worker-A")
+
+        final = service.get_job(record.job_id)
+        final_dict = final.to_dict() if hasattr(final, "to_dict") else final
+        assert final_dict["status"] == "RETRYING"
+        assert final_dict["retry_count"] == 0
+
+    def test_sqlite_claim_skips_cancel_requested_pending_jobs(
+        self,
+        service: JobService,
+    ) -> None:
+        """Workers should not claim jobs that were cancelled before execution."""
+        cancelled = service.create_job(job_type="cancelled_pending")
+        available = service.create_job(job_type="available_pending")
+        assert service.cancel_job(cancelled.job_id) is not None
+
+        claimed = service.claim_next_job("worker-A")
+
+        assert claimed is not None
+        assert claimed["job_id"] == available.job_id
+        skipped = service.get_job(cancelled.job_id)
+        skipped_dict = skipped.to_dict() if hasattr(skipped, "to_dict") else skipped
+        assert skipped_dict["status"] == "CANCELLED"
+        assert skipped_dict["locked_by"] is None
+
     def test_sqlite_persists_finished_at_for_terminal_jobs(
         self,
         service: JobService,
