@@ -74,8 +74,7 @@ _ensure_module("app.observability", {
 # ---------------------------------------------------------------------------
 # App imports
 # ---------------------------------------------------------------------------
-from app.rate_limit import MemoryRateLimiter, RateLimitMiddleware, RedisRateLimiter  # noqa: E402
-from app.config import Settings, get_settings  # noqa: E402
+from app.rate_limit import RateLimitMiddleware  # noqa: E402
 
 # Suppress noisy logging from rate_limit module during tests
 logging.getLogger("project_a").setLevel(logging.CRITICAL)
@@ -96,12 +95,6 @@ try:
     import redis as _redis_lib
 except ImportError:
     print("ERROR: redis Python package is not installed.  pip install redis")
-    sys.exit(1)
-
-try:
-    import httpx
-except ImportError:
-    print("ERROR: httpx Python package is not installed.  pip install httpx")
     sys.exit(1)
 
 from fastapi import FastAPI  # noqa: E402
@@ -258,7 +251,7 @@ def test_burst_limit(app: FastAPI) -> bool:
     flush_redis()
     client = _make_client(app)
     # 5 requests should all succeed (burst=5)
-    for i in range(5):
+    for _i in range(5):
         resp = client.get("/api/v1/test")
         if resp.status_code != 200:
             return False
@@ -271,14 +264,14 @@ def test_rpm_limit(app: FastAPI) -> bool:
     flush_redis()
     client = _make_client(app)
     # First burst of 5
-    for i in range(5):
+    for _i in range(5):
         resp = client.get("/api/v1/test")
         if resp.status_code != 200:
             return False
     # Wait for burst window (1 s) to roll over
     time.sleep(1.1)
     # Second burst of 5  (total 10 = RPM limit)
-    for i in range(5):
+    for _i in range(5):
         resp = client.get("/api/v1/test")
         if resp.status_code != 200:
             return False
@@ -398,7 +391,7 @@ def main() -> None:
     for name, fn in tests:
         try:
             ok = fn()
-        except Exception as exc:
+        except Exception:
             ok = False
         results[name] = bool(ok)
         print(f"{name}: {'PASSED' if ok else 'FAILED'}")

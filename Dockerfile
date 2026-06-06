@@ -9,7 +9,7 @@ COPY backend ./backend
 COPY prompts ./prompts
 COPY data/seed_docs ./data/seed_docs
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e ".[cache,postgres,vector]"
 
 RUN mkdir -p /app/data && chown -R appuser:appuser /app/data
 

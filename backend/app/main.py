@@ -710,7 +710,8 @@ def create_app(
         job = app.state.job_service.get_job(job_id)
         if job is None:
             raise AppError(code="not_found", message="Job not found", status_code=404)
-        if _role == "operator" and job.job_type != "document.ingest":
+        job_type = job.get("job_type", "") if isinstance(job, dict) else job.job_type
+        if _role == "operator" and job_type != "document.ingest":
             raise AppError(code="forbidden", message="Operators can only cancel ingest jobs", status_code=403)
         if _role == "viewer":
             raise AppError(code="forbidden", message="Viewers cannot cancel jobs", status_code=403)

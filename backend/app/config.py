@@ -17,6 +17,7 @@ _DEFAULT_CORS_ORIGINS = [
 _VALID_STORAGE_BACKENDS = ("sqlite", "postgres")
 _VALID_VECTOR_BACKENDS = ("chroma", "milvus")
 _VALID_MULTIMODAL_BACKENDS = ("sidecar", "mineru", "paddleocr", "vision_llm")
+_VALID_RATE_LIMIT_BACKENDS = ("memory", "redis")
 _MIN_CACHE_TTL = 1
 _MAX_CACHE_TTL = 86400
 _MIN_UPLOAD_BYTES = 1
@@ -116,6 +117,8 @@ class Settings:
             )
         if self.rate_limit_backend == "redis" and not self.rate_limit_redis_url:
             errors.append("RATE_LIMIT_REDIS_URL is required when RATE_LIMIT_BACKEND=redis")
+        if self.rate_limit_backend.strip().lower() not in _VALID_RATE_LIMIT_BACKENDS:
+            errors.append(f"RATE_LIMIT_BACKEND must be one of {_VALID_RATE_LIMIT_BACKENDS}")
         return errors
 
 
@@ -176,7 +179,7 @@ def get_settings() -> Settings:
         rate_limit_requests_per_minute=_env_int("RATE_LIMIT_REQUESTS_PER_MINUTE", 60),
         rate_limit_burst=_env_int("RATE_LIMIT_BURST", 30),
         rate_limit_exempt_paths=_parse_list(os.getenv("RATE_LIMIT_EXEMPT_PATHS", "")),
-        rate_limit_backend=os.getenv("RATE_LIMIT_BACKEND", "memory"),
+        rate_limit_backend=os.getenv("RATE_LIMIT_BACKEND", "memory").strip().lower(),
         rate_limit_redis_url=os.getenv("RATE_LIMIT_REDIS_URL", ""),
         metrics_enabled=_env_bool("METRICS_ENABLED"),
     )

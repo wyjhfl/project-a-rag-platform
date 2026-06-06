@@ -1,10 +1,8 @@
-"""PostgreSQL smoke test for job operations.
+﻿"""PostgreSQL smoke test for the real Project A PostgresStore.
 
-Starts an ephemeral Docker PostgreSQL container (postgres:16-alpine) on port
-5434, creates a simple jobs table, and exercises INSERT / SELECT / UPDATE /
-DELETE plus concurrent claim with FOR UPDATE SKIP LOCKED.
-
-Exits 0 if all 10 tests pass, 1 otherwise.
+Starts an ephemeral Docker PostgreSQL container (postgres:16-alpine), initializes
+PostgresStore, and exercises the actual Store + JobService paths used by the
+production API and worker.
 """
 from __future__ import annotations
 
@@ -13,90 +11,54 @@ import os
 import subprocess
 import sys
 import time
-import uuid
 from datetime import datetime, timezone
 
-# ---------------------------------------------------------------------------
-# sys.path setup – must happen before any app.* imports
-# ---------------------------------------------------------------------------
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 sys.path.insert(0, os.path.join(PROJECT_ROOT, ".pg_deps"))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "backend"))
 
-# ---------------------------------------------------------------------------
-# Docker path – add custom Docker location to PATH
-# ---------------------------------------------------------------------------
-_docker_bin = os.path.join("D:\\codex安装\\tools\\Docker\\resources\\bin")
-if os.path.isdir(_docker_bin):
-    os.environ["PATH"] = _docker_bin + os.pathsep + os.environ.get("PATH", "")
-
-# ---------------------------------------------------------------------------
-# Third-party imports
-# ---------------------------------------------------------------------------
 try:
     import psycopg
 except ImportError:
-    print("ERROR: psycopg Python package is not installed.  pip install psycopg[binary]")
+    print("ERROR: psycopg Python package is not installed. pip install 'psycopg[binary,pool]'")
     sys.exit(1)
 
-# ---------------------------------------------------------------------------
-# Docker / PostgreSQL helpers
-# ---------------------------------------------------------------------------
+from app.jobs import JobService  # noqa: E402
+from app.rag.costing import TokenUsage  # noqa: E402
+from app.storage.postgres_store import PostgresStore  # noqa: E402
+
 CONTAINER_NAME = "project-a-pg-smoke"
 PG_IMAGE = "postgres:16-alpine"
-PG_PORT = 5434
+PG_PORT = int(os.environ.get("PG_SMOKE_PORT", "5434"))
 PG_PASSWORD = os.environ.get("PG_SMOKE_PASSWORD", "smoke_test_pw_placeholder")
 PG_DATABASE = "project_a_smoke"
 PG_USER = "postgres"
 DSN = f"postgresql://{PG_USER}:{PG_PASSWORD}@localhost:{PG_PORT}/{PG_DATABASE}"
 
-JOBS_TABLE_DDL = """
-CREATE TABLE IF NOT EXISTS jobs (
-    job_id       TEXT PRIMARY KEY,
-    job_type     TEXT NOT NULL,
-    status       TEXT NOT NULL DEFAULT 'PENDING',
-    payload      TEXT DEFAULT '{}',
-    result       TEXT DEFAULT '{}',
-    error        TEXT,
-    retry_count  INTEGER DEFAULT 0,
-    max_retries  INTEGER DEFAULT 3,
-    locked_by    TEXT,
-    locked_at    TEXT,
-    heartbeat_at TEXT,
-    timeout_seconds INTEGER DEFAULT 300,
-    cancel_requested INTEGER DEFAULT 0,
-    created_at   TEXT NOT NULL,
-    updated_at   TEXT NOT NULL,
-    started_at   TEXT
-);
-"""
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, check=False, text=True, capture_output=True, **kwargs)
 
 
 def _docker_available() -> bool:
     try:
-        result = subprocess.run(
-            ["docker", "--version"],
-            capture_output=True, text=True, timeout=10,
-        )
-        return result.returncode == 0
+        return _run(["docker", "--version"], timeout=10).returncode == 0
     except FileNotFoundError:
         return False
 
 
 def _container_exists() -> bool:
-    result = subprocess.run(
-        ["docker", "ps", "-aq", "-f", f"name=^{CONTAINER_NAME}$"],
-        capture_output=True, text=True,
-    )
+    result = _run(["docker", "ps", "-aq", "-f", f"name=^{CONTAINER_NAME}$"])
     return bool(result.stdout.strip())
 
 
 def _container_running() -> bool:
-    result = subprocess.run(
-        ["docker", "ps", "-q", "-f", f"name=^{CONTAINER_NAME}$"],
-        capture_output=True, text=True,
-    )
+    result = _run(["docker", "ps", "-q", "-f", f"name=^{CONTAINER_NAME}$"])
     return bool(result.stdout.strip())
 
 
@@ -117,11 +79,10 @@ def start_postgres() -> None:
             ],
             check=True,
         )
-    # Wait for PostgreSQL to accept connections
-    for _ in range(60):
+    for _attempt in range(60):
         try:
-            conn = psycopg.connect(DSN, autocommit=True)
-            conn.close()
+            with psycopg.connect(DSN, autocommit=True) as conn:
+                conn.execute("SELECT 1")
             return
         except Exception:
             time.sleep(0.5)
@@ -129,277 +90,186 @@ def start_postgres() -> None:
 
 
 def remove_container() -> None:
-    subprocess.run(["docker", "rm", "-f", CONTAINER_NAME], capture_output=True)
+    _run(["docker", "rm", "-f", CONTAINER_NAME])
 
 
-# ---------------------------------------------------------------------------
-# Test helpers
-# ---------------------------------------------------------------------------
+def reset_schema() -> None:
+    with psycopg.connect(DSN, autocommit=True) as conn:
+        for table in [
+            "token_usage",
+            "tickets",
+            "chat_records",
+            "audit_events",
+            "documents",
+            "jobs",
+            "schema_migrations",
+        ]:
+            conn.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
-
-def _make_job(job_type: str = "smoke_test", status: str = "PENDING") -> dict:
-    return {
-        "job_id": f"JOB-{uuid.uuid4().hex[:8]}",
-        "job_type": job_type,
-        "status": status,
-        "payload": "{}",
-        "result": "{}",
-        "error": None,
-        "retry_count": 0,
-        "max_retries": 3,
-        "locked_by": None,
-        "locked_at": None,
-        "heartbeat_at": None,
-        "timeout_seconds": 300,
-        "cancel_requested": 0,
+def test_create_and_get_job(store: PostgresStore) -> bool:
+    store.create_job({
+        "job_id": "JOB-PG-001",
+        "job_type": "document.ingest",
+        "status": "SUCCEEDED",
+        "payload": {"docs_source": "seed_docs"},
         "created_at": _now(),
         "updated_at": _now(),
-        "started_at": None,
-    }
+    })
+    job = store.get_job("JOB-PG-001")
+    return bool(job and job["payload"]["docs_source"] == "seed_docs")
 
 
-def _insert_job(conn, job: dict) -> None:
-    conn.execute(
-        """INSERT INTO jobs
-           (job_id, job_type, status, payload, result, error,
-            retry_count, max_retries, locked_by, locked_at, heartbeat_at,
-            timeout_seconds, cancel_requested, created_at, updated_at, started_at)
-           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-        (job["job_id"], job["job_type"], job["status"],
-         job["payload"], job["result"], job["error"],
-         job["retry_count"], job["max_retries"],
-         job["locked_by"], job["locked_at"], job["heartbeat_at"],
-         job["timeout_seconds"], job["cancel_requested"],
-         job["created_at"], job["updated_at"], job["started_at"]),
-    )
+def test_claim_and_complete(store: PostgresStore) -> bool:
+    service = JobService(store, execution_mode="worker")
+    service.create_job("document.ingest", payload={"docs_source": "seed_docs"}, max_retries=1)
+    claimed = service.claim_next_job("worker-1")
+    if not claimed or claimed["status"] != "RUNNING" or claimed["locked_by"] != "worker-1":
+        return False
+    if service.claim_next_job("worker-2") is not None:
+        return False
+    if not service.complete_job(claimed["job_id"], "worker-1", {"document_count": 1}):
+        return False
+    final = service.get_job(claimed["job_id"])
+    return bool(final and final["status"] == "SUCCEEDED" and final["finished_at"])
 
 
-# ---------------------------------------------------------------------------
-# Individual tests (10 total)
-# ---------------------------------------------------------------------------
-
-def test_connect(conn) -> bool:
-    """1. Basic connectivity – SELECT 1."""
-    row = conn.execute("SELECT 1").fetchone()
-    return row is not None and row[0] == 1
+def test_cancel_pending(store: PostgresStore) -> bool:
+    service = JobService(store, execution_mode="worker")
+    record = service.create_job("document.ingest", payload={})
+    result = service.cancel_job(record.job_id)
+    final = service.get_job(record.job_id)
+    return bool(result and final and final["status"] == "CANCELLED" and final["finished_at"])
 
 
-def test_create_table(conn) -> bool:
-    """2. Create jobs table."""
-    conn.execute(JOBS_TABLE_DDL)
+def test_cancel_running(store: PostgresStore) -> bool:
+    service = JobService(store, execution_mode="worker")
+    record = service.create_job("document.ingest", payload={})
+    claimed = service.claim_next_job("worker-1")
+    if not claimed:
+        return False
+    if not service.cancel_running_job(record.job_id, "worker-1", "cancel smoke"):
+        return False
+    final = service.get_job(record.job_id)
+    return bool(final and final["status"] == "CANCELLED" and final["locked_by"] is None)
+
+
+def test_retry_to_failed(store: PostgresStore) -> bool:
+    service = JobService(store, execution_mode="worker")
+    record = service.create_job("unknown.type", payload={}, max_retries=1)
+    claimed = service.claim_next_job("worker-1")
+    if not claimed:
+        return False
+    service.fail_job(record.job_id, "worker-1", "unknown type")
+    final = service.get_job(record.job_id)
+    return bool(final and final["status"] == "FAILED" and final["error"] == "unknown type")
+
+
+def test_documents(store: PostgresStore) -> bool:
+    store.add_document("doc-1", "seed_docs", "/tmp/doc.txt", 3)
+    store.add_document("doc-1", "seed_docs", "/tmp/doc.txt", 4)
     return True
 
 
-def test_insert_job(conn) -> bool:
-    """3. Insert a job."""
-    job = _make_job()
-    _insert_job(conn, job)
-    row = conn.execute("SELECT job_id FROM jobs WHERE job_id = %s", (job["job_id"],)).fetchone()
-    return row is not None and row[0] == job["job_id"]
-
-
-def test_query_job(conn) -> bool:
-    """4. Query a job by job_id."""
-    job = _make_job()
-    _insert_job(conn, job)
-    row = conn.execute(
-        "SELECT job_type, status FROM jobs WHERE job_id = %s",
-        (job["job_id"],),
-    ).fetchone()
-    return row is not None and row[0] == "smoke_test" and row[1] == "PENDING"
-
-
-def test_update_job_status(conn) -> bool:
-    """5. Update a job's status to RUNNING."""
-    job = _make_job()
-    _insert_job(conn, job)
-    conn.execute(
-        "UPDATE jobs SET status = 'RUNNING', updated_at = %s WHERE job_id = %s",
-        (_now(), job["job_id"]),
+def test_chat_and_token_usage(store: PostgresStore) -> bool:
+    store.add_chat_record("q", "a", "[]")
+    usage = TokenUsage(
+        request_id="req-pg-smoke",
+        module="chat",
+        prompt_tokens=1,
+        completion_tokens=2,
+        total_tokens=3,
+        estimated_cost=0.001,
     )
-    row = conn.execute(
-        "SELECT status FROM jobs WHERE job_id = %s", (job["job_id"],)
-    ).fetchone()
-    return row is not None and row[0] == "RUNNING"
+    store.add_token_usage(usage)
+    return bool(store.list_chat_records())
 
 
-def test_delete_job(conn) -> bool:
-    """6. Delete a job."""
-    job = _make_job()
-    _insert_job(conn, job)
-    conn.execute("DELETE FROM jobs WHERE job_id = %s", (job["job_id"],))
-    row = conn.execute(
-        "SELECT job_id FROM jobs WHERE job_id = %s", (job["job_id"],)
-    ).fetchone()
-    return row is None
+def test_tickets(store: PostgresStore) -> bool:
+    ticket = {
+        "ticket_id": "TCK-PG-001",
+        "idempotency_key": "idem-pg-001",
+        "question": "question",
+        "diagnosis": "diagnosis",
+        "citations": [],
+        "device_model": "M1",
+        "fault_code": "F1",
+        "risk_level": "low",
+        "status": "OPEN",
+        "required_parts": [],
+        "human_required": False,
+        "human_decision": None,
+        "human_reviewer": None,
+        "created_at": _now(),
+        "updated_at": _now(),
+        "closed_by": None,
+        "closed_at": None,
+    }
+    store.upsert_ticket(ticket)
+    by_id = store.get_ticket("TCK-PG-001")
+    by_key = store.get_ticket_by_idempotency_key("idem-pg-001")
+    return bool(by_id and by_key and store.list_tickets())
 
 
-def test_claim_next_job(conn) -> bool:
-    """7. Claim the next PENDING job (single worker)."""
-    conn.execute("DELETE FROM jobs")
-    job = _make_job()
-    _insert_job(conn, job)
-    worker_id = "worker-1"
-    now = _now()
-    row = conn.execute(
-        """UPDATE jobs SET status = 'RUNNING', locked_by = %s,
-           locked_at = %s, heartbeat_at = %s, started_at = %s, updated_at = %s
-           WHERE job_id = (
-               SELECT job_id FROM jobs
-               WHERE status = 'PENDING'
-               ORDER BY created_at ASC
-               LIMIT 1
-               FOR UPDATE SKIP LOCKED
-           )
-           RETURNING job_id""",
-        (worker_id, now, now, now, now),
-    ).fetchone()
-    return row is not None and row[0] == job["job_id"]
+def test_audit(store: PostgresStore) -> bool:
+    store.record_audit_event({
+        "action": "smoke.event",
+        "actor_role": "admin",
+        "resource_type": "smoke",
+        "resource_id": "pg",
+        "summary": "postgres smoke",
+        "metadata": {"ok": True},
+        "timestamp": _now(),
+    })
+    events = store.list_audit_events(limit=10)
+    return bool(events and events[0]["metadata"]["ok"] is True)
 
-
-def test_concurrent_claim_no_duplicates(conn) -> bool:
-    """8. Concurrent claim with FOR UPDATE SKIP LOCKED – no duplicates."""
-    conn.execute("DELETE FROM jobs")
-    # Insert 3 jobs
-    jobs = [_make_job() for _ in range(3)]
-    for j in jobs:
-        _insert_job(conn, j)
-
-    claimed_ids: list[str] = []
-    worker_ids = ["worker-A", "worker-B", "worker-C"]
-
-    for wid in worker_ids:
-        now = _now()
-        row = conn.execute(
-            """UPDATE jobs SET status = 'RUNNING', locked_by = %s,
-               locked_at = %s, heartbeat_at = %s, started_at = %s, updated_at = %s
-               WHERE job_id = (
-                   SELECT job_id FROM jobs
-                   WHERE status = 'PENDING'
-                   ORDER BY created_at ASC
-                   LIMIT 1
-                   FOR UPDATE SKIP LOCKED
-               )
-               RETURNING job_id""",
-            (wid, now, now, now, now),
-        ).fetchone()
-        if row is not None:
-            claimed_ids.append(row[0])
-
-    # All claimed IDs must be unique
-    return len(claimed_ids) == len(set(claimed_ids))
-
-
-def test_skip_locked_returns_none_when_all_claimed(conn) -> bool:
-    """9. FOR UPDATE SKIP LOCKED returns None when all jobs are claimed."""
-    conn.execute("DELETE FROM jobs")
-    job = _make_job()
-    _insert_job(conn, job)
-    # Claim it
-    now = _now()
-    conn.execute(
-        """UPDATE jobs SET status = 'RUNNING', locked_by = %s,
-           locked_at = %s, heartbeat_at = %s, started_at = %s, updated_at = %s
-           WHERE job_id = %s""",
-        ("worker-X", now, now, now, now, job["job_id"]),
-    )
-    # Try to claim again – should get None (no PENDING jobs left)
-    row = conn.execute(
-        """SELECT job_id FROM jobs
-           WHERE status = 'PENDING'
-           ORDER BY created_at ASC
-           LIMIT 1
-           FOR UPDATE SKIP LOCKED"""
-    ).fetchone()
-    return row is None
-
-
-def test_complete_job(conn) -> bool:
-    """10. Complete a claimed job – set status to SUCCEEDED."""
-    job = _make_job()
-    _insert_job(conn, job)
-    now = _now()
-    conn.execute(
-        """UPDATE jobs SET status = 'RUNNING', locked_by = %s,
-           locked_at = %s, heartbeat_at = %s, started_at = %s, updated_at = %s
-           WHERE job_id = %s""",
-        ("worker-Y", now, now, now, now, job["job_id"]),
-    )
-    conn.execute(
-        """UPDATE jobs SET status = 'SUCCEEDED', result = %s, updated_at = %s
-           WHERE job_id = %s""",
-        ('{"done": true}', _now(), job["job_id"]),
-    )
-    row = conn.execute(
-        "SELECT status FROM jobs WHERE job_id = %s", (job["job_id"],)
-    ).fetchone()
-    return row is not None and row[0] == "SUCCEEDED"
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main() -> None:
-    # 1. Check Docker availability
     if not _docker_available():
-        print("ERROR: Docker is not available.  Install Docker and try again.")
+        print("ERROR: Docker is not available. Install Docker and try again.")
         sys.exit(1)
 
-    # 2. Start PostgreSQL container
     try:
         start_postgres()
     except Exception as exc:
         print(f"ERROR: Failed to start PostgreSQL container: {exc}")
         sys.exit(1)
-
-    # 3. Register cleanup
     atexit.register(remove_container)
 
-    # 4. Connect and run tests
-    conn = psycopg.connect(DSN, autocommit=True)
     try:
-        # Create table first
-        conn.execute(JOBS_TABLE_DDL)
+        reset_schema()
+        store = PostgresStore(DSN)
+    except Exception as exc:
+        print(f"ERROR: Failed to initialize PostgresStore: {exc}")
+        sys.exit(1)
 
-        tests = [
-            ("connect", lambda: test_connect(conn)),
-            ("create_table", lambda: test_create_table(conn)),
-            ("insert_job", lambda: test_insert_job(conn)),
-            ("query_job", lambda: test_query_job(conn)),
-            ("update_job_status", lambda: test_update_job_status(conn)),
-            ("delete_job", lambda: test_delete_job(conn)),
-            ("claim_next_job", lambda: test_claim_next_job(conn)),
-            ("concurrent_claim_no_duplicates", lambda: test_concurrent_claim_no_duplicates(conn)),
-            ("skip_locked_returns_none", lambda: test_skip_locked_returns_none_when_all_claimed(conn)),
-            ("complete_job", lambda: test_complete_job(conn)),
-        ]
+    tests = [
+        ("create_and_get_job", lambda: test_create_and_get_job(store)),
+        ("claim_and_complete", lambda: test_claim_and_complete(store)),
+        ("cancel_pending", lambda: test_cancel_pending(store)),
+        ("cancel_running", lambda: test_cancel_running(store)),
+        ("retry_to_failed", lambda: test_retry_to_failed(store)),
+        ("documents", lambda: test_documents(store)),
+        ("chat_and_token_usage", lambda: test_chat_and_token_usage(store)),
+        ("tickets", lambda: test_tickets(store)),
+        ("audit", lambda: test_audit(store)),
+    ]
 
-        results: dict[str, bool] = {}
-        for name, fn in tests:
-            try:
-                ok = fn()
-            except Exception as exc:
-                print(f"  [{name}] exception: {exc}")
-                ok = False
-            results[name] = bool(ok)
-            print(f"{name}: {'PASSED' if ok else 'FAILED'}")
+    results: dict[str, bool] = {}
+    for name, fn in tests:
+        try:
+            ok = bool(fn())
+        except Exception:
+            ok = False
+        results[name] = ok
+        print(f"{name}: {'PASSED' if ok else 'FAILED'}")
 
-        # 5. Summary
-        print()
-        passed = sum(1 for ok in results.values() if ok)
-        total = len(results)
-        print(f"{passed}/{total} PASSED" if passed == total else f"{passed}/{total} FAILED")
-
-        if all(results.values()):
-            sys.exit(0)
-        else:
-            sys.exit(1)
-    finally:
-        conn.close()
+    passed = sum(1 for ok in results.values() if ok)
+    total = len(results)
+    print()
+    print(f"{passed}/{total} PASSED" if passed == total else f"{passed}/{total} FAILED")
+    sys.exit(0 if passed == total else 1)
 
 
 if __name__ == "__main__":

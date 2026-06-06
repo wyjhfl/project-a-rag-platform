@@ -1,0 +1,175 @@
+"""Enterprise landing guardrails for production configuration."""
+from __future__ import annotations
+
+from pathlib import Path
+from types import SimpleNamespace
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_production_compose_defaults_are_fail_closed() -> None:
+    compose = (PROJECT_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+
+    assert "AUTH_ENABLED: ${AUTH_ENABLED:-true}" in compose
+    assert "CACHE_ENABLED: ${CACHE_ENABLED:-true}" in compose
+    assert "RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}" in compose
+    assert "RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND:-redis}" in compose
+    assert "RATE_LIMIT_REDIS_URL: ${RATE_LIMIT_REDIS_URL:-redis://redis:6379/0}" in compose
+    assert "CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-" in compose
+
+
+def test_env_production_example_documents_redis_rate_limit() -> None:
+    env_text = (PROJECT_ROOT / ".env.production.example").read_text(encoding="utf-8")
+
+    assert "AUTH_ENABLED=true" in env_text
+    assert "CACHE_ENABLED=true" in env_text
+    assert "RATE_LIMIT_ENABLED=true" in env_text
+    assert "RATE_LIMIT_BACKEND=redis" in env_text
+    assert "RATE_LIMIT_REDIS_URL=redis://redis:6379/0" in env_text
+    assert "DATABASE_URL password must match POSTGRES_PASSWORD" in env_text
+
+
+def test_dockerfile_installs_production_extras() -> None:
+    dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    assert 'pip install --no-cache-dir -e ".[cache,postgres,vector]"' in dockerfile
+
+
+def test_storage_factory_uses_postgres_backend(monkeypatch) -> None:
+    from app.storage import factory
+
+    created: dict[str, str] = {}
+
+    class FakePostgresStore:
+        def __init__(self, database_url: str) -> None:
+            created["database_url"] = database_url
+
+    monkeypatch.setattr(factory, "PostgresStore", FakePostgresStore)
+
+    settings = SimpleNamespace(
+        storage_backend="postgres",
+        database_url="postgresql://user:pass@postgres:5432/project_a",
+        database_path=PROJECT_ROOT / "data" / "unused.db",
+    )
+    store = factory.build_store(settings)
+
+    assert isinstance(store, FakePostgresStore)
+    assert created["database_url"] == settings.database_url
+
+
+def test_storage_factory_rejects_unknown_backend() -> None:
+    from app.storage.factory import build_store
+
+    settings = SimpleNamespace(
+        storage_backend="unknown",
+        database_url="",
+        database_path=PROJECT_ROOT / "data" / "unused.db",
+    )
+
+    try:
+        build_store(settings)
+    except ValueError as exc:
+        assert "STORAGE_BACKEND" in str(exc)
+    else:  # pragma: no cover - defensive assertion
+        raise AssertionError("unknown storage backend should fail")
+
+
+def test_worker_processes_one_claimed_job_to_success() -> None:
+    from app.job_worker import process_one_job
+    from app.jobs import JobService
+
+    class Store:
+        def __init__(self) -> None:
+            self.job = {
+                "job_id": "JOB-001",
+                "job_type": "document.ingest",
+                "status": "PENDING",
+                "payload": {"docs_source": "seed_docs"},
+                "result": {},
+                "error": None,
+                "retry_count": 0,
+                "max_retries": 1,
+                "locked_by": None,
+                "locked_at": None,
+                "heartbeat_at": None,
+                "timeout_seconds": 300,
+                "cancel_requested": False,
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "started_at": None,
+            }
+
+        def claim_next_job(self, worker_id: str):
+            if self.job["status"] != "PENDING":
+                return None
+            self.job["status"] = "RUNNING"
+            self.job["locked_by"] = worker_id
+            return dict(self.job)
+
+        def get_job(self, job_id: str):
+            return dict(self.job) if job_id == self.job["job_id"] else None
+
+        def update_job(self, job: dict) -> None:
+            self.job.update(job)
+
+    store = Store()
+    service = JobService(store, execution_mode="worker")
+
+    assert process_one_job(
+        service=service,
+        worker_id="worker-1",
+        executor=lambda job: {"document_count": 1, "chunk_count": 2},
+    )
+    assert store.job["status"] == "SUCCEEDED"
+    assert store.job["result"]["chunk_count"] == 2
+    assert store.job["locked_by"] is None
+    assert store.job["finished_at"]
+
+
+def test_worker_cancels_running_job_when_cancel_requested() -> None:
+    from app.job_worker import process_one_job
+    from app.jobs import JobService
+
+    class Store:
+        def __init__(self) -> None:
+            self.job = {
+                "job_id": "JOB-002",
+                "job_type": "document.ingest",
+                "status": "PENDING",
+                "payload": {},
+                "result": {},
+                "error": None,
+                "retry_count": 0,
+                "max_retries": 3,
+                "locked_by": None,
+                "locked_at": None,
+                "heartbeat_at": None,
+                "timeout_seconds": 300,
+                "cancel_requested": True,
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "started_at": None,
+            }
+
+        def claim_next_job(self, worker_id: str):
+            self.job["status"] = "RUNNING"
+            self.job["locked_by"] = worker_id
+            return dict(self.job)
+
+        def get_job(self, job_id: str):
+            return dict(self.job) if job_id == self.job["job_id"] else None
+
+        def update_job(self, job: dict) -> None:
+            self.job.update(job)
+
+    store = Store()
+    service = JobService(store, execution_mode="worker")
+
+    assert process_one_job(
+        service=service,
+        worker_id="worker-1",
+        executor=lambda job: {"should_not_run": True},
+    )
+    assert store.job["status"] == "CANCELLED"
+    assert store.job["retry_count"] == 0
+    assert store.job["locked_by"] is None
