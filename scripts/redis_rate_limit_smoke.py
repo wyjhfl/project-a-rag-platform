@@ -250,14 +250,21 @@ def test_redis_ping() -> bool:
 def test_burst_limit(app: FastAPI) -> bool:
     flush_redis()
     client = _make_client(app)
+    statuses = []
     # 5 requests should all succeed (burst=5)
     for _i in range(5):
         resp = client.get("/api/v1/test")
+        statuses.append(resp.status_code)
         if resp.status_code != 200:
+            print(f"burst_limit debug statuses: {statuses}")
             return False
     # 6th request within the same second must be rejected (429)
     resp = client.get("/api/v1/test")
-    return resp.status_code == 429
+    statuses.append(resp.status_code)
+    if resp.status_code != 429:
+        print(f"burst_limit debug statuses: {statuses}")
+        return False
+    return True
 
 
 def test_rpm_limit(app: FastAPI) -> bool:

@@ -381,3 +381,13 @@ D:\codex安装\tools\Python312\python.exe -m ruff check backend
 - [x] Final production acceptance passed: 13/13 with `-RunFullE2E`.
 - [x] Hosted handoff completed: `origin/production/v1.0.2` and `v1.0.2` tag pushed to `https://github.com/wyjhfl/project-a-rag-platform`.
 - [x] Documentation reconciled: README, final acceptance checklist, canonical repo decision, lineage notice, enterprise landing checklist, release notes.
+
+### v1.0.3 Production Landing Finalization DONE
+
+- [x] Store-level atomic job worker transitions added for SQLite and PostgreSQL.
+- [x] Worker completion/failure/heartbeat/cancel now require `RUNNING` ownership checks at the storage layer.
+- [x] Cancellation requested jobs cannot be overwritten by normal complete/fail transitions.
+- [x] Package metadata updated to `1.0.3`.
+- [x] Release notes added: `docs/release_notes_v1.0.3.md`.
+- [x] Final production acceptance passed: 13/13 with `-RunFullE2E`.
+- [x] Hosted production handoff target: `origin/production/v1.0.3` and tag `v1.0.3` on `https://github.com/wyjhfl/project-a-rag-platform`.

@@ -102,17 +102,17 @@ class TestRedisRateLimiter:
 
     def test_is_allowed_under_limit(self):
         """When Redis INCR returns low values, the request is allowed."""
-        self.mock_script.side_effect = [1, 1]  # burst=1, rpm=1 (both under limits)
+        self.mock_script.return_value = 1
         assert self.limiter.is_allowed("testkey") is True
 
     def test_is_allowed_over_burst(self):
         """When burst counter exceeds the burst limit, the request is denied."""
-        self.mock_script.side_effect = [31, 1]  # burst=31 > 30
+        self.mock_script.return_value = 0
         assert self.limiter.is_allowed("testkey") is False
 
     def test_is_allowed_over_rpm(self):
         """When RPM counter exceeds the RPM limit, the request is denied."""
-        self.mock_script.side_effect = [1, 61]  # rpm=61 > 60
+        self.mock_script.return_value = 0
         assert self.limiter.is_allowed("testkey") is False
 
     def test_ping_success(self):
@@ -134,13 +134,13 @@ class TestRedisRateLimiter:
         """Verify keys use the correct format with project_a:ratelimit: prefix."""
         captured_keys = []
         self.mock_script.side_effect = lambda keys, args: (
-            captured_keys.append(keys[0]) or 1
+            captured_keys.extend(keys) or 1
         )
         self.limiter.is_allowed("mykey")
         assert len(captured_keys) == 2
         # First key is burst, second is RPM
-        assert captured_keys[0].startswith("project_a:ratelimit:burst:mykey:")
-        assert captured_keys[1].startswith("project_a:ratelimit:rpm:mykey:")
+        assert captured_keys[0] == "project_a:ratelimit:burst:mykey"
+        assert captured_keys[1] == "project_a:ratelimit:rpm:mykey"
 
 
 # ---------------------------------------------------------------------------

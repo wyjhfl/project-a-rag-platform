@@ -1,12 +1,12 @@
-# Enterprise Landing Checklist — v1.0.2
+# Enterprise Landing Checklist - v1.0.3
 
 ## Current go/no-go
 
-Project A is suitable for a controlled enterprise pilot and small production landing. The v1.0.2 hardening gate has passed.
+Project A is suitable for a controlled enterprise pilot and small production landing. The v1.0.3 hardening gate has passed.
 
 It is not yet a regulated/high-scale enterprise platform without additional SSO, backup, observability dashboarding, and formal migration governance.
 
-## What v1.0.2 fixes
+## What v1.0.3 fixes
 
 - Production compose defaults are fail-closed: authentication and rate limiting default to enabled.
 - Redis-backed rate limiting is configured in production compose and `.env.production.example`.
@@ -14,7 +14,7 @@ It is not yet a regulated/high-scale enterprise platform without additional SSO,
 - `STORAGE_BACKEND=postgres` now uses the real `PostgresStore` instead of silently falling back to SQLite.
 - PostgreSQL smoke uses the real `PostgresStore` and `JobService` paths.
 - Production worker module has an executable loop for claimed jobs.
-- Python and frontend package versions are aligned to `1.0.2`.
+- Python and frontend package versions are aligned to `1.0.3`.
 
 ## Required production environment
 
@@ -47,7 +47,7 @@ The project owner approved using `https://github.com/wyjhfl/project-a-rag-platfo
 To avoid overwriting the older public-delivery `main`, production code is pushed to versioned production branches such as:
 
 ```text
-production/v1.0.2
+production/v1.0.3
 ```
 
-Release tags such as `v1.0.2` may be pushed to the same remote after the final production acceptance gate passes.
+Release tags such as `v1.0.3` may be pushed to the same remote after the final production acceptance gate passes.

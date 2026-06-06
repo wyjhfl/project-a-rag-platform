@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
+import uuid
 from collections import defaultdict
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -27,16 +28,37 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
-# Lua script for atomic INCR + EXPIRE (used by RedisRateLimiter)
+# Lua script for atomic Redis-backed sliding-window rate limiting.
 # ---------------------------------------------------------------------------
-_LUA_INCR_SCRIPT = """\
-local key = KEYS[1]
-local ttl = tonumber(ARGV[1])
-local count = redis.call('INCR', key)
-if count == 1 then
-    redis.call('EXPIRE', key, ttl)
+_LUA_SLIDING_WINDOW_SCRIPT = """\
+local burst_key = KEYS[1]
+local rpm_key = KEYS[2]
+local now_ms = tonumber(ARGV[1])
+local burst_window_ms = tonumber(ARGV[2])
+local rpm_window_ms = tonumber(ARGV[3])
+local burst_limit = tonumber(ARGV[4])
+local rpm_limit = tonumber(ARGV[5])
+local member = ARGV[6]
+local burst_ttl = tonumber(ARGV[7])
+local rpm_ttl = tonumber(ARGV[8])
+
+redis.call('ZREMRANGEBYSCORE', burst_key, 0, now_ms - burst_window_ms)
+redis.call('ZREMRANGEBYSCORE', rpm_key, 0, now_ms - rpm_window_ms)
+
+local burst_count = redis.call('ZCARD', burst_key)
+local rpm_count = redis.call('ZCARD', rpm_key)
+
+if burst_count >= burst_limit or rpm_count >= rpm_limit then
+    redis.call('EXPIRE', burst_key, burst_ttl)
+    redis.call('EXPIRE', rpm_key, rpm_ttl)
+    return 0
 end
-return count
+
+redis.call('ZADD', burst_key, now_ms, member)
+redis.call('ZADD', rpm_key, now_ms, member)
+redis.call('EXPIRE', burst_key, burst_ttl)
+redis.call('EXPIRE', rpm_key, rpm_ttl)
+return 1
 """
 
 
@@ -96,7 +118,7 @@ _RateLimiter = MemoryRateLimiter
 
 
 class RedisRateLimiter:
-    """Redis-backed rate limiter using INCR + EXPIRE per time window.
+    """Redis-backed rate limiter using atomic sorted-set sliding windows.
 
     When Redis is unavailable, ``is_allowed`` returns ``False`` -- no silent
     degradation to in-memory fallback.
@@ -117,20 +139,31 @@ class RedisRateLimiter:
         self._burst = burst
         self._redis_url = redis_url
         self._client = _redis.Redis.from_url(redis_url, decode_responses=True)
-        self._script = self._client.register_script(_LUA_INCR_SCRIPT)
+        self._script = self._client.register_script(_LUA_SLIDING_WINDOW_SCRIPT)
 
     def is_allowed(self, key: str) -> bool:
-        now = time.time()
-        burst_key = f"project_a:ratelimit:burst:{key}:{int(now)}"
-        rpm_key = f"project_a:ratelimit:rpm:{key}:{int(now // 60)}"
+        now_ms = time.time_ns() // 1_000_000
+        burst_key = f"project_a:ratelimit:burst:{key}"
+        rpm_key = f"project_a:ratelimit:rpm:{key}"
+        member = f"{now_ms}:{uuid.uuid4().hex}"
         try:
-            burst_count = int(self._script(keys=[burst_key], args=[2]))
-            if burst_count > self._burst:
-                return False
-            rpm_count = int(self._script(keys=[rpm_key], args=[61]))
-            if rpm_count > self._rpm:
-                return False
-            return True
+            return bool(
+                int(
+                    self._script(
+                        keys=[burst_key, rpm_key],
+                        args=[
+                            now_ms,
+                            1_000,
+                            60_000,
+                            self._burst,
+                            self._rpm,
+                            member,
+                            2,
+                            61,
+                        ],
+                    )
+                )
+            )
         except Exception:
             logger.exception("Redis rate limit check failed -- denying request")
             return False

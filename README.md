@@ -28,9 +28,9 @@ Project A 是一个企业设备售后诊断 RAG 平台，把设备型号、故�
 完整投递材料见：[docs/A-v3.4-resume-delivery-pack.md](docs/A-v3.4-resume-delivery-pack.md)。
 
 ## 当前发布版本
-- Production release tag: `v1.0.2`
-- Production branch: `production/v1.0.2` on `https://github.com/wyjhfl/project-a-rag-platform`
-- Release notes: [docs/release_notes_v1.0.2.md](docs/release_notes_v1.0.2.md)
+- Production release tag: `v1.0.3`
+- Production branch: `production/v1.0.3` on `https://github.com/wyjhfl/project-a-rag-platform`
+- Release notes: [docs/release_notes_v1.0.3.md](docs/release_notes_v1.0.3.md)
 - Enterprise landing checklist: [docs/enterprise_landing_checklist.md](docs/enterprise_landing_checklist.md)
 - Final production acceptance checklist: [docs/final_acceptance_checklist.md](docs/final_acceptance_checklist.md)
 - Release lineage notice: [docs/release_lineage_notice.md](docs/release_lineage_notice.md)
@@ -38,7 +38,7 @@ Project A 是一个企业设备售后诊断 RAG 平台，把设备型号、故�
 
 ### Git Lineage Notice
 
-> Important: this production line is based on reconstructed Git history. The `v1.0.0` tag is not the original `e64b095`. The project owner approved `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote; production handoff is on `production/v1.0.2` and tag `v1.0.2`. See [docs/release_lineage_notice.md](docs/release_lineage_notice.md).
+> Important: this production line is based on reconstructed Git history. The `v1.0.0` tag is not the original `e64b095`. The project owner approved `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote; production handoff is on `production/v1.0.3` and tag `v1.0.3`. See [docs/release_lineage_notice.md](docs/release_lineage_notice.md).
 
 ## 30 秒看懂项目
 
@@ -112,7 +112,7 @@ Production deployment guide: [docs/deployment_guide.md](docs/deployment_guide.md
 Final production acceptance checklist: [docs/final_acceptance_checklist.md](docs/final_acceptance_checklist.md).
 Enterprise landing checklist: [docs/enterprise_landing_checklist.md](docs/enterprise_landing_checklist.md).
 Production roadmap: [docs/production_roadmap.md](docs/production_roadmap.md).
-v1.0.2 Release Notes: [docs/release_notes_v1.0.2.md](docs/release_notes_v1.0.2.md).
+v1.0.3 Release Notes: [docs/release_notes_v1.0.3.md](docs/release_notes_v1.0.3.md).
 E2E guide: [docs/e2e_guide.md](docs/e2e_guide.md).
 
 ## Final Production Acceptance Script

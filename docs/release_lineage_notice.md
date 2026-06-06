@@ -9,14 +9,16 @@ The current repository history was reconstructed after a local `.git` directory 
 - The original v1.0.0 release-gate commit `e64b095` is not present in the current local history.
 - The current `v1.0.0` tag is a reconstructed tag pointing to `111066c`, not the original `e64b095`.
 - The current `v1.0.1` tag points to `3c2ce62`.
-- The current `v1.0.2` tag points to `d0c4f94`.
+- The current `v1.0.2` tag points to `d0c4f94`; `v1.0.3` is the latest production release.
 - The project owner approved using `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote.
-- To avoid overwriting the older public-delivery `main` branch, production releases are published on versioned production branches such as `production/v1.0.2`.
+- To avoid overwriting the older public-delivery `main` branch, production releases are published on versioned production branches such as `production/v1.0.3`.
 
 ## Current production line
 
 ```text
-production/v1.0.2  versioned production handoff branch; may include post-tag handoff documentation commits
+production/v1.0.3  latest versioned production handoff branch
+94e413b  (v1.0.3-rc.1) atomic job worker state transitions; final v1.0.3 metadata follows on top
+production/v1.0.2  previous versioned production handoff branch
 d0c4f94  (tag: v1.0.2) documentation-consistent v1.0.2 release baseline
 4090e4d  enterprise landing release checklist
 4309e9f  PostgreSQL Store + Redis/compose/worker hardening
