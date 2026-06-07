@@ -100,6 +100,9 @@ def process_one_job(service, worker_id: str, executor: JobExecutor) -> bool:
         with _heartbeat_during_execution(service, job_id, worker_id, job):
             result = executor(job)
         latest = service.get_job(job_id) or job
+        if isinstance(latest, dict) and latest.get("status") == "CANCELLED":
+            _record_worker_job_metric(job_type, "CANCELLED")
+            return True
         if isinstance(latest, dict) and latest.get("cancel_requested"):
             _cancel_running_or_warn(service, job_id, worker_id, job_type, "Job cancelled during execution")
             return True
@@ -156,6 +159,14 @@ class _heartbeat_during_execution:
     def _run(self) -> None:
         while not self._stop.wait(self._interval):
             try:
+                latest = self._service.get_job(self._job_id) or {}
+                if isinstance(latest, dict) and latest.get("cancel_requested"):
+                    self._service.cancel_running_job(
+                        self._job_id,
+                        self._worker_id,
+                        "Job cancelled during execution",
+                    )
+                    return
                 if not self._service.heartbeat(self._job_id, self._worker_id):
                     logger.warning(
                         "Worker heartbeat failed: job_id=%s worker_id=%s",

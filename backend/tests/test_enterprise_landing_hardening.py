@@ -178,6 +178,63 @@ def test_worker_heartbeats_during_long_execution() -> None:
     assert store.job["status"] == "SUCCEEDED"
 
 
+def test_worker_heartbeat_converts_cancel_requested_job_to_cancelled(monkeypatch) -> None:
+    from app import job_worker
+    from app.job_worker import process_one_job
+    from app.jobs import JobService
+
+    class Store:
+        def __init__(self) -> None:
+            self.job = {
+                "job_id": "JOB-heartbeat-cancel",
+                "job_type": "document.ingest",
+                "status": "PENDING",
+                "payload": {},
+                "result": {},
+                "error": None,
+                "retry_count": 0,
+                "max_retries": 3,
+                "locked_by": None,
+                "locked_at": None,
+                "heartbeat_at": None,
+                "timeout_seconds": 3,
+                "cancel_requested": False,
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "started_at": None,
+                "finished_at": None,
+            }
+
+        def claim_next_job(self, worker_id: str):
+            self.job["status"] = "RUNNING"
+            self.job["locked_by"] = worker_id
+            return dict(self.job)
+
+        def get_job(self, job_id: str):
+            return dict(self.job) if job_id == self.job["job_id"] else None
+
+        def update_job(self, job: dict) -> None:
+            self.job.update(job)
+
+    store = Store()
+    service = JobService(store, execution_mode="worker")
+    recorded: list[tuple[str, str]] = []
+
+    def executor(job):
+        time.sleep(0.2)
+        service.cancel_job(job["job_id"])
+        time.sleep(1.2)
+        return {"document_count": 1}
+
+    monkeypatch.setattr(job_worker, "_record_worker_job_metric", lambda jt, st: recorded.append((jt, st)))
+    assert process_one_job(service=service, worker_id="worker-1", executor=executor)
+    assert store.job["status"] == "CANCELLED"
+    assert store.job["cancel_requested"] is True
+    assert store.job["result"] == {}
+    assert store.job["locked_by"] is None
+    assert recorded == [("document.ingest", "CANCELLED")]
+
+
 def test_worker_heartbeat_interval_is_bounded() -> None:
     from app.job_worker import _heartbeat_interval_seconds
 
