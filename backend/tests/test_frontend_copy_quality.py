@@ -275,12 +275,31 @@ def test_acceptance_page_exposes_interview_showcase() -> None:
     assert "final_production_acceptance" not in page_text
 
 
+def test_acceptance_page_exposes_rag_quality_and_tradeoff_showcase() -> None:
+    page_text = (FRONTEND_SRC / "pages" / "AcceptancePage.vue").read_text(encoding="utf-8")
+
+    assert 'data-testid="rag-quality-card"' in page_text
+    assert 'data-testid="rag-quality-metric-context-precision"' in page_text
+    assert 'data-testid="rag-quality-metric-faithfulness"' in page_text
+    assert 'data-testid="rag-quality-metric-context-recall"' in page_text
+    assert 'data-testid="bad-case-boundary-card"' in page_text
+    assert 'data-testid="risk-tradeoff-card"' in page_text
+    assert "function findPanel" in page_text
+    assert "qualityPanel" in page_text
+    assert "badCasePanel" in page_text
+    assert "qualityMetrics" in page_text
+    assert "riskTradeoffs" in page_text
+    assert "资料不足时拒答" in page_text
+    assert "外部队列" in page_text
+
+
 def test_readme_resume_links_are_current_and_existing() -> None:
     project_root = FRONTEND_SRC.parents[1]
     readme = (project_root / "README.md").read_text(encoding="utf-8")
     required_links = [
         "docs/resume_interview_showcase.md",
         "docs/interview_demo_script.md",
+        "docs/interview_questions.md",
         "docs/architecture_overview.md",
         "docs/demo_guide.md",
         "docs/release_notes_v1.0.4.md",

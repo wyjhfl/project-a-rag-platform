@@ -48,6 +48,54 @@
       </div>
     </el-card>
 
+    <el-card class="quality-card" data-testid="rag-quality-card">
+      <template #header>
+        <div class="card-header-row">
+          <span>RAG 质量证据</span>
+          <el-tag :type="panelStatusType(qualityPanel?.status || 'info')" size="small">
+            {{ qualityPanel?.status || 'pending' }}
+          </el-tag>
+        </div>
+      </template>
+
+      <p class="muted">{{ qualityPanel?.summary || '等待验收中心返回评测数据。' }}</p>
+      <div class="quality-grid section">
+        <div class="quality-tile" data-testid="rag-quality-metric-context-precision">
+          <span class="proof-label">context_precision</span>
+          <strong>{{ qualityMetricValue('context_precision') }}</strong>
+          <p class="muted">检索到的上下文有多少真正支撑答案。</p>
+        </div>
+        <div class="quality-tile" data-testid="rag-quality-metric-faithfulness">
+          <span class="proof-label">faithfulness</span>
+          <strong>{{ qualityMetricValue('faithfulness') }}</strong>
+          <p class="muted">回答是否忠实于检索上下文，避免编造。</p>
+        </div>
+        <div class="quality-tile" data-testid="rag-quality-metric-context-recall">
+          <span class="proof-label">context_recall</span>
+          <strong>{{ qualityMetricValue('context_recall') }}</strong>
+          <p class="muted">关键证据是否被检索链路召回。</p>
+        </div>
+      </div>
+
+      <div class="showcase-columns section">
+        <div class="boundary-card" data-testid="bad-case-boundary-card">
+          <h4>Bad Case 与边界</h4>
+          <p>{{ badCasePanel?.summary || '暂无 bad case 汇总。' }}</p>
+          <ul class="compact-list">
+            <li>资料不足时拒答，而不是强行生成不可靠答案。</li>
+            <li>高风险维修建议进入人工工单闭环。</li>
+            <li>低分样本保留 trace，方便复盘检索、上下文和生成问题。</li>
+          </ul>
+        </div>
+        <div class="boundary-card" data-testid="risk-tradeoff-card">
+          <h4>面试可讲取舍</h4>
+          <ul class="compact-list">
+            <li v-for="item in riskTradeoffs" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+      </div>
+    </el-card>
+
     <el-alert v-if="!overview" type="info" :closable="false" show-icon class="section">
       <template #title>正在加载验收概览数据…</template>
     </el-alert>
@@ -150,11 +198,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { AcceptanceOverviewResponse } from '../api/types'
 import { ElMessage } from '../plugins/element-plus'
 import { RELEASE_URL, RELEASE_VERSION } from '../release'
 
-defineProps<{ overview: AcceptanceOverviewResponse | null }>()
+const props = defineProps<{ overview: AcceptanceOverviewResponse | null }>()
 
 const interviewPitch = '我做的 Project A 不是普通聊天 demo，而是企业设备售后诊断 RAG 平台：它能把故障描述转成可引用答案，在资料不足或高风险时拒答/升级人工，并用评测、审计、Metrics、E2E 和生产验收脚本证明工程质量。'
 
@@ -182,6 +232,28 @@ const demoRoute = [
   'Chat + Tickets：展示 grounded 回答、拒答边界和人工工单升级',
   'Evaluations + Audit：用评测结果和审计日志收束工程可信度',
 ]
+
+const riskTradeoffs = [
+  'SQLite + Chroma 降低面试 demo 成本，PostgreSQL + Redis + Milvus 保留生产增强路径',
+  '内置 JobService 展示任务生命周期，外部队列是多实例规模化的下一步',
+  'OpenAPI 生成前端类型并在 CI 阻断 drift，避免手写类型长期失真',
+  'Prometheus /metrics 已可用，Grafana/OTel 是后续可观测性增强方向',
+]
+
+const qualityPanel = computed(() => findPanel('evaluation'))
+const badCasePanel = computed(() => findPanel('badcases'))
+const qualityMetrics = computed(() => qualityPanel.value?.chart || [])
+
+function findPanel(key: string) {
+  return props.overview?.panels.find((panel) => panel.key === key) || null
+}
+
+function qualityMetricValue(label: string): string {
+  const metric = qualityMetrics.value.find((item) => item.label === label)
+  if (!metric) return '见评测报告'
+  if (metric.total === 1) return metric.value.toFixed(3)
+  return `${metric.value}/${metric.total}`
+}
 
 async function copyPitch() {
   try {
@@ -264,6 +336,36 @@ function panelStatusType(status: string): 'success' | 'warning' | 'danger' | 'in
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.quality-card {
+  border: 1px solid #e1f3d8;
+}
+
+.quality-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quality-tile,
+.boundary-card {
+  padding: 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.quality-tile strong {
+  display: block;
+  color: #303133;
+  font-size: 20px;
+}
+
+.quality-tile p,
+.boundary-card p {
+  margin: 6px 0 0;
+  line-height: 1.5;
 }
 
 .compact-list {
@@ -353,7 +455,8 @@ function panelStatusType(status: string): 'success' | 'warning' | 'danger' | 'in
 @media (max-width: 900px) {
   .showcase-hero,
   .showcase-columns,
-  .showcase-grid {
+  .showcase-grid,
+  .quality-grid {
     grid-template-columns: 1fr;
   }
 

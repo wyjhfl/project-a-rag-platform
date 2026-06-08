@@ -43,6 +43,7 @@ Project A 是一个面向简历与技术面试展示的 **企业设备售后诊�
 
 - Resume / interview showcase: [docs/resume_interview_showcase.md](docs/resume_interview_showcase.md)
 - 5-10 分钟面试 Demo 脚本: [docs/interview_demo_script.md](docs/interview_demo_script.md)
+- 面试追问答法: [docs/interview_questions.md](docs/interview_questions.md)
 - Architecture overview: [docs/architecture_overview.md](docs/architecture_overview.md)
 - Demo guide: [docs/demo_guide.md](docs/demo_guide.md)
 - E2E guide: [docs/e2e_guide.md](docs/e2e_guide.md)
