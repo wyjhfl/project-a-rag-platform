@@ -259,3 +259,37 @@ def test_system_status_page_surfaces_prometheus_metrics_summary() -> None:
     assert "project_a_error_total" in page_text
     assert "project_a_job_total" in page_text
     assert "getMetricsText" in page_text
+
+
+def test_acceptance_page_exposes_interview_showcase() -> None:
+    page_text = (FRONTEND_SRC / "pages" / "AcceptancePage.vue").read_text(encoding="utf-8")
+
+    assert 'data-testid="interview-showcase-card"' in page_text
+    assert 'data-testid="interview-pitch"' in page_text
+    assert 'data-testid="copy-interview-pitch"' in page_text
+    assert 'data-testid="showcase-proof-grid"' in page_text
+    assert 'data-testid="showcase-architecture-pillars"' in page_text
+    assert 'data-testid="showcase-demo-route"' in page_text
+    assert "企业设备售后诊断 RAG 平台" in page_text
+    assert "OpenAPI 生成前端类型" in page_text
+    assert "final_production_acceptance" not in page_text
+
+
+def test_readme_resume_links_are_current_and_existing() -> None:
+    project_root = FRONTEND_SRC.parents[1]
+    readme = (project_root / "README.md").read_text(encoding="utf-8")
+    required_links = [
+        "docs/resume_interview_showcase.md",
+        "docs/interview_demo_script.md",
+        "docs/architecture_overview.md",
+        "docs/demo_guide.md",
+        "docs/release_notes_v1.0.4.md",
+    ]
+
+    for link in required_links:
+        assert link in readme
+        assert (project_root / link).exists(), link
+
+    assert "A-v3.6 Release Tag 收口阶段" not in readme
+    assert "docs/A-v3.4-resume-delivery-pack.md" not in readme
+    assert "scripts\\start_demo_stack.ps1" not in readme

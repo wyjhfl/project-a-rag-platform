@@ -27,4 +27,12 @@ test.describe('Acceptance Page', () => {
       'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4',
     )
   })
+
+  test('shows interview showcase summary and demo route', async ({ page }) => {
+    await expect(page.locator('[data-testid="interview-showcase-card"]')).toBeVisible()
+    await expect(page.locator('[data-testid="interview-pitch"]')).toContainText('企业设备售后诊断 RAG 平台')
+    await expect(page.locator('[data-testid="showcase-proof-grid"]')).toContainText('生产门禁')
+    await expect(page.locator('[data-testid="showcase-architecture-pillars"]')).toContainText('OpenAPI')
+    await expect(page.locator('[data-testid="showcase-demo-route"]')).toContainText('System Status')
+  })
 })

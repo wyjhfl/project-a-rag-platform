@@ -35,9 +35,18 @@
 - 工单闭环：创建 → 需配件 → 需人工 → 恢复 → 关闭，幂等创建
 - 公开发布脱敏：create_public_release_repo 脚本，路径/用户名自动替换
 
-### 生产化缺口
+### 当前生产化状态
 
-- 前端无运维控制台：API Key 输入、错误展示等运维操作无 UI（Phase 5）
+- 前端运维控制台已完成：Acceptance、System Status、Documents、Jobs、Audit、Chat、Tickets、Evaluations。
+- 生产化门禁已完成：pytest、ruff、frontend build、OpenAPI drift guard、secret scan、Docker Compose、PostgreSQL smoke、Redis smoke、worker stress、Full E2E。
+- 面试展示收口已补充：README、Architecture Overview、Interview Demo Script、Resume Showcase、Acceptance 页展示卡片。
+
+### 后续增强方向
+
+- Grafana / OTel：将 `/metrics` 文本端点升级为完整观测面板。
+- Alembic：结构化管理 PostgreSQL schema migration。
+- 外部队列：将内置 JobService 演进到 Celery/RQ/Redis Queue。
+- 真实业务样本：继续扩容 bad case 和行业资料样本。
 
 ---
 

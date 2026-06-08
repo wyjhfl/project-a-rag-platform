@@ -1,5 +1,53 @@
 <template>
   <section class="stack">
+    <el-card class="showcase-card" data-testid="interview-showcase-card">
+      <template #header>
+        <div class="card-header-row">
+          <span>面试展示入口</span>
+          <el-tag type="success" size="small">{{ RELEASE_VERSION }}</el-tag>
+        </div>
+      </template>
+
+      <div class="showcase-hero">
+        <div>
+          <h2>企业设备售后诊断 RAG 平台</h2>
+          <p class="showcase-pitch" data-testid="interview-pitch">{{ interviewPitch }}</p>
+          <div class="tag-row">
+            <el-tag v-for="tag in showcaseTags" :key="tag" size="small" type="info">{{ tag }}</el-tag>
+          </div>
+        </div>
+        <div class="showcase-actions">
+          <el-button data-testid="copy-interview-pitch" type="primary" @click="copyPitch">复制 30 秒讲法</el-button>
+          <el-button data-testid="open-release-notes" tag="a" :href="RELEASE_URL" target="_blank" rel="noreferrer">
+            查看 Release
+          </el-button>
+        </div>
+      </div>
+
+      <div class="showcase-grid section" data-testid="showcase-proof-grid">
+        <div v-for="item in proofItems" :key="item.label" class="proof-tile">
+          <span class="proof-label">{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <p class="muted">{{ item.summary }}</p>
+        </div>
+      </div>
+
+      <div class="showcase-columns section">
+        <div data-testid="showcase-architecture-pillars">
+          <h4>技术亮点</h4>
+          <ul class="compact-list">
+            <li v-for="pillar in architecturePillars" :key="pillar">{{ pillar }}</li>
+          </ul>
+        </div>
+        <div data-testid="showcase-demo-route">
+          <h4>5 分钟 Demo 路线</h4>
+          <ol class="compact-list">
+            <li v-for="step in demoRoute" :key="step">{{ step }}</li>
+          </ol>
+        </div>
+      </div>
+    </el-card>
+
     <el-alert v-if="!overview" type="info" :closable="false" show-icon class="section">
       <template #title>正在加载验收概览数据…</template>
     </el-alert>
@@ -103,8 +151,46 @@
 
 <script setup lang="ts">
 import type { AcceptanceOverviewResponse } from '../api/types'
+import { ElMessage } from '../plugins/element-plus'
+import { RELEASE_URL, RELEASE_VERSION } from '../release'
 
 defineProps<{ overview: AcceptanceOverviewResponse | null }>()
+
+const interviewPitch = '我做的 Project A 不是普通聊天 demo，而是企业设备售后诊断 RAG 平台：它能把故障描述转成可引用答案，在资料不足或高风险时拒答/升级人工，并用评测、审计、Metrics、E2E 和生产验收脚本证明工程质量。'
+
+const showcaseTags = ['FastAPI', 'Vue 3', 'RAG', 'Async Jobs', 'Audit', 'OpenAPI', 'E2E', 'Docker']
+
+const proofItems = [
+  { label: '后端测试', value: 'pytest suite', summary: '覆盖认证、RAG、安全、工单、Redis 限流与 Worker 并发' },
+  { label: '前端验收', value: 'Playwright E2E', summary: '覆盖系统状态、资料、Jobs、审计、工单与评测主路径' },
+  { label: '生产门禁', value: '13-step gate', summary: '统一执行测试、构建、OpenAPI drift、secret scan、Docker 与 smoke' },
+  { label: '可观测性', value: '/metrics + audit', summary: 'Request ID、结构化错误、Prometheus 指标和审计事件可追踪' },
+]
+
+const architecturePillars = [
+  'RAG 检索 + grounded 回答 + 引用证据，避免只包装聊天接口',
+  '异步 Job/Worker 把入库与评测从同步请求中解耦',
+  'X-API-Key 角色、统一错误体、Request ID 与审计日志支撑运维排障',
+  'OpenAPI 生成前端类型并在 CI 中阻断 schema drift',
+  'Redis 限流、PostgreSQL smoke、Docker Compose 与最终验收脚本面向生产落地',
+]
+
+const demoRoute = [
+  'Acceptance：用这张卡说明业务目标、技术亮点和验收证据',
+  'System Status：展示 health/readyz/release/metrics 与 Request ID 排障',
+  'Documents + Jobs：演示资料入库如何进入后台任务并可取消/重试/查询',
+  'Chat + Tickets：展示 grounded 回答、拒答边界和人工工单升级',
+  'Evaluations + Audit：用评测结果和审计日志收束工程可信度',
+]
+
+async function copyPitch() {
+  try {
+    await navigator.clipboard.writeText(interviewPitch)
+    ElMessage.success('已复制面试 30 秒讲法')
+  } catch {
+    ElMessage.warning('当前浏览器不支持自动复制，请手动选择文案')
+  }
+}
 
 function panelStatusType(status: string): 'success' | 'warning' | 'danger' | 'info' {
   if (status === 'passed' || status === 'ok') return 'success'
@@ -115,6 +201,78 @@ function panelStatusType(status: string): 'success' | 'warning' | 'danger' | 'in
 </script>
 
 <style scoped>
+.showcase-card {
+  border: 1px solid #d9ecff;
+  background: linear-gradient(135deg, #f8fbff 0%, #ffffff 48%, #f5fff8 100%);
+}
+
+.showcase-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+}
+
+.showcase-hero h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.showcase-pitch {
+  margin: 0 0 12px;
+  color: #303133;
+  line-height: 1.7;
+}
+
+.showcase-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.proof-tile {
+  padding: 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.proof-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #909399;
+  font-size: 12px;
+}
+
+.proof-tile strong {
+  color: #303133;
+}
+
+.proof-tile p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
+.showcase-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.compact-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #606266;
+  line-height: 1.7;
+}
+
 .overview-header {
   display: flex;
   align-items: center;
@@ -190,5 +348,17 @@ function panelStatusType(status: string): 'success' | 'warning' | 'danger' | 'in
 .evidence-list {
   padding-left: 20px;
   margin: 0;
+}
+
+@media (max-width: 900px) {
+  .showcase-hero,
+  .showcase-columns,
+  .showcase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .showcase-actions {
+    justify-content: flex-start;
+  }
 }
 </style>
