@@ -1,6 +1,7 @@
 <template>
-  <AppShell v-model:activeTab="activeTab" :loading="globalLoading" @refresh="refreshAll">
+    <AppShell v-model:activeTab="activeTab" :loading="globalLoading" @refresh="refreshAll">
     <AcceptancePage v-if="activeTab === 'acceptance'" data-testid="page-acceptance" :overview="acceptanceOverview" />
+    <QualityPage v-if="activeTab === 'quality'" data-testid="page-quality" :overview="acceptanceOverview" />
     <SystemStatusPage v-if="activeTab === 'status'" data-testid="page-status" ref="statusPage" />
     <DocumentsPage v-if="activeTab === 'documents'" data-testid="page-documents" />
     <JobsPage v-if="activeTab === 'jobs'" data-testid="page-jobs" />
@@ -23,10 +24,11 @@ import ChatPage from './pages/ChatPage.vue'
 import DocumentsPage from './pages/DocumentsPage.vue'
 import EvaluationsPage from './pages/EvaluationsPage.vue'
 import JobsPage from './pages/JobsPage.vue'
+import QualityPage from './pages/QualityPage.vue'
 import SystemStatusPage from './pages/SystemStatusPage.vue'
 import TicketsPage from './pages/TicketsPage.vue'
 
-const VALID_TABS = ['acceptance', 'status', 'documents', 'jobs', 'audit', 'chat', 'tickets', 'eval']
+const VALID_TABS = ['acceptance', 'quality', 'status', 'documents', 'jobs', 'audit', 'chat', 'tickets', 'eval']
 const TAB_STORAGE_KEY = 'project_a_active_tab'
 
 function isValidTab(value: string): boolean {

@@ -3,6 +3,7 @@ from pathlib import Path
 
 FRONTEND_SRC = Path(__file__).resolve().parents[2] / "frontend" / "src"
 APP_SHELL = FRONTEND_SRC / "components" / "AppShell.vue"
+APP_VUE = FRONTEND_SRC / "App.vue"
 VISIBLE_SOURCE_GLOBS = ("*.vue", "*.ts")
 EXCLUDED_FILES = {"generated.ts"}
 MOJIBAKE_MARKERS = (
@@ -291,6 +292,34 @@ def test_acceptance_page_exposes_rag_quality_and_tradeoff_showcase() -> None:
     assert "riskTradeoffs" in page_text
     assert "资料不足时拒答" in page_text
     assert "外部队列" in page_text
+
+
+def test_quality_insights_page_is_first_class_console_route() -> None:
+    app_text = APP_VUE.read_text(encoding="utf-8")
+    shell_text = APP_SHELL.read_text(encoding="utf-8")
+    page = FRONTEND_SRC / "pages" / "QualityPage.vue"
+
+    assert page.exists()
+    page_text = page.read_text(encoding="utf-8")
+    assert "import QualityPage from './pages/QualityPage.vue'" in app_text
+    assert "activeTab === 'quality'" in app_text
+    assert "'quality'" in app_text
+    assert "{ key: 'quality'" in shell_text
+    assert 'data-testid="page-quality"' in app_text
+    assert ':data-testid="`nav-${item.key}`"' in shell_text
+    assert 'data-testid="quality-overview-card"' in page_text
+    assert 'data-testid="quality-regression-pass-rate"' in page_text
+    assert 'data-testid="quality-context-precision"' in page_text
+    assert 'data-testid="quality-faithfulness"' in page_text
+    assert 'data-testid="quality-context-recall"' in page_text
+    assert 'data-testid="quality-badcase-count"' in page_text
+    assert 'data-testid="quality-trace-case-list"' in page_text
+    assert 'data-testid="quality-tradeoff-lane"' in page_text
+    assert "AcceptanceOverviewResponse" in page_text
+    assert "evaluationPanel" in page_text
+    assert "badCasePanel" in page_text
+    assert "traceCases" in page_text
+    assert "RAG 质量洞察" in page_text
 
 
 def test_readme_resume_links_are_current_and_existing() -> None:

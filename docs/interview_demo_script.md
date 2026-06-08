@@ -51,7 +51,21 @@ http://127.0.0.1:4173
 
 “生产系统不能只有功能，还要能排障。所以我做了 liveness/readiness、统一错误格式、Request ID 和 Prometheus metrics。前端直接展示这些信号。”
 
-## 4. Documents + Jobs：讲异步化
+## 4. Quality：讲 RAG 质量与工程取舍
+
+展示点：
+
+- regression 通过率
+- context_precision / faithfulness / context_recall
+- Bad Case 边界
+- 低分 Trace 复盘
+- Demo 成本、外部队列、Grafana/OTel 等取舍
+
+讲法：
+
+“RAG 项目不能只演示一条问答。我单独做了质量洞察页，把评测指标、bad case、trace 和工程取舍集中展示。这样面试官追问‘怎么证明效果’和‘怎么生产化’时，可以直接从 UI 讲到测试和架构。”
+
+## 5. Documents + Jobs：讲异步化
 
 展示点：
 
@@ -63,7 +77,7 @@ http://127.0.0.1:4173
 
 “文档入库和评测可能很慢，所以我把它们放到 Job 模型里。Job 有 PENDING/RUNNING/SUCCEEDED/FAILED/CANCELLED 状态，worker 通过 claim 避免重复执行，并支持 cancel、retry、timeout 和 heartbeat。”
 
-## 5. Chat：讲 grounded answer
+## 6. Chat：讲 grounded answer
 
 展示点：
 
@@ -75,7 +89,7 @@ http://127.0.0.1:4173
 
 “我不希望系统编答案，所以回答必须绑定检索上下文和引用。资料不足时应该拒答或升级工单，这比强行回答更符合企业售后场景。”
 
-## 6. Tickets：讲人工闭环
+## 7. Tickets：讲人工闭环
 
 展示点：
 
@@ -87,7 +101,7 @@ http://127.0.0.1:4173
 
 “RAG 不是替代所有人工。高风险或资料不足时升级人工，这样系统边界更安全，也更接近真实业务。”
 
-## 7. Evaluations + Audit：讲质量闭环
+## 8. Evaluations + Audit：讲质量闭环
 
 展示点：
 
@@ -99,7 +113,7 @@ http://127.0.0.1:4173
 
 “我把评测和审计做成产品的一部分。评测回答‘效果如何’，审计回答‘发生了什么、谁触发的、怎么排查’。”
 
-## 8. 收束
+## 9. 收束
 
 最后打开 GitHub Actions 或本地验收输出：
 

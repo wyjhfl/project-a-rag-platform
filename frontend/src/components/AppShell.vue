@@ -96,6 +96,7 @@ const showKeyDialog = ref(false)
 
 const navItems = [
   { key: 'acceptance', label: '验收中心', hint: '展示文本主链、多模态、评测与 bad case 的统一证据面板。' },
+  { key: 'quality', label: '????', hint: '???? RAG ???Bad Case?Trace ???????????????' },
   { key: 'status', label: '系统状态', hint: '查看 API、LLM 与向量库当前状态及健康检查。' },
   { key: 'documents', label: '资料管理', hint: '上传资料、切换 docs source 并执行入库。' },
   { key: 'jobs', label: '异步任务', hint: '查看和管理异步入库与评测任务。' },
