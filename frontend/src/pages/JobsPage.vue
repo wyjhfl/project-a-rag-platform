@@ -1,7 +1,41 @@
 <template>
   <section class="stack" data-testid="page-jobs">
+    <div class="job-summary-grid">
+      <el-card shadow="never" data-testid="job-summary-total">
+        <div class="summary-label">任务总数</div>
+        <div class="summary-value">{{ safeJobs.length }}</div>
+      </el-card>
+      <el-card shadow="never" data-testid="job-summary-active">
+        <div class="summary-label">活跃任务</div>
+        <div class="summary-value">{{ activeCount }}</div>
+      </el-card>
+      <el-card shadow="never" data-testid="job-summary-failed">
+        <div class="summary-label">失败任务</div>
+        <div class="summary-value danger">{{ failedCount }}</div>
+      </el-card>
+      <el-card shadow="never" data-testid="job-summary-cancelled">
+        <div class="summary-label">已取消</div>
+        <div class="summary-value muted-value">{{ cancelledCount }}</div>
+      </el-card>
+    </div>
+
     <div class="toolbar">
       <el-button @click="refresh" :loading="loading">刷新列表</el-button>
+      <el-select
+        v-model="statusFilter"
+        data-testid="job-status-filter"
+        placeholder="按状态筛选"
+        style="width: 180px"
+      >
+        <el-option label="全部状态" value="ALL" />
+        <el-option label="活跃中" value="ACTIVE" />
+        <el-option label="PENDING" value="PENDING" />
+        <el-option label="RUNNING" value="RUNNING" />
+        <el-option label="RETRYING" value="RETRYING" />
+        <el-option label="SUCCEEDED" value="SUCCEEDED" />
+        <el-option label="FAILED" value="FAILED" />
+        <el-option label="CANCELLED" value="CANCELLED" />
+      </el-select>
       <el-input
         v-model="searchJobId"
         data-testid="job-search-input"
@@ -16,9 +50,23 @@
       </el-input>
     </div>
 
-    <el-alert v-if="listError" :title="listError" type="error" show-icon :closable="false" />
+    <el-alert
+      v-if="listError"
+      data-testid="jobs-list-error"
+      :title="listError"
+      type="error"
+      show-icon
+      :closable="false"
+    />
 
-    <el-alert v-if="searchError" :title="searchError" type="error" show-icon :closable="false" />
+    <el-alert
+      v-if="searchError"
+      data-testid="job-search-error"
+      :title="searchError"
+      type="error"
+      show-icon
+      :closable="false"
+    />
 
     <el-alert v-if="searchResult && searchResult.status === 'FAILED'" type="error" :closable="false" show-icon>
       <template #title>Job {{ searchResult.job_id }} 失败: {{ truncate(searchResult.error || '未知错误', 300) }}</template>
@@ -30,6 +78,18 @@
         <div class="status-row">
           <el-tag :type="statusType(searchResult.status)" size="small">{{ searchResult.status }}</el-tag>
           <span class="muted">类型: {{ searchResult.job_type }}</span>
+          <el-tag v-if="searchResult.cancel_requested" type="warning" size="small">取消已请求</el-tag>
+          <el-button
+            v-if="canCancelJob(searchResult)"
+            data-testid="job-cancel-button"
+            size="small"
+            type="danger"
+            plain
+            :loading="cancellingJobId === searchResult.job_id"
+            @click="confirmCancel(searchResult)"
+          >
+            取消任务
+          </el-button>
         </div>
         <el-alert v-if="searchResult.error" type="error" :title="truncate(searchResult.error, 300)" closable :show-icon="true" />
         <pre v-if="searchResult.status === 'SUCCEEDED'" class="mono section">{{ formatResult(searchResult) }}</pre>
@@ -38,7 +98,7 @@
 
     <el-card>
       <template #header>任务列表</template>
-      <el-table :data="jobs" size="small" stripe v-loading="loading">
+      <el-table :data="filteredJobs" size="small" stripe v-loading="loading">
         <el-table-column prop="job_id" label="Job ID" width="180" />
         <el-table-column prop="job_type" label="类型" width="160" />
         <el-table-column prop="status" label="状态" width="120">
@@ -56,11 +116,29 @@
           <template #default="{ row }">
             <span v-if="row.status === 'SUCCEEDED' && row.result">{{ resultSummary(row) }}</span>
             <span v-else-if="row.status === 'FAILED' && row.error" class="error-text">{{ truncate(row.error, 80) }}</span>
+            <span v-else-if="row.cancel_requested" class="warning-text">取消已请求</span>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="canCancelJob(row)"
+              data-testid="job-cancel-button"
+              size="small"
+              type="danger"
+              plain
+              :loading="cancellingJobId === row.job_id"
+              @click="confirmCancel(row)"
+            >
+              取消
+            </el-button>
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!loading && jobs.length === 0 && !listError" description="暂无任务" />
+      <el-empty v-if="!loading && safeJobs.length === 0 && !listError" description="暂无任务" />
+      <el-empty v-else-if="!loading && filteredJobs.length === 0 && !listError" description="当前筛选条件下暂无任务" />
     </el-card>
 
     <div v-if="runningCount > 0" class="poll-bar">
@@ -73,25 +151,43 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 import { ApiClientError, formatApiError } from '../api/client'
-import { getJob, listJobs } from '../api/endpoints'
+import { cancelJob, getJob, listJobs } from '../api/endpoints'
 import type { JobRecord } from '../api/types'
+import { ElMessage, ElMessageBox } from '../plugins/element-plus'
 
 const jobs = ref<JobRecord[]>([])
 const loading = ref(false)
 const listError = ref('')
+const statusFilter = ref('ALL')
 const searchJobId = ref('')
 const searchLoading = ref(false)
 const searchResult = ref<JobRecord | null>(null)
 const searchError = ref('')
+const cancellingJobId = ref('')
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
-const runningCount = computed(() => jobs.value.filter((j) => j.status === 'PENDING' || j.status === 'RUNNING').length)
+const activeStatuses = new Set(['PENDING', 'RUNNING', 'RETRYING'])
+const safeJobs = computed(() => (Array.isArray(jobs.value) ? jobs.value : []))
+const runningCount = computed(() => safeJobs.value.filter((j) => activeStatuses.has(j.status)).length)
+const activeCount = runningCount
+const failedCount = computed(() => safeJobs.value.filter((j) => j.status === 'FAILED').length)
+const cancelledCount = computed(() => safeJobs.value.filter((j) => j.status === 'CANCELLED').length)
+
+const filteredJobs = computed(() => {
+  if (statusFilter.value === 'ALL') return safeJobs.value
+  if (statusFilter.value === 'ACTIVE') return safeJobs.value.filter((job) => activeStatuses.has(job.status))
+  return safeJobs.value.filter((job) => job.status === statusFilter.value)
+})
 
 function statusType(status: string): 'success' | 'warning' | 'danger' | 'info' {
   if (status === 'SUCCEEDED') return 'success'
-  if (status === 'RUNNING') return 'warning'
+  if (status === 'RUNNING' || status === 'RETRYING') return 'warning'
   if (status === 'FAILED') return 'danger'
   return 'info'
+}
+
+function canCancelJob(job: JobRecord): boolean {
+  return activeStatuses.has(job.status) && !job.cancel_requested
 }
 
 function formatTime(iso: string | null): string {
@@ -127,11 +223,56 @@ async function refresh() {
   loading.value = true
   listError.value = ''
   try {
-    jobs.value = await listJobs(100)
+    const data = await listJobs(100)
+    if (!Array.isArray(data)) {
+      jobs.value = []
+      listError.value = 'Jobs API 返回格式异常：期望数组'
+      return
+    }
+    jobs.value = data
   } catch (e) {
     listError.value = formatApiError(e)
   } finally {
     loading.value = false
+  }
+}
+
+function replaceJob(updated: JobRecord) {
+  const index = jobs.value.findIndex((job) => job.job_id === updated.job_id)
+  if (index >= 0) {
+    jobs.value.splice(index, 1, updated)
+  } else {
+    jobs.value.unshift(updated)
+  }
+  if (searchResult.value?.job_id === updated.job_id) {
+    searchResult.value = updated
+  }
+}
+
+async function confirmCancel(job: JobRecord) {
+  try {
+    await ElMessageBox.confirm(
+      `确认取消任务 ${job.job_id}？RUNNING 任务会先标记取消请求，由 worker 安全收口。`,
+      '取消任务',
+      {
+        type: 'warning',
+        confirmButtonText: '确认取消',
+        cancelButtonText: '保留任务',
+      },
+    )
+  } catch {
+    return
+  }
+
+  cancellingJobId.value = job.job_id
+  try {
+    const updated = await cancelJob(job.job_id, 'Cancelled from operations console')
+    replaceJob(updated)
+    ElMessage.success(`任务 ${job.job_id} 已提交取消`)
+  } catch (e) {
+    ElMessage.error(formatApiError(e))
+  } finally {
+    cancellingJobId.value = ''
   }
 }
 
@@ -183,5 +324,42 @@ onUnmounted(() => {
 .error-text {
   color: #f56c6c;
   font-size: 13px;
+}
+
+.warning-text {
+  color: #e6a23c;
+  font-size: 13px;
+}
+
+.job-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.summary-value {
+  margin-top: 6px;
+  color: var(--el-text-color-primary);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.summary-value.danger {
+  color: var(--el-color-danger);
+}
+
+.summary-value.muted-value {
+  color: var(--el-text-color-secondary);
+}
+
+@media (max-width: 900px) {
+  .job-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

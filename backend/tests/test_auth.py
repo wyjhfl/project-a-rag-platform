@@ -126,6 +126,55 @@ def test_operator_can_access_operator_endpoint(tmp_path: Path):
     assert response.status_code == 200
 
 
+def test_operator_can_cancel_ingest_job(tmp_path: Path):
+    os.environ["JOB_EXECUTION_MODE"] = "worker"
+    try:
+        client = _make_client(tmp_path, auth_enabled=True)
+        created = client.post(
+            "/api/v1/jobs/ingest",
+            headers={"X-API-Key": "test-operator-key"},
+            json={"docs_source": "seed_docs"},
+        )
+        assert created.status_code == 200
+        job_id = created.json()["job"]["job_id"]
+
+        response = client.post(
+            f"/api/v1/jobs/{job_id}/cancel",
+            headers={"X-API-Key": "test-operator-key"},
+            json={"reason": "operator requested cancellation"},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "CANCELLED"
+        assert body["cancel_requested"] is True
+    finally:
+        os.environ.pop("JOB_EXECUTION_MODE", None)
+
+
+def test_viewer_cannot_cancel_job(tmp_path: Path):
+    os.environ["JOB_EXECUTION_MODE"] = "worker"
+    try:
+        client = _make_client(tmp_path, auth_enabled=True)
+        created = client.post(
+            "/api/v1/jobs/ingest",
+            headers={"X-API-Key": "test-operator-key"},
+            json={"docs_source": "seed_docs"},
+        )
+        assert created.status_code == 200
+        job_id = created.json()["job"]["job_id"]
+
+        response = client.post(
+            f"/api/v1/jobs/{job_id}/cancel",
+            headers={"X-API-Key": "test-viewer-key"},
+            json={"reason": "viewer attempted cancellation"},
+        )
+
+        assert response.status_code == 403
+    finally:
+        os.environ.pop("JOB_EXECUTION_MODE", None)
+
+
 def test_operator_cannot_access_admin_endpoint():
     test_app = FastAPI()
 

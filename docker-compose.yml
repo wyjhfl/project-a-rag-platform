@@ -106,7 +106,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        VITE_API_BASE_URL: http://127.0.0.1:18081
+        VITE_API_BASE: http://127.0.0.1:18081
     ports:
       - "18080:80"
     depends_on:

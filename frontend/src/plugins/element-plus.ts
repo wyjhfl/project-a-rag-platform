@@ -15,6 +15,7 @@ import { ElTag } from 'element-plus/es/components/tag/index.mjs'
 import { ElTimeline, ElTimelineItem } from 'element-plus/es/components/timeline/index.mjs'
 import { ElUpload } from 'element-plus/es/components/upload/index.mjs'
 import { ElLoading } from 'element-plus/es/components/loading/index.mjs'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
 import { ElMessageBox } from 'element-plus/es/components/message-box/index.mjs'
 
 import 'element-plus/es/components/alert/style/css'
@@ -27,6 +28,7 @@ import 'element-plus/es/components/empty/style/css'
 import 'element-plus/es/components/form/style/css'
 import 'element-plus/es/components/input/style/css'
 import 'element-plus/es/components/loading/style/css'
+import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/message-box/style/css'
 import 'element-plus/es/components/option/style/css'
 import 'element-plus/es/components/radio/style/css'
@@ -69,4 +71,4 @@ export function installElementPlus(app: App) {
   app.use(ElMessageBox)
 }
 
-export { ElMessageBox }
+export { ElMessage, ElMessageBox }

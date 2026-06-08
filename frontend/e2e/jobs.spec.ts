@@ -35,6 +35,27 @@ test.describe('Jobs Page', () => {
     expect(bodyText.length).toBeGreaterThan(0)
   })
 
+  test('renders management summaries and status filter', async ({ page }) => {
+    await page.goto('/')
+    await page.click('[data-testid="api-key-config-button"]')
+    const dialog = page.locator('.el-dialog')
+    await expect(dialog).toBeVisible()
+    await page.fill('[data-testid="api-key-input"]', 'demo-test-key')
+    await page.click('[data-testid="api-key-save-button"]')
+    await expect(dialog).not.toBeVisible({ timeout: 5000 })
+
+    await page.click('[data-testid="nav-jobs"]')
+    await expect(page.locator('[data-testid="job-summary-total"]')).toBeVisible()
+    await expect(page.locator('[data-testid="job-summary-active"]')).toBeVisible()
+    await expect(page.locator('[data-testid="job-summary-failed"]')).toBeVisible()
+
+    const statusFilter = page.locator('[data-testid="job-status-filter"]')
+    await expect(statusFilter).toBeVisible()
+    await statusFilter.click()
+    await page.locator('.el-select-dropdown__item:has-text("FAILED")').last().click()
+    await expect(page.locator('[data-testid="page-jobs"]')).toBeVisible()
+  })
+
   test('searching non-existent job shows not-found message', async ({ page }) => {
     await page.goto('/')
     // Configure API Key
@@ -53,7 +74,7 @@ test.describe('Jobs Page', () => {
     if (await searchInput.isVisible({ timeout: 5000 }).catch(() => false)) {
       await searchInput.fill('nonexistent-job-id-00000000')
       await page.click('[data-testid="job-search-button"]')
-      await expect(page.locator('.el-alert')).toBeVisible({ timeout: 10_000 })
+      await expect(page.locator('[data-testid="job-search-error"]')).toBeVisible({ timeout: 10_000 })
     } else {
       // If search input not visible, the page might have an error - that's acceptable
       expect(true).toBeTruthy()

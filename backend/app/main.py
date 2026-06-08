@@ -631,7 +631,7 @@ def create_app(
                 metadata={"job_type": "document.ingest", "status": record.status},
             ),
         )
-        return JobCreateResponse(job=record)
+        return JobCreateResponse(job=record.to_dict() if hasattr(record, "to_dict") else record)
 
     @app.post("/api/v1/jobs/evaluations", response_model=JobCreateResponse)
     def create_evaluation_job(request: JobEvaluationRequest, _role: str = Depends(require_role("admin"))) -> JobCreateResponse:
@@ -712,7 +712,7 @@ def create_app(
                 metadata={"job_type": "evaluation.run", "status": record.status},
             ),
         )
-        return JobCreateResponse(job=record)
+        return JobCreateResponse(job=record.to_dict() if hasattr(record, "to_dict") else record)
 
     @app.get("/api/v1/jobs/{job_id}", response_model=JobRecord)
     def get_job(job_id: str, _role: str = Depends(require_role("viewer"))) -> JobRecord:

@@ -69,6 +69,7 @@ Write-Host "--- Starting Backend ---" -ForegroundColor Yellow
 
 $env:STORAGE_BACKEND = "sqlite"
 $env:AUTH_ENABLED = "false"
+$env:CORS_ALLOW_ORIGINS = "http://127.0.0.1:4173,http://localhost:4173"
 $env:RATE_LIMIT_ENABLED = "false"
 $env:METRICS_ENABLED = "false"
 $env:VECTOR_BACKEND = "chroma"
@@ -115,6 +116,7 @@ Write-Host "  Backend ready (healthz 200)" -ForegroundColor Green
 Write-Host "--- Building Frontend ---" -ForegroundColor Yellow
 
 Set-Location "$ProjectRoot\frontend"
+$env:VITE_API_BASE = "http://127.0.0.1:8000"
 $savedEAP = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
 $buildOutput = & $NpmCmd run build 2>&1
@@ -132,6 +134,7 @@ Write-Host "  Frontend build succeeded" -ForegroundColor Green
 Write-Host "--- Starting Frontend Preview ---" -ForegroundColor Yellow
 
 $env:PLAYWRIGHT_BASE_URL = "http://127.0.0.1:4173"
+$env:VITE_API_BASE = "http://127.0.0.1:8000"
 # Use npx vite preview directly to control port (package.json preview uses port 4173)
 $frontendProc = Start-Process -FilePath $NpmCmd `
     -ArgumentList "run", "preview" `
