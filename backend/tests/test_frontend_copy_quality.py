@@ -342,6 +342,35 @@ def test_quality_insights_page_is_first_class_console_route() -> None:
     assert "RAG 质量洞察" in page_text
 
 
+def test_architecture_page_is_first_class_console_route() -> None:
+    app_text = APP_VUE.read_text(encoding="utf-8")
+    shell_text = APP_SHELL.read_text(encoding="utf-8")
+    page = FRONTEND_SRC / "pages" / "ArchitecturePage.vue"
+
+    assert page.exists()
+    page_text = page.read_text(encoding="utf-8")
+    assert "import ArchitecturePage from './pages/ArchitecturePage.vue'" in app_text
+    assert "activeTab === 'architecture'" in app_text
+    assert "'architecture'" in app_text
+    assert "{ key: 'architecture'" in shell_text
+    assert "架构总览" in shell_text
+    assert "质量洞察" in shell_text
+    assert 'data-testid="page-architecture"' in app_text
+    assert 'data-testid="architecture-overview-card"' in page_text
+    assert 'data-testid="architecture-layer-map"' in page_text
+    assert 'data-testid="architecture-rag-flow"' in page_text
+    assert 'data-testid="architecture-job-flow"' in page_text
+    assert 'data-testid="architecture-observability-flow"' in page_text
+    assert 'data-testid="architecture-acceptance-gate"' in page_text
+    assert 'data-testid="architecture-copy-mermaid"' in page_text
+    assert "architectureMermaid" in page_text
+    assert "FastAPI" in page_text
+    assert "Vue 3" in page_text
+    assert "OpenAPI" in page_text
+    assert "Prometheus" in page_text
+    assert "final_production_acceptance.ps1" in page_text
+
+
 def test_readme_resume_links_are_current_and_existing() -> None:
     project_root = FRONTEND_SRC.parents[1]
     readme = (project_root / "README.md").read_text(encoding="utf-8")

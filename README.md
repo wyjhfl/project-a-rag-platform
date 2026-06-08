@@ -114,14 +114,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\final_production_acceptance.p
 ## 推荐演示顺序
 
 1. 打开前端控制台 Acceptance 页，先讲“面试展示入口”卡片。
-2. Quality：集中讲 RAG 指标、Bad Case、Trace 复盘和工程取舍。
-3. System Status：展示 release、healthz/readyz、metrics、Request ID 错误排障。
-4. Documents + Jobs：讲资料入库为什么要异步化，以及 cancel/retry/timeout 的生产语义。
-5. Chat：讲 grounded answer、引用证据和 Prompt 注入防护。
-6. Tickets：讲高风险或资料不足时如何升级人工闭环。
-7. Evaluations：讲 RAG 评测和 bad case 复盘。
-8. Audit：用审计日志和 Request ID 收束“可追踪、可运维”。
-9. GitHub Actions / final acceptance：展示自动化验证证据。
+2. Architecture：从系统分层、RAG 数据流、Worker、可观测性和生产门禁讲整体设计。
+3. Quality：集中讲 RAG 指标、Bad Case、Trace 复盘和工程取舍。
+4. System Status：展示 release、healthz/readyz、metrics、Request ID 错误排障。
+5. Documents + Jobs：讲资料入库为什么要异步化，以及 cancel/retry/timeout 的生产语义。
+6. Chat：讲 grounded answer、引用证据和 Prompt 注入防护。
+7. Tickets：讲高风险或资料不足时如何升级人工闭环。
+8. Evaluations：讲 RAG 评测和 bad case 复盘。
+9. Audit：用审计日志和 Request ID 收束“可追踪、可运维”。
+10. GitHub Actions / final acceptance：展示自动化验证证据。
 
 ## 仓库结构
 

@@ -37,7 +37,21 @@ http://127.0.0.1:4173
 
 “我把面试时需要讲的业务价值、技术亮点和验收证据放在默认页，面试官打开项目后不用翻代码就能理解这个系统解决什么问题。”
 
-## 3. System Status：讲可运维性
+## 3. Architecture：讲整体设计
+
+展示点：
+
+- 系统分层：Vue 3、FastAPI、RAG、JobService、Observability、Acceptance Gate
+- RAG 数据流
+- Job / Worker 流
+- 可观测性链路
+- final production acceptance gate
+
+讲法：
+
+“我单独做了架构总览页，面试官不用先读代码，就能看到这个项目的分层和数据流。这里可以从业务输入一路讲到 RAG、异步任务、审计、metrics 和最终验收门禁。”
+
+## 4. System Status：讲可运维性
 
 展示点：
 
@@ -51,7 +65,7 @@ http://127.0.0.1:4173
 
 “生产系统不能只有功能，还要能排障。所以我做了 liveness/readiness、统一错误格式、Request ID 和 Prometheus metrics。前端直接展示这些信号。”
 
-## 4. Quality：讲 RAG 质量与工程取舍
+## 5. Quality：讲 RAG 质量与工程取舍
 
 展示点：
 
@@ -65,7 +79,7 @@ http://127.0.0.1:4173
 
 “RAG 项目不能只演示一条问答。我单独做了质量洞察页，把评测指标、bad case、trace 和工程取舍集中展示。这样面试官追问‘怎么证明效果’和‘怎么生产化’时，可以直接从 UI 讲到测试和架构。”
 
-## 5. Documents + Jobs：讲异步化
+## 6. Documents + Jobs：讲异步化
 
 展示点：
 
@@ -83,7 +97,7 @@ http://127.0.0.1:4173
 
 “内置 JobService 是为了把任务语义讲清楚；生产增强时用 PostgreSQL 共享任务状态，Redis 共享限流。再往后可以把执行层替换成 Celery/RQ/Redis Queue，但 API、审计、metrics 和 UI 的任务语义不用推倒重来。”
 
-## 6. Chat：讲 grounded answer
+## 7. Chat：讲 grounded answer
 
 展示点：
 
@@ -95,7 +109,7 @@ http://127.0.0.1:4173
 
 “我不希望系统编答案，所以回答必须绑定检索上下文和引用。资料不足时应该拒答或升级工单，这比强行回答更符合企业售后场景。”
 
-## 7. Tickets：讲人工闭环
+## 8. Tickets：讲人工闭环
 
 展示点：
 
@@ -107,7 +121,7 @@ http://127.0.0.1:4173
 
 “RAG 不是替代所有人工。高风险或资料不足时升级人工，这样系统边界更安全，也更接近真实业务。”
 
-## 8. Evaluations + Audit：讲质量闭环
+## 9. Evaluations + Audit：讲质量闭环
 
 展示点：
 
@@ -119,7 +133,7 @@ http://127.0.0.1:4173
 
 “我把评测和审计做成产品的一部分。评测回答‘效果如何’，审计回答‘发生了什么、谁触发的、怎么排查’。”
 
-## 9. 收束
+## 10. 收束
 
 最后打开 GitHub Actions 或本地验收输出：
 

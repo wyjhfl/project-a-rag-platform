@@ -69,10 +69,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\final_production_acceptance.p
 ## 讲解顺序
 
 1. Acceptance：先讲面试展示入口。
-2. Quality：讲 RAG 指标、Bad Case、Trace 和工程取舍。
-3. System Status：讲健康检查、release 和 metrics。
-4. Documents + Jobs：讲资料入库和异步任务。
-5. Chat：讲 grounded answer 与引用证据。
-6. Tickets：讲人工升级闭环。
-7. Evaluations：讲评测闭环。
-8. Audit：讲 Request ID 与审计追踪。
+2. Architecture：讲系统分层、RAG 数据流、Worker、可观测性和生产验收门禁。
+3. Quality：讲 RAG 指标、Bad Case、Trace 和工程取舍。
+4. System Status：讲健康检查、release 和 metrics。
+5. Documents + Jobs：讲资料入库和异步任务。
+6. Chat：讲 grounded answer 与引用证据。
+7. Tickets：讲人工升级闭环。
+8. Evaluations：讲评测闭环。
+9. Audit：讲 Request ID 与审计追踪。

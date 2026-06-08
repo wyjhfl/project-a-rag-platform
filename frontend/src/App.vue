@@ -1,6 +1,7 @@
 <template>
     <AppShell v-model:activeTab="activeTab" :loading="globalLoading" @refresh="refreshAll">
     <AcceptancePage v-if="activeTab === 'acceptance'" data-testid="page-acceptance" :overview="acceptanceOverview" />
+    <ArchitecturePage v-if="activeTab === 'architecture'" data-testid="page-architecture" />
     <QualityPage v-if="activeTab === 'quality'" data-testid="page-quality" :overview="acceptanceOverview" />
     <SystemStatusPage v-if="activeTab === 'status'" data-testid="page-status" ref="statusPage" />
     <DocumentsPage v-if="activeTab === 'documents'" data-testid="page-documents" />
@@ -19,6 +20,7 @@ import { loadAcceptanceOverview } from './api/endpoints'
 import type { AcceptanceOverviewResponse } from './api/types'
 import AppShell from './components/AppShell.vue'
 import AcceptancePage from './pages/AcceptancePage.vue'
+import ArchitecturePage from './pages/ArchitecturePage.vue'
 import AuditPage from './pages/AuditPage.vue'
 import ChatPage from './pages/ChatPage.vue'
 import DocumentsPage from './pages/DocumentsPage.vue'
@@ -28,7 +30,7 @@ import QualityPage from './pages/QualityPage.vue'
 import SystemStatusPage from './pages/SystemStatusPage.vue'
 import TicketsPage from './pages/TicketsPage.vue'
 
-const VALID_TABS = ['acceptance', 'quality', 'status', 'documents', 'jobs', 'audit', 'chat', 'tickets', 'eval']
+const VALID_TABS = ['acceptance', 'architecture', 'quality', 'status', 'documents', 'jobs', 'audit', 'chat', 'tickets', 'eval']
 const TAB_STORAGE_KEY = 'project_a_active_tab'
 
 function isValidTab(value: string): boolean {
