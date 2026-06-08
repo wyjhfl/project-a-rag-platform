@@ -9,6 +9,22 @@
         </p>
       </div>
 
+      <div class="release-card" data-testid="release-badge">
+        <div>
+          <div class="release-label">Production release</div>
+          <div class="release-version">v1.0.4</div>
+        </div>
+        <a
+          class="release-link"
+          data-testid="release-link"
+          :href="releaseUrl"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GitHub Release
+        </a>
+      </div>
+
       <nav class="nav">
         <button
           v-for="item in navItems"
@@ -75,6 +91,7 @@ defineEmits<{ refresh: [] }>()
 
 const auth = useAuthStore()
 const showKeyDialog = ref(false)
+const releaseUrl = 'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4'
 
 const navItems = [
   { key: 'acceptance', label: '验收中心', hint: '展示文本主链、多模态、评测与 bad case 的统一证据面板。' },
@@ -102,5 +119,42 @@ const currentNav = computed(() => navItems.find((item) => item.key === activeTab
   display: flex;
   gap: 6px;
   margin-bottom: 8px;
+}
+
+.release-card {
+  margin: 14px 8px 16px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(53, 162, 235, 0.18), rgba(89, 96, 255, 0.12));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.release-label {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.release-version {
+  margin-top: 3px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.release-link {
+  display: inline-flex;
+  margin-top: 8px;
+  color: #9fd7ff;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.release-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
 }
 </style>
