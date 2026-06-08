@@ -56,6 +56,23 @@ test.describe('Jobs Page', () => {
     await expect(page.locator('[data-testid="page-jobs"]')).toBeVisible()
   })
 
+  test('shows worker architecture and queue evolution evidence', async ({ page }) => {
+    await page.goto('/')
+    await page.click('[data-testid="api-key-config-button"]')
+    const dialog = page.locator('.el-dialog')
+    await expect(dialog).toBeVisible()
+    await page.fill('[data-testid="api-key-input"]', 'demo-test-key')
+    await page.click('[data-testid="api-key-save-button"]')
+    await expect(dialog).not.toBeVisible({ timeout: 5000 })
+
+    await page.click('[data-testid="nav-jobs"]')
+    await expect(page.locator('[data-testid="job-worker-architecture-card"]')).toBeVisible()
+    await expect(page.locator('[data-testid="job-lifecycle-flow"]')).toContainText('PENDING')
+    await expect(page.locator('[data-testid="job-worker-guarantees"]')).toContainText('claim_next_job')
+    await expect(page.locator('[data-testid="job-queue-evolution"]')).toContainText('外部队列')
+    await expect(page.locator('[data-testid="job-worker-stress-command"]')).toContainText('postgres_worker_stress.py')
+  })
+
   test('searching non-existent job shows not-found message', async ({ page }) => {
     await page.goto('/')
     // Configure API Key

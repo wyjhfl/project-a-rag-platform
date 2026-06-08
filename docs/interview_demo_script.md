@@ -72,10 +72,16 @@ http://127.0.0.1:4173
 - 资料入库按钮
 - Job 列表
 - 状态、取消、重试、错误摘要
+- Worker / 队列架构卡片
+- PostgreSQL worker stress 命令
 
 讲法：
 
 “文档入库和评测可能很慢，所以我把它们放到 Job 模型里。Job 有 PENDING/RUNNING/SUCCEEDED/FAILED/CANCELLED 状态，worker 通过 claim 避免重复执行，并支持 cancel、retry、timeout 和 heartbeat。”
+
+如果面试官继续追问多实例部署，可以接着讲：
+
+“内置 JobService 是为了把任务语义讲清楚；生产增强时用 PostgreSQL 共享任务状态，Redis 共享限流。再往后可以把执行层替换成 Celery/RQ/Redis Queue，但 API、审计、metrics 和 UI 的任务语义不用推倒重来。”
 
 ## 6. Chat：讲 grounded answer
 

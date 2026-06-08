@@ -37,6 +37,13 @@ PENDING -> RUNNING -> SUCCEEDED / FAILED / CANCELLED
 - cancel/retry/timeout/heartbeat 让任务生命周期更接近生产系统。
 - Job 结果、错误摘要、审计事件和 metrics 都能在前端展示。
 
+面试演示时可以打开 Jobs 页的 “Worker / 队列架构” 卡片，直接讲：
+
+- `claim_next_job` 如何避免重复执行。
+- `heartbeat` 如何保护长任务。
+- `cancel_requested` 如何安全收口到 `CANCELLED`。
+- `postgres_worker_stress.py` 如何验证多 worker claim 竞争。
+
 ## 4. 如果部署多个 API/Worker 实例会有什么问题？
 
 单实例 demo 路径可以使用 SQLite 和内存限流；多实例生产场景需要共享状态：

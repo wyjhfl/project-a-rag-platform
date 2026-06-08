@@ -103,6 +103,26 @@ def test_jobs_page_exposes_management_controls() -> None:
     assert "canCancelJob" in text
 
 
+def test_jobs_page_exposes_worker_architecture_showcase() -> None:
+    text = (FRONTEND_SRC / "pages" / "JobsPage.vue").read_text(encoding="utf-8")
+
+    assert 'data-testid="job-worker-architecture-card"' in text
+    assert 'data-testid="job-lifecycle-flow"' in text
+    assert 'data-testid="job-worker-guarantees"' in text
+    assert 'data-testid="job-queue-evolution"' in text
+    assert 'data-testid="job-worker-stress-command"' in text
+    assert 'data-testid="job-copy-stress-command"' in text
+    assert "workerArchitecture" in text
+    assert "lifecycleSteps" in text
+    assert "workerGuarantees" in text
+    assert "queueEvolution" in text
+    assert "copyWorkerStressCommand" in text
+    assert "claim_next_job" in text
+    assert "heartbeat" in text
+    assert "postgres_worker_stress.py" in text
+    assert "外部队列" in text
+
+
 def test_jobs_page_preserves_element_plus_on_demand_imports() -> None:
     text = (FRONTEND_SRC / "pages" / "JobsPage.vue").read_text(encoding="utf-8")
     plugin_text = (FRONTEND_SRC / "plugins" / "element-plus.ts").read_text(encoding="utf-8")

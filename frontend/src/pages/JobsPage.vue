@@ -19,6 +19,49 @@
       </el-card>
     </div>
 
+    <el-card class="worker-card" data-testid="job-worker-architecture-card">
+      <template #header>
+        <div class="card-header-row">
+          <span>Worker / 队列架构</span>
+          <el-tag size="small" type="success">production-ready semantics</el-tag>
+        </div>
+      </template>
+
+      <div class="worker-grid">
+        <div>
+          <h4>状态流转</h4>
+          <div class="lifecycle-flow" data-testid="job-lifecycle-flow">
+            <span v-for="(step, index) in lifecycleSteps" :key="step" class="lifecycle-step">
+              {{ step }}
+              <span v-if="index < lifecycleSteps.length - 1" class="arrow">→</span>
+            </span>
+          </div>
+          <p class="muted section">{{ workerArchitecture }}</p>
+        </div>
+
+        <div data-testid="job-worker-guarantees">
+          <h4>生产保证</h4>
+          <ul class="compact-list">
+            <li v-for="item in workerGuarantees" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+
+        <div data-testid="job-queue-evolution">
+          <h4>队列演进</h4>
+          <ul class="compact-list">
+            <li v-for="item in queueEvolution" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stress-command section" data-testid="job-worker-stress-command">
+        <code>{{ workerStressCommand }}</code>
+        <el-button data-testid="job-copy-stress-command" size="small" text @click="copyWorkerStressCommand">
+          复制压测命令
+        </el-button>
+      </div>
+    </el-card>
+
     <div class="toolbar">
       <el-button @click="refresh" :loading="loading">刷新列表</el-button>
       <el-select
@@ -154,6 +197,20 @@ const cancellingJobId = ref('')
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const activeStatuses = new Set(['PENDING', 'RUNNING', 'RETRYING'])
+const lifecycleSteps = ['PENDING', 'RUNNING', 'SUCCEEDED / FAILED / CANCELLED']
+const workerArchitecture = 'JobService 将入库与评测从同步请求中解耦；worker 通过 claim_next_job 获取任务，用 heartbeat 证明长任务仍然存活，并把结果、错误摘要、审计事件和 metrics 写回。'
+const workerGuarantees = [
+  'claim_next_job 保证同一时刻只有一个 worker 拥有 RUNNING job',
+  'heartbeat 防止合法长任务被 timeout 误回收',
+  'cancel_requested 由 worker 安全收口到 CANCELLED',
+  'FAILED error 只保留安全摘要，不泄露 traceback 或绝对路径',
+]
+const queueEvolution = [
+  '单机 demo：内置 JobService + SQLite，启动成本低',
+  '生产增强：PostgreSQL 共享 job 状态，Redis 共享限流',
+  '规模化下一步：外部队列 Celery / RQ / Redis Queue',
+]
+const workerStressCommand = 'python scripts/postgres_worker_stress.py --jobs 50 --workers 6'
 const safeJobs = computed(() => (Array.isArray(jobs.value) ? jobs.value : []))
 const runningCount = computed(() => safeJobs.value.filter((j) => activeStatuses.has(j.status)).length)
 const activeCount = runningCount
@@ -204,6 +261,15 @@ function formatResult(job: JobRecord): string {
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) + '...' : s
+}
+
+async function copyWorkerStressCommand() {
+  try {
+    await navigator.clipboard.writeText(workerStressCommand)
+    ElMessage.success('已复制 worker stress 命令')
+  } catch {
+    ElMessage.warning('当前浏览器不支持自动复制，请手动选择命令')
+  }
 }
 
 async function refresh() {
@@ -344,9 +410,86 @@ onUnmounted(() => {
   color: var(--el-text-color-secondary);
 }
 
+.worker-card {
+  border: 1px solid #d9ecff;
+  background: linear-gradient(135deg, #f8fbff 0%, #ffffff 50%, #f8fff5 100%);
+}
+
+.card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.worker-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 16px;
+}
+
+.worker-grid h4 {
+  margin: 0 0 8px;
+}
+
+.lifecycle-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.lifecycle-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid #d9ecff;
+  border-radius: 999px;
+  background: #ecf5ff;
+  color: #303133;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.arrow {
+  color: #909399;
+}
+
+.compact-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--el-text-color-regular);
+  line-height: 1.7;
+}
+
+.stress-command {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.stress-command code {
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 900px) {
   .job-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .worker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stress-command {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>
