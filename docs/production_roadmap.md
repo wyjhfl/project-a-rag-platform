@@ -391,3 +391,13 @@ D:\codex安装\tools\Python312\python.exe -m ruff check backend
 - [x] Release notes added: `docs/release_notes_v1.0.3.md`.
 - [x] Final production acceptance passed: 13/13 with `-RunFullE2E`.
 - [x] Hosted production handoff target: `origin/production/v1.0.3` and tag `v1.0.3` on `https://github.com/wyjhfl/project-a-rag-platform`.
+
+### v1.0.4 Production Landing Patch Finalization DONE
+
+- [x] Post-v1.0.3 worker cancellation/timeout hardening consolidated into an immutable patch release.
+- [x] Heartbeat checks now convert `cancel_requested` RUNNING jobs to `CANCELLED`.
+- [x] Package metadata updated to `1.0.4`.
+- [x] Release notes added: `docs/release_notes_v1.0.4.md`.
+- [x] Final production acceptance passed: 13/13 with `-RunFullE2E` on 2026-06-08.
+- [x] Hosted production handoff target: `origin/production/v1.0.4` and tag `v1.0.4` on `https://github.com/wyjhfl/project-a-rag-platform`.
+
