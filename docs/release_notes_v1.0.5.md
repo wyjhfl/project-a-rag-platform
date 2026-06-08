@@ -6,10 +6,7 @@
 
 The core production capabilities remain intact: FastAPI backend, Vue 3 console, RAG quality evidence, async Jobs, audit logs, Prometheus metrics, OpenAPI type generation, Docker Compose validation, PostgreSQL/Redis smoke checks, worker stress, and Full E2E.
 
-This release still uses reconstructed Git history. See:
-
-- `docs/release_lineage_notice.md`
-- `docs/canonical_repo_decision.md`
+This release still uses reconstructed Git history. The detailed historical recovery notes were intentionally removed from the public showcase tree to keep the repository focused; the current `v1.0.5` code, tests, docs, tag, and CI state are the authoritative showcase baseline.
 
 ## Key changes since v1.0.4
 

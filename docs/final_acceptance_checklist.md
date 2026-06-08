@@ -1,14 +1,14 @@
 ﻿# Final Production Acceptance Checklist
 
-This checklist is the authoritative v1.0.3 production gate for Project A.
+This checklist is the authoritative v1.0.5 production/showcase gate for Project A.
 It replaces the older `final_acceptance.ps1` checklist.
 
 ## 0. Release context
 
-- Current release target: `v1.0.3`.
-- Hosted production branch: `production/v1.0.3` on `https://github.com/wyjhfl/project-a-rag-platform`.
-- Git history is reconstructed. Keep `docs/release_lineage_notice.md` in every release.
-- Do not move old tags. Create a new tag for new production changes.
+- Current release target: `v1.0.5`.
+- Hosted repository: `https://github.com/wyjhfl/project-a-rag-platform`.
+- Git history is reconstructed; keep this transparency note in README and current release notes.
+- Do not move old tags. Create a new tag for new production/showcase changes.
 
 ## 1. Pre-flight checks
 
