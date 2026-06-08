@@ -12,12 +12,12 @@
       <div class="release-card" data-testid="release-badge">
         <div>
           <div class="release-label">Production release</div>
-          <div class="release-version">v1.0.4</div>
+          <div class="release-version">{{ RELEASE_VERSION }}</div>
         </div>
         <a
           class="release-link"
           data-testid="release-link"
-          :href="releaseUrl"
+          :href="RELEASE_URL"
           target="_blank"
           rel="noreferrer"
         >
@@ -83,6 +83,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { RELEASE_URL, RELEASE_VERSION } from '../release'
 import { useAuthStore } from '../stores/auth'
 import ApiKeyConfig from './ApiKeyConfig.vue'
 
@@ -91,7 +92,6 @@ defineEmits<{ refresh: [] }>()
 
 const auth = useAuthStore()
 const showKeyDialog = ref(false)
-const releaseUrl = 'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4'
 
 const navItems = [
   { key: 'acceptance', label: '验收中心', hint: '展示文本主链、多模态、评测与 bad case 的统一证据面板。' },

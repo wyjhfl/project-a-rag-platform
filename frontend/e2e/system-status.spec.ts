@@ -8,21 +8,47 @@ test.describe('System Status', () => {
   })
 
   test('displays healthz card', async ({ page }) => {
-    const healthzCard = page.locator('.health-grid .el-card').first()
-    await expect(healthzCard).toBeVisible()
+    await expect(page.locator('[data-testid="healthz-card"]')).toBeVisible()
   })
 
   test('displays readyz card', async ({ page }) => {
-    const cards = page.locator('.health-grid .el-card')
-    await expect(cards.nth(1)).toBeVisible()
+    await expect(page.locator('[data-testid="readyz-card"]')).toBeVisible()
   })
 
   test('displays legacy health card', async ({ page }) => {
-    const cards = page.locator('.health-grid .el-card')
-    await expect(cards.nth(2)).toBeVisible()
+    await expect(page.locator('[data-testid="legacy-health-card"]')).toBeVisible()
   })
 
   test('page does not crash even if readyz is degraded', async ({ page }) => {
     await expect(page.locator('[data-testid="page-status"]')).toBeVisible()
+  })
+
+  test('system details show release metadata or an explicit error state', async ({ page }) => {
+    await expect(page.locator('[data-testid="system-status-panel"]')).toBeVisible()
+
+    await expect
+      .poll(
+        async () => {
+          const loaded = await page.locator('[data-testid="system-status-loaded"]').isVisible().catch(() => false)
+          const error = await page.locator('[data-testid="system-status-error"]').isVisible().catch(() => false)
+          if (loaded) return 'loaded'
+          if (error) return 'error'
+          return 'pending'
+        },
+        { timeout: 10_000 },
+      )
+      .not.toBe('pending')
+
+    const loaded = await page.locator('[data-testid="system-status-loaded"]').isVisible().catch(() => false)
+    if (loaded) {
+      const panel = page.locator('[data-testid="system-status-panel"]')
+      await expect(panel.locator('[data-testid="system-status-version"]').first()).toBeVisible()
+      await expect(panel.locator('[data-testid="system-release-link"]').first()).toHaveAttribute(
+        'href',
+        'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4',
+      )
+    } else {
+      await expect(page.locator('[data-testid="system-status-error"]')).toBeVisible()
+    }
   })
 })

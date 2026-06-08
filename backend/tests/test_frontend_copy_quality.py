@@ -48,8 +48,37 @@ def test_frontend_visible_copy_has_no_mojibake_markers() -> None:
 
 def test_app_shell_exposes_current_release_entrypoint() -> None:
     text = APP_SHELL.read_text(encoding="utf-8")
+    release_text = (FRONTEND_SRC / "release.ts").read_text(encoding="utf-8")
 
     assert 'data-testid="release-badge"' in text
     assert 'data-testid="release-link"' in text
-    assert "v1.0.4" in text
-    assert "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4" in text
+    assert "RELEASE_VERSION" in text
+    assert "RELEASE_URL" in text
+    assert "v1.0.4" in release_text
+    assert "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4" in release_text
+
+
+def test_app_shell_uses_central_release_metadata() -> None:
+    text = APP_SHELL.read_text(encoding="utf-8")
+    release_file = FRONTEND_SRC / "release.ts"
+
+    assert release_file.exists()
+    release_text = release_file.read_text(encoding="utf-8")
+    assert "export const RELEASE_VERSION" in release_text
+    assert "export const RELEASE_URL" in release_text
+    assert "import { RELEASE_URL, RELEASE_VERSION } from '../release'" in text
+    assert "const releaseUrl =" not in text
+
+
+def test_system_status_page_has_stable_release_and_empty_state_selectors() -> None:
+    text = (FRONTEND_SRC / "pages" / "SystemStatusPage.vue").read_text(encoding="utf-8")
+
+    assert 'data-testid="healthz-version"' in text
+    assert 'data-testid="readyz-version"' in text
+    assert 'data-testid="legacy-health-version"' in text
+    assert 'data-testid="system-status-version"' in text
+    assert 'data-testid="system-release-link"' in text
+    assert "import { RELEASE_URL } from '../release'" in text
+    assert "function displayValue" in text
+    assert "function displayList" in text
+    assert "\u2014" in text
