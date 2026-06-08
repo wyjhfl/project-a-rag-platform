@@ -42,6 +42,13 @@ export async function getHealth(): Promise<HealthResponse> {
   return data
 }
 
+export async function getMetricsText(): Promise<string> {
+  const { data } = await http.get<string>('/metrics', {
+    responseType: 'text',
+  })
+  return data
+}
+
 export async function ingestDocuments(docsSource: string): Promise<IngestResponse> {
   const { data } = await http.post<IngestResponse>('/api/v1/documents/ingest', { docs_source: docsSource })
   return data

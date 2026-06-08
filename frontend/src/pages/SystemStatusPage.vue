@@ -83,6 +83,34 @@
       <el-empty v-else-if="!statusError" description="暂无系统详情数据" />
       <ApiErrorAlert v-if="statusError" data-testid="system-status-error" :error="statusError" />
     </el-card>
+
+    <el-card data-testid="metrics-card">
+      <template #header>Metrics</template>
+      <div v-if="metricsLoading" v-loading="true" style="min-height: 80px" />
+      <template v-else-if="metricsData">
+        <div class="metrics-grid">
+          <div class="metric-tile">
+            <span class="metric-label">HTTP requests</span>
+            <strong data-testid="metrics-request-total">{{ metricsData.requestTotal }}</strong>
+          </div>
+          <div class="metric-tile">
+            <span class="metric-label">HTTP errors</span>
+            <strong data-testid="metrics-error-total">{{ metricsData.errorTotal }}</strong>
+          </div>
+          <div class="metric-tile">
+            <span class="metric-label">Jobs processed</span>
+            <strong data-testid="metrics-job-total">{{ metricsData.jobTotal }}</strong>
+          </div>
+          <div class="metric-tile">
+            <span class="metric-label">Uptime seconds</span>
+            <strong data-testid="metrics-uptime-seconds">{{ displayMetricNumber(metricsData.uptimeSeconds) }}</strong>
+          </div>
+        </div>
+        <p class="muted section">Parsed from /metrics ({{ metricsData.rawLineCount }} non-empty lines).</p>
+      </template>
+      <el-empty v-else-if="!metricsError" description="暂无 metrics 数据" />
+      <ApiErrorAlert v-if="metricsError" :error="metricsError" />
+    </el-card>
   </section>
 </template>
 
@@ -91,9 +119,17 @@ import { computed, onMounted, ref } from 'vue'
 
 import { formatApiError } from '../api/client'
 import ApiErrorAlert from '../components/ApiErrorAlert.vue'
-import { getHealth, getHealthz, getReadyz, getSystemStatus } from '../api/endpoints'
+import { getHealth, getHealthz, getMetricsText, getReadyz, getSystemStatus } from '../api/endpoints'
 import type { HealthResponse, HealthzResponse, ReadyzResponse, SystemStatusResponse } from '../api/types'
 import { RELEASE_URL } from '../release'
+
+interface MetricsSnapshot {
+  requestTotal: number
+  errorTotal: number
+  jobTotal: number
+  uptimeSeconds: number | null
+  rawLineCount: number
+}
 
 const loading = ref(false)
 
@@ -112,6 +148,10 @@ const healthError = ref('')
 const statusData = ref<SystemStatusResponse | null>(null)
 const statusLoading = ref(false)
 const statusError = ref('')
+
+const metricsData = ref<MetricsSnapshot | null>(null)
+const metricsLoading = ref(false)
+const metricsError = ref('')
 
 const readyzStatusType = computed(() => {
   if (!readyzData.value) return 'info'
@@ -145,17 +185,48 @@ function displayList(values: string[] | null | undefined): string {
   return visible.length > 0 ? visible.join(', ') : '—'
 }
 
+function metricValues(text: string, name: string): number[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith(name))
+    .map((line) => Number(line.match(/\s+([0-9.]+)$/)?.[1] ?? 0))
+    .filter((value) => Number.isFinite(value))
+}
+
+function sumMetric(text: string, name: string): number {
+  return metricValues(text, name).reduce((total, value) => total + value, 0)
+}
+
+function parseMetricsSnapshot(text: string): MetricsSnapshot {
+  const uptime = metricValues(text, 'project_a_uptime_seconds')[0]
+  return {
+    requestTotal: sumMetric(text, 'project_a_request_total'),
+    errorTotal: sumMetric(text, 'project_a_error_total'),
+    jobTotal: sumMetric(text, 'project_a_job_total'),
+    uptimeSeconds: Number.isFinite(uptime) ? uptime : null,
+    rawLineCount: text.split('\n').filter((line) => line.trim().length > 0).length,
+  }
+}
+
+function displayMetricNumber(value: number | null): string {
+  if (value === null) return '—'
+  return Number.isInteger(value) ? String(value) : value.toFixed(2)
+}
+
 async function refreshAll() {
   loading.value = true
   healthzError.value = ''
   readyzError.value = ''
   healthError.value = ''
   statusError.value = ''
+  metricsError.value = ''
 
   healthzLoading.value = true
   readyzLoading.value = true
   healthLoading.value = true
   statusLoading.value = true
+  metricsLoading.value = true
 
   await Promise.allSettled([
     (async () => {
@@ -173,6 +244,10 @@ async function refreshAll() {
     (async () => {
       try { statusData.value = await getSystemStatus() } catch (e) { statusError.value = formatApiError(e) }
       finally { statusLoading.value = false }
+    })(),
+    (async () => {
+      try { metricsData.value = parseMetricsSnapshot(await getMetricsText()) } catch (e) { metricsError.value = formatApiError(e) }
+      finally { metricsLoading.value = false }
     })(),
   ])
 
@@ -206,5 +281,37 @@ defineExpose({ refresh: refreshAll })
 
 .release-link:hover {
   text-decoration: underline;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric-tile {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter);
+}
+
+.metric-label {
+  display: block;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.metric-tile strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--el-text-color-primary);
+  font-size: 24px;
+}
+
+@media (max-width: 900px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

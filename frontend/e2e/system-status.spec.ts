@@ -19,6 +19,15 @@ test.describe('System Status', () => {
     await expect(page.locator('[data-testid="legacy-health-card"]')).toBeVisible()
   })
 
+  test('displays metrics summary card', async ({ page }) => {
+    const card = page.locator('[data-testid="metrics-card"]')
+    await expect(card).toBeVisible()
+    await expect(card.locator('[data-testid="metrics-request-total"]')).toBeVisible()
+    await expect(card.locator('[data-testid="metrics-error-total"]')).toBeVisible()
+    await expect(card.locator('[data-testid="metrics-job-total"]')).toBeVisible()
+    await expect(card.locator('[data-testid="metrics-uptime-seconds"]')).toBeVisible()
+  })
+
   test('page does not crash even if readyz is degraded', async ({ page }) => {
     await expect(page.locator('[data-testid="page-status"]')).toBeVisible()
   })

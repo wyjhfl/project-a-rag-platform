@@ -241,3 +241,21 @@ def test_api_error_alert_component_is_used_for_request_id_traceability() -> None
     for page in pages:
         page_text = (FRONTEND_SRC / "pages" / page).read_text(encoding="utf-8")
         assert "ApiErrorAlert" in page_text, page
+
+
+def test_system_status_page_surfaces_prometheus_metrics_summary() -> None:
+    endpoints_text = (FRONTEND_SRC / "api" / "endpoints.ts").read_text(encoding="utf-8")
+    page_text = (FRONTEND_SRC / "pages" / "SystemStatusPage.vue").read_text(encoding="utf-8")
+
+    assert "export async function getMetricsText" in endpoints_text
+    assert "http.get<string>('/metrics'" in endpoints_text
+    assert 'data-testid="metrics-card"' in page_text
+    assert 'data-testid="metrics-request-total"' in page_text
+    assert 'data-testid="metrics-error-total"' in page_text
+    assert 'data-testid="metrics-job-total"' in page_text
+    assert 'data-testid="metrics-uptime-seconds"' in page_text
+    assert "function parseMetricsSnapshot" in page_text
+    assert "project_a_request_total" in page_text
+    assert "project_a_error_total" in page_text
+    assert "project_a_job_total" in page_text
+    assert "getMetricsText" in page_text
