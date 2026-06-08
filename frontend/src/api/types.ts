@@ -1,195 +1,90 @@
+import type { components, paths } from './generated'
+
+export type ApiSchema<Name extends keyof components['schemas']> = components['schemas'][Name]
+
+type JsonContent<Response> = Response extends { content: { 'application/json': infer Body } } ? Body : never
+type SuccessResponse<Path extends keyof paths> = paths[Path]['get'] extends { responses: { 200: infer Response } }
+  ? JsonContent<Response>
+  : never
+
 export interface ErrorResponse {
-  detail: string
+  detail?: string
+  message?: string
   code?: string
   request_id?: string
+  error?: {
+    code?: string
+    message?: string
+    request_id?: string
+  }
 }
 
-export interface ChatRequest {
-  question: string
-}
-
-export interface Citation {
-  source: string
-  chunk_index: number
-  content: string
-}
-
-export interface ChatResponse {
-  answer: string
-  citations: Citation[]
-  llm_used: boolean
-  insufficient: boolean
-  safety_warning: boolean
-}
-
-export interface SessionChatRequest {
-  session_id: string
-  question: string
-}
-
-export interface SessionChatResponse extends ChatResponse {
-  session_id: string
-  resolved_question: string
-}
-
-export interface IngestResponse {
-  document_count: number
-  chunk_count: number
-}
-
-export interface UploadResponse {
-  filename: string
-  path: string
-}
-
-export interface SystemStatusResponse {
-  status: string
-  version: string
-  release_url: string
-  llm_provider: string
-  llm_model: string
-  llm_enabled: boolean
-  vector_store_ready: boolean
-  docs_sources: string[]
-}
-
-export interface EvaluationRunResponse {
-  summary: Record<string, unknown>
-  report_path: string | null
-}
-
-export interface AcceptanceEvidenceItem {
-  label: string
-  path: string
-}
-
-export interface AcceptanceBreakdownItem {
-  label: string
-  status: string
-  summary: string
+export type ChatRequest = ApiSchema<'ChatRequest'>
+export type Citation = ApiSchema<'Citation'>
+export type ChatResponse = ApiSchema<'ChatResponse'>
+export type SessionChatRequest = ApiSchema<'SessionChatRequest'>
+export type SessionChatResponse = ApiSchema<'SessionChatResponse'>
+export type IngestResponse = ApiSchema<'IngestResponse'>
+export type UploadResponse = ApiSchema<'UploadResponse'>
+export type SystemStatusResponse = ApiSchema<'SystemStatusResponse'>
+export type EvaluationRunResponse = ApiSchema<'EvaluationRunResponse'>
+export type AcceptanceEvidenceItem = ApiSchema<'AcceptanceEvidenceItem'>
+export type AcceptanceBreakdownItem = ApiSchema<'AcceptanceBreakdownItem'> & {
   metrics: Record<string, string>
 }
-
-export interface AcceptanceChartBar {
-  label: string
-  value: number
-  total: number
-  tone: string
-}
-
-export interface AcceptanceHighlightItem {
-  title: string
-  summary: string
-  status: string
+export type AcceptanceChartBar = ApiSchema<'AcceptanceChartBar'>
+export type AcceptanceHighlightItem = ApiSchema<'AcceptanceHighlightItem'> & {
   tags: string[]
 }
-
-export interface AcceptanceTraceEvent {
-  name: string
-  summary: string
+export type AcceptanceTraceEvent = ApiSchema<'AcceptanceTraceEvent'> & {
   inputs: Record<string, string>
   outputs: Record<string, string>
   metadata: Record<string, string>
 }
-
-export interface AcceptanceTraceCase {
-  case_id: string
-  title: string
-  issue: string
+export type AcceptanceTraceCase = Omit<ApiSchema<'AcceptanceTraceCase'>, 'events' | 'raw_trace'> & {
   events: AcceptanceTraceEvent[]
   raw_trace: Record<string, unknown>
 }
-
-export interface AcceptancePanel {
-  key: string
-  title: string
-  status: string
-  summary: string
-  metrics: Record<string, string>
+export type AcceptancePanel = Omit<
+  ApiSchema<'AcceptancePanel'>,
+  'evidence' | 'breakdown' | 'chart' | 'highlights' | 'trace_cases'
+> & {
   evidence: AcceptanceEvidenceItem[]
   breakdown: AcceptanceBreakdownItem[]
   chart: AcceptanceChartBar[]
   highlights: AcceptanceHighlightItem[]
   trace_cases: AcceptanceTraceCase[]
 }
-
-export interface AcceptanceOverviewResponse {
-  status: string
-  version: string
-  generated_from: string[]
+export type AcceptanceOverviewResponse = Omit<ApiSchema<'AcceptanceOverviewResponse'>, 'panels'> & {
   panels: AcceptancePanel[]
 }
+export type TicketRecord = ApiSchema<'TicketRecord'> & { [key: string]: unknown }
+export type TicketWorkflowResult = ApiSchema<'TicketWorkflowResult'> & { [key: string]: unknown }
+export type AuditEventResponse = ApiSchema<'AuditEventResponse'> & {
+  id?: number
+  event_id?: string
+  request_id?: string
+  created_at?: string
+}
+export type JobRecord = ApiSchema<'JobRecord'>
+export type JobCancelRequest = Partial<ApiSchema<'JobCancelRequest'>>
+export type JobCreateResponse = ApiSchema<'JobCreateResponse'>
 
-export interface TicketRecord {
-  ticket_id: string
+export type HealthzResponse = SuccessResponse<'/healthz'> & {
   status: string
-  risk_level: string
-  device_model: string
-  question: string
+  service?: string
+  version?: string
+  release_url?: string
+}
+export type ReadyzResponse = {
+  status: string
+  version?: string
+  release_url?: string
+  checks?: Record<string, unknown>
   [key: string]: unknown
 }
-
-export interface TicketWorkflowResult {
-  ticket: TicketRecord
-  [key: string]: unknown
-}
-
-export interface AuditEventResponse {
-  event_id: string
-  action: string
-  actor_role: string
-  resource_type: string
-  resource_id: string | null
-  summary: string
-  metadata: Record<string, unknown>
-  request_id: string
-  created_at: string
-}
-
-export interface JobRecord {
-  job_id: string
-  job_type: string
+export type HealthResponse = SuccessResponse<'/health'> & {
   status: string
-  payload: Record<string, unknown>
-  result: Record<string, unknown>
-  error: string | null
-  retry_count: number
-  max_retries: number
-  locked_by: string | null
-  locked_at: string | null
-  heartbeat_at: string | null
-  timeout_seconds: number
-  cancel_requested: boolean
-  created_at: string
-  updated_at: string
-  started_at: string | null
-  finished_at: string | null
-}
-
-export interface JobCancelRequest {
-  reason?: string
-}
-
-export interface JobCreateResponse {
-  job: JobRecord
-}
-
-export interface HealthzResponse {
-  status: string
-  service: string
-  version: string
-  release_url: string
-}
-
-export interface ReadyzResponse {
-  status: string
-  version: string
-  release_url: string
-  checks: Record<string, unknown>
-}
-
-export interface HealthResponse {
-  status: string
-  version: string
-  release_url: string
+  version?: string
+  release_url?: string
 }

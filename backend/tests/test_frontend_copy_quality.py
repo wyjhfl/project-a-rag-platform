@@ -1,4 +1,5 @@
-﻿from pathlib import Path
+﻿import json
+from pathlib import Path
 
 FRONTEND_SRC = Path(__file__).resolve().parents[2] / "frontend" / "src"
 APP_SHELL = FRONTEND_SRC / "components" / "AppShell.vue"
@@ -179,3 +180,22 @@ def test_openapi_generation_is_ci_guarded() -> None:
     assert "api:check" in final_acceptance
     assert "$env:PROJECT_A_PYTHON_EXE = $PythonExe" in final_acceptance
     assert "git diff --exit-code docs/openapi.json frontend/src/api/generated.ts" in final_acceptance
+
+
+def test_job_create_response_is_strongly_typed_in_openapi() -> None:
+    project_root = FRONTEND_SRC.parents[1]
+    openapi = json.loads((project_root / "docs" / "openapi.json").read_text(encoding="utf-8"))
+
+    job_schema = openapi["components"]["schemas"]["JobCreateResponse"]["properties"]["job"]
+    assert job_schema == {"$ref": "#/components/schemas/JobRecord"}
+
+
+def test_frontend_api_types_are_generated_schema_aliases() -> None:
+    types_text = (FRONTEND_SRC / "api" / "types.ts").read_text(encoding="utf-8")
+
+    assert "import type { components" in types_text
+    assert "from './generated'" in types_text
+    assert "export type JobRecord = ApiSchema<'JobRecord'>" in types_text
+    assert "export type ChatResponse = ApiSchema<'ChatResponse'>" in types_text
+    assert 'export interface JobRecord' not in types_text
+    assert 'export interface ChatResponse' not in types_text

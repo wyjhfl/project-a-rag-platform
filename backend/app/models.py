@@ -153,10 +153,6 @@ class AuditEventResponse(BaseModel):
     timestamp: str = ""
 
 
-class JobCreateResponse(BaseModel):
-    job: dict
-
-
 class JobRecord(BaseModel):
     job_id: str
     job_type: str = ""
@@ -175,6 +171,10 @@ class JobRecord(BaseModel):
     updated_at: str = ""
     started_at: Optional[str] = None
     finished_at: Optional[str] = None
+
+
+class JobCreateResponse(BaseModel):
+    job: JobRecord
 
 
 class JobCancelRequest(BaseModel):

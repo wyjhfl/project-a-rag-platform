@@ -629,10 +629,7 @@ export interface components {
         };
         /** JobCreateResponse */
         JobCreateResponse: {
-            /** Job */
-            job: {
-                [key: string]: unknown;
-            };
+            job: components["schemas"]["JobRecord"];
         };
         /** JobEvaluationRequest */
         JobEvaluationRequest: {
