@@ -111,10 +111,17 @@ def test_viewer_cannot_access_operator_endpoint(tmp_path: Path):
     client = _make_client(tmp_path, auth_enabled=True)
     response = client.post(
         "/api/v1/documents/ingest",
-        headers={"X-API-Key": "test-viewer-key"},
+        headers={"X-API-Key": "test-viewer-key", "X-Request-ID": "rid-forbidden"},
     )
     assert response.status_code == 403
-    assert response.json()["detail"] == "Insufficient permissions"
+    body = response.json()
+    assert body["detail"] == "Insufficient permissions"
+    assert body["error"] == {
+        "code": "forbidden",
+        "message": "Insufficient permissions",
+        "request_id": "rid-forbidden",
+    }
+    assert response.headers["X-Request-ID"] == "rid-forbidden"
 
 
 def test_operator_can_access_operator_endpoint(tmp_path: Path):

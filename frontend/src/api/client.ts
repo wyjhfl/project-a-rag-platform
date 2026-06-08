@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 import { useAuthStore } from '../stores/auth'
+import type { ErrorResponse } from './types'
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
 
@@ -32,18 +33,63 @@ export class ApiClientError extends Error {
   }
 }
 
+function stringOrEmpty(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function formatValidationDetail(detail: unknown): string {
+  if (!Array.isArray(detail)) return ''
+  const messages = detail
+    .map((item) => {
+      if (!item || typeof item !== 'object') return ''
+      const record = item as Record<string, unknown>
+      const loc = Array.isArray(record.loc) ? record.loc.join('.') : ''
+      const msg = stringOrEmpty(record.msg)
+      if (!msg) return ''
+      return loc ? `${loc}: ${msg}` : msg
+    })
+    .filter(Boolean)
+  return messages.length > 0 ? `Validation failed: ${messages.join('; ')}` : 'Validation failed'
+}
+
+function extractApiErrorPayload(
+  data: ErrorResponse | undefined,
+  fallbackMessage: string,
+  headers: Record<string, unknown> | undefined,
+): { message: string; code: string; requestId: string } {
+  const nested = data?.error
+  const validationMessage = formatValidationDetail(data?.detail)
+  const message =
+    stringOrEmpty(nested?.message) ||
+    validationMessage ||
+    stringOrEmpty(data?.detail) ||
+    stringOrEmpty(data?.message) ||
+    fallbackMessage
+  const code =
+    stringOrEmpty(nested?.code) ||
+    stringOrEmpty(data?.code) ||
+    (validationMessage ? 'validation_error' : 'unknown')
+  const requestId =
+    stringOrEmpty(nested?.request_id) ||
+    stringOrEmpty(data?.request_id) ||
+    stringOrEmpty(headers?.['x-request-id'])
+  return { message, code, requestId }
+}
+
 http.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      const data = error.response.data
-      const message = data?.detail || data?.message || error.message
-      const code = data?.code || 'unknown'
-      const requestId = data?.request_id || error.response.headers?.['x-request-id'] || ''
+      const data = error.response.data as ErrorResponse | undefined
+      const { message, code, requestId } = extractApiErrorPayload(
+        data,
+        error.message,
+        error.response.headers as Record<string, unknown>,
+      )
       throw new ApiClientError(error.response.status, code, message, requestId)
     }
     throw new ApiClientError(0, 'network_error', error.message, '')
-  }
+  },
 )
 
 export { http }

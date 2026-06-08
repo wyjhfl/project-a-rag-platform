@@ -199,3 +199,17 @@ def test_frontend_api_types_are_generated_schema_aliases() -> None:
     assert "export type ChatResponse = ApiSchema<'ChatResponse'>" in types_text
     assert 'export interface JobRecord' not in types_text
     assert 'export interface ChatResponse' not in types_text
+
+
+def test_api_client_parses_unified_error_payload_and_formats_cleanly() -> None:
+    client_text = (FRONTEND_SRC / "api" / "client.ts").read_text(encoding="utf-8")
+
+    assert "function extractApiErrorPayload" in client_text
+    assert "const nested = data?.error" in client_text
+    assert "nested?.message" in client_text
+    assert "nested?.code" in client_text
+    assert "nested?.request_id" in client_text
+    assert "Validation failed" in client_text
+    assert "parts.join(' " + chr(0x2014) + " ')" in client_text
+    assert chr(0x9225) not in client_text
+    assert chr(0xFFFD) not in client_text
