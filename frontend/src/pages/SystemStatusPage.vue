@@ -48,6 +48,17 @@
         <el-descriptions :column="2" border size="small">
           <el-descriptions-item label="状态">{{ statusData.status }}</el-descriptions-item>
           <el-descriptions-item label="版本">{{ statusData.version }}</el-descriptions-item>
+          <el-descriptions-item label="发布入口" :span="2">
+            <a
+              class="release-link"
+              data-testid="system-release-link"
+              :href="statusData.release_url"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {{ statusData.release_url }}
+            </a>
+          </el-descriptions-item>
           <el-descriptions-item label="LLM Provider">{{ statusData.llm_provider }}</el-descriptions-item>
           <el-descriptions-item label="LLM Model">{{ statusData.llm_model }}</el-descriptions-item>
           <el-descriptions-item label="LLM 已启用">
@@ -151,5 +162,16 @@ defineExpose({ refresh: refreshAll })
   .health-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.release-link {
+  color: var(--el-color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.release-link:hover {
+  text-decoration: underline;
 }
 </style>

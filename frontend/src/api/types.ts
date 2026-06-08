@@ -45,6 +45,7 @@ export interface UploadResponse {
 export interface SystemStatusResponse {
   status: string
   version: string
+  release_url: string
   llm_provider: string
   llm_model: string
   llm_enabled: boolean
@@ -177,15 +178,18 @@ export interface HealthzResponse {
   status: string
   service: string
   version: string
+  release_url: string
 }
 
 export interface ReadyzResponse {
   status: string
   version: string
+  release_url: string
   checks: Record<string, unknown>
 }
 
 export interface HealthResponse {
   status: string
   version: string
+  release_url: string
 }

@@ -48,6 +48,7 @@ class UploadResponse(BaseModel):
 class SystemStatusResponse(BaseModel):
     status: str
     version: str
+    release_url: str
     llm_provider: str
     llm_model: str
     llm_enabled: bool

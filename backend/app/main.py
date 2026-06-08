@@ -1,5 +1,6 @@
 import json
 import logging
+import tomllib
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
@@ -50,7 +51,21 @@ from app.ticketing.models import TicketRecord, TicketWorkflowResult
 from app.ticketing.workflow import TicketWorkflowService
 from app.upload_security import safe_save_upload
 
-APP_VERSION = "v2.0"
+
+def _resolve_app_version() -> str:
+    try:
+        pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        version = data.get("project", {}).get("version")
+        if isinstance(version, str) and version:
+            return f"v{version}"
+    except (OSError, tomllib.TOMLDecodeError):
+        return "v1.0.4"
+    return "v1.0.4"
+
+
+APP_VERSION = _resolve_app_version()
+RELEASE_URL = "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4"
 
 logger = logging.getLogger("project_a")
 
@@ -287,7 +302,12 @@ def create_app(
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
-        return {"status": "ok", "service": "project-a-rag-platform", "version": APP_VERSION}
+        return {
+            "status": "ok",
+            "service": "project-a-rag-platform",
+            "version": APP_VERSION,
+            "release_url": RELEASE_URL,
+        }
 
     @app.get("/readyz")
     def readyz():
@@ -314,7 +334,7 @@ def create_app(
             overall = "error"
             return JSONResponse(
                 status_code=503,
-                content={"status": overall, "version": APP_VERSION, "checks": checks},
+                content={"status": overall, "version": APP_VERSION, "release_url": RELEASE_URL, "checks": checks},
             )
         all_core_ok = (
             config_check["status"] in ("ok", "degraded")
@@ -335,11 +355,11 @@ def create_app(
             overall = "degraded"
         else:
             overall = "error"
-        return {"status": overall, "version": APP_VERSION, "checks": checks}
+        return {"status": overall, "version": APP_VERSION, "release_url": RELEASE_URL, "checks": checks}
 
     @app.get("/health")
     def health() -> dict[str, str]:
-        return {"status": "ok", "version": APP_VERSION}
+        return {"status": "ok", "version": APP_VERSION, "release_url": RELEASE_URL}
 
     @app.get("/metrics")
     def metrics_endpoint() -> PlainTextResponse:
@@ -352,6 +372,7 @@ def create_app(
         return SystemStatusResponse(
             status="ok",
             version=APP_VERSION,
+            release_url=RELEASE_URL,
             llm_provider=settings.llm_provider,
             llm_model=settings.llm_model,
             llm_enabled=app.state.pipeline.llm_generator.is_enabled,

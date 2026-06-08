@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Project A v2.0 Enterprise RAG",
+    "title": "Project A v1.0.4 Enterprise RAG",
     "version": "0.1.0"
   },
   "paths": {
@@ -1144,60 +1144,45 @@
       },
       "AuditEventResponse": {
         "properties": {
-          "event_id": {
-            "type": "string",
-            "title": "Event Id"
-          },
           "action": {
             "type": "string",
             "title": "Action"
           },
           "actor_role": {
             "type": "string",
-            "title": "Actor Role"
+            "title": "Actor Role",
+            "default": ""
           },
           "resource_type": {
             "type": "string",
-            "title": "Resource Type"
+            "title": "Resource Type",
+            "default": ""
           },
           "resource_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Resource Id"
+            "type": "string",
+            "title": "Resource Id",
+            "default": ""
           },
           "summary": {
             "type": "string",
-            "title": "Summary"
+            "title": "Summary",
+            "default": ""
           },
           "metadata": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Metadata"
+            "title": "Metadata",
+            "default": {}
           },
-          "request_id": {
+          "timestamp": {
             "type": "string",
-            "title": "Request Id"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
+            "title": "Timestamp",
+            "default": ""
           }
         },
         "type": "object",
         "required": [
-          "event_id",
-          "action",
-          "actor_role",
-          "resource_type",
-          "summary",
-          "request_id",
-          "created_at"
+          "action"
         ],
         "title": "AuditEventResponse"
       },
@@ -1393,7 +1378,9 @@
       "JobCreateResponse": {
         "properties": {
           "job": {
-            "$ref": "#/components/schemas/JobRecord"
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Job"
           }
         },
         "type": "object",
@@ -1406,12 +1393,13 @@
         "properties": {
           "evaluation_type": {
             "type": "string",
-            "pattern": "^(ragas|regression|adversarial)$",
-            "title": "Evaluation Type"
+            "title": "Evaluation Type",
+            "default": "regression"
           },
           "cases_path": {
             "type": "string",
-            "title": "Cases Path"
+            "title": "Cases Path",
+            "default": ""
           },
           "docs_source": {
             "type": "string",
@@ -1420,10 +1408,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "evaluation_type",
-          "cases_path"
-        ],
         "title": "JobEvaluationRequest"
       },
       "JobIngestRequest": {
@@ -1445,21 +1429,25 @@
           },
           "job_type": {
             "type": "string",
-            "title": "Job Type"
+            "title": "Job Type",
+            "default": ""
           },
           "status": {
             "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "default": "PENDING"
           },
           "payload": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Payload"
+            "title": "Payload",
+            "default": {}
           },
           "result": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Result"
+            "title": "Result",
+            "default": {}
           },
           "error": {
             "anyOf": [
@@ -1527,11 +1515,13 @@
           },
           "created_at": {
             "type": "string",
-            "title": "Created At"
+            "title": "Created At",
+            "default": ""
           },
           "updated_at": {
             "type": "string",
-            "title": "Updated At"
+            "title": "Updated At",
+            "default": ""
           },
           "started_at": {
             "anyOf": [
@@ -1558,11 +1548,7 @@
         },
         "type": "object",
         "required": [
-          "job_id",
-          "job_type",
-          "status",
-          "created_at",
-          "updated_at"
+          "job_id"
         ],
         "title": "JobRecord"
       },
@@ -1679,6 +1665,10 @@
             "type": "string",
             "title": "Version"
           },
+          "release_url": {
+            "type": "string",
+            "title": "Release Url"
+          },
           "llm_provider": {
             "type": "string",
             "title": "Llm Provider"
@@ -1707,6 +1697,7 @@
         "required": [
           "status",
           "version",
+          "release_url",
           "llm_provider",
           "llm_model",
           "llm_enabled",

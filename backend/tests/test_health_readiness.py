@@ -35,7 +35,8 @@ def test_healthz_returns_200(tmp_path: Path):
     body = response.json()
     assert body["status"] == "ok"
     assert body["service"] == "project-a-rag-platform"
-    assert body["version"] == "v2.0"
+    assert body["version"] == "v1.0.4"
+    assert body["release_url"] == "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4"
 
 
 def test_readyz_returns_200(tmp_path: Path):
@@ -44,7 +45,8 @@ def test_readyz_returns_200(tmp_path: Path):
     assert response.status_code == 200
     body = response.json()
     assert body["status"] in ("ok", "degraded")
-    assert body["version"] == "v2.0"
+    assert body["version"] == "v1.0.4"
+    assert body["release_url"] == "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4"
 
 
 def test_readyz_contains_required_checks(tmp_path: Path):

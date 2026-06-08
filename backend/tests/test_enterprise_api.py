@@ -27,7 +27,8 @@ def test_system_status_reports_llm_disabled_without_api_key(tmp_path: Path, monk
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["version"] == "v2.0"
+    assert payload["version"] == "v1.0.4"
+    assert payload["release_url"] == "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4"
     assert payload["llm_provider"] == "xiaomi_mimo"
     assert payload["llm_model"] == "mimo-test"
     assert payload["llm_enabled"] is False

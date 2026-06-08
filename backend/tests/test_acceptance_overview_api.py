@@ -124,7 +124,7 @@ def test_acceptance_overview_exposes_panels(tmp_path: Path):
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["version"] == "v2.0"
+    assert payload["version"] == "v1.0.4"
     assert payload["status"] in {"ok", "warning"}
     assert len(payload["panels"]) == 4
     panel_map = {panel["key"]: panel for panel in payload["panels"]}

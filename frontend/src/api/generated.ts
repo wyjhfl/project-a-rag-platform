@@ -502,26 +502,40 @@ export interface components {
         };
         /** AuditEventResponse */
         AuditEventResponse: {
-            /** Event Id */
-            event_id: string;
             /** Action */
             action: string;
-            /** Actor Role */
+            /**
+             * Actor Role
+             * @default
+             */
             actor_role: string;
-            /** Resource Type */
+            /**
+             * Resource Type
+             * @default
+             */
             resource_type: string;
-            /** Resource Id */
-            resource_id?: string | null;
-            /** Summary */
+            /**
+             * Resource Id
+             * @default
+             */
+            resource_id: string;
+            /**
+             * Summary
+             * @default
+             */
             summary: string;
-            /** Metadata */
-            metadata?: {
+            /**
+             * Metadata
+             * @default {}
+             */
+            metadata: {
                 [key: string]: unknown;
             };
-            /** Request Id */
-            request_id: string;
-            /** Created At */
-            created_at: string;
+            /**
+             * Timestamp
+             * @default
+             */
+            timestamp: string;
         };
         /** Body_upload_document_api_v1_documents_upload_post */
         Body_upload_document_api_v1_documents_upload_post: {
@@ -615,13 +629,22 @@ export interface components {
         };
         /** JobCreateResponse */
         JobCreateResponse: {
-            job: components["schemas"]["JobRecord"];
+            /** Job */
+            job: {
+                [key: string]: unknown;
+            };
         };
         /** JobEvaluationRequest */
         JobEvaluationRequest: {
-            /** Evaluation Type */
+            /**
+             * Evaluation Type
+             * @default regression
+             */
             evaluation_type: string;
-            /** Cases Path */
+            /**
+             * Cases Path
+             * @default
+             */
             cases_path: string;
             /**
              * Docs Source
@@ -641,16 +664,28 @@ export interface components {
         JobRecord: {
             /** Job Id */
             job_id: string;
-            /** Job Type */
+            /**
+             * Job Type
+             * @default
+             */
             job_type: string;
-            /** Status */
+            /**
+             * Status
+             * @default PENDING
+             */
             status: string;
-            /** Payload */
-            payload?: {
+            /**
+             * Payload
+             * @default {}
+             */
+            payload: {
                 [key: string]: unknown;
             };
-            /** Result */
-            result?: {
+            /**
+             * Result
+             * @default {}
+             */
+            result: {
                 [key: string]: unknown;
             };
             /** Error */
@@ -681,9 +716,15 @@ export interface components {
              * @default false
              */
             cancel_requested: boolean;
-            /** Created At */
+            /**
+             * Created At
+             * @default
+             */
             created_at: string;
-            /** Updated At */
+            /**
+             * Updated At
+             * @default
+             */
             updated_at: string;
             /** Started At */
             started_at?: string | null;
@@ -745,6 +786,8 @@ export interface components {
             status: string;
             /** Version */
             version: string;
+            /** Release Url */
+            release_url: string;
             /** Llm Provider */
             llm_provider: string;
             /** Llm Model */
