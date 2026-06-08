@@ -148,3 +148,34 @@ def test_app_supports_hash_deep_links_and_accessible_nav_state() -> None:
     assert "window.history.replaceState" in app_text
     assert "localStorage.setItem(TAB_STORAGE_KEY" in app_text
     assert ':aria-current="activeTab === item.key ? \'page\' : undefined"' in shell_text
+
+
+def test_openapi_generation_is_ci_guarded() -> None:
+    project_root = FRONTEND_SRC.parents[1]
+    export_script = project_root / "scripts" / "export_openapi.py"
+    python_runner = project_root / "scripts" / "run_python.mjs"
+    defaults_example = project_root / "scripts" / "acceptance.defaults.example.json"
+    package_json = (project_root / "frontend" / "package.json").read_text(encoding="utf-8")
+    ci = (project_root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    final_acceptance = (project_root / "scripts" / "final_production_acceptance.ps1").read_text(encoding="utf-8")
+
+    assert export_script.exists()
+    assert python_runner.exists()
+    assert defaults_example.exists()
+    script_text = export_script.read_text(encoding="utf-8")
+    runner_text = python_runner.read_text(encoding="utf-8")
+    assert "create_app" in script_text
+    assert "docs/openapi.json" in script_text
+    assert '"api:openapi"' in package_json
+    assert "run_python.mjs" in package_json
+    assert '"api:types"' in package_json
+    assert '"api:check"' in package_json
+    assert "PROJECT_A_PYTHON_EXE" in runner_text
+    assert "acceptance.defaults.json" in runner_text
+    assert "WindowsApps" in runner_text
+    assert "npm --prefix frontend run api:check" in ci
+    assert "python -m ruff check backend scripts" in ci
+    assert "git diff --exit-code docs/openapi.json frontend/src/api/generated.ts" in ci
+    assert "api:check" in final_acceptance
+    assert "$env:PROJECT_A_PYTHON_EXE = $PythonExe" in final_acceptance
+    assert "git diff --exit-code docs/openapi.json frontend/src/api/generated.ts" in final_acceptance

@@ -29,7 +29,7 @@ jobs:
           pip install pytest ruff
 
       - name: Ruff
-        run: python -m ruff check backend
+        run: python -m ruff check backend scripts
 
       - name: Backend pytest
         run: pytest backend/tests -q
@@ -47,6 +47,11 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: OpenAPI drift check
+        run: |
+          npm --prefix frontend run api:check
+          git diff --exit-code docs/openapi.json frontend/src/api/generated.ts
 
       - name: Build frontend
         working-directory: frontend

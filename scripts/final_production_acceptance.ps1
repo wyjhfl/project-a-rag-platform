@@ -131,6 +131,11 @@ if (-not $preOk) {
 Write-Host "Pre-flight checks PASSED" -ForegroundColor Green
 Write-Host ""
 
+# Make child npm scripts use the same verified tools. This is required on
+# Windows where the PATH `python` command can be a Microsoft Store alias.
+$env:PROJECT_A_PYTHON_EXE = $PythonExe
+$env:PROJECT_A_NPM_CMD = $NpmCmd
+
 # --- Step Runner ---
 $StepNames = [System.Collections.Specialized.OrderedDictionary]::new()
 
@@ -172,9 +177,12 @@ Run-Step "3. Frontend Build" {
     & $NpmCmd run build 2>&1 | Out-Null
 }
 
-Run-Step "4. OpenAPI Types" {
+Run-Step "4. OpenAPI Drift Check" {
     Set-Location "$ProjectRoot\frontend"
-    & $NpmCmd run api:types 2>&1 | Out-Null
+    & $NpmCmd run api:check 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "api:check failed with exit code $LASTEXITCODE" }
+    Set-Location $ProjectRoot
+    git diff --exit-code docs/openapi.json frontend/src/api/generated.ts 2>&1 | Out-Null
 }
 
 Run-Step "5. E2E List" {
