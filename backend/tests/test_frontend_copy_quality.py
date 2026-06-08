@@ -135,3 +135,16 @@ def test_frontend_docker_and_e2e_use_actual_api_base() -> None:
     assert "frontend/node_modules/" in dockerignore_text
     assert "frontend/dist/" in dockerignore_text
     assert "frontend/test-results/" in dockerignore_text
+
+
+def test_app_supports_hash_deep_links_and_accessible_nav_state() -> None:
+    app_text = (FRONTEND_SRC / "App.vue").read_text(encoding="utf-8")
+    shell_text = APP_SHELL.read_text(encoding="utf-8")
+
+    assert "function tabFromHash" in app_text
+    assert "function tabToHash" in app_text
+    assert "window.addEventListener('hashchange'" in app_text
+    assert "window.removeEventListener('hashchange'" in app_text
+    assert "window.history.replaceState" in app_text
+    assert "localStorage.setItem(TAB_STORAGE_KEY" in app_text
+    assert ':aria-current="activeTab === item.key ? \'page\' : undefined"' in shell_text

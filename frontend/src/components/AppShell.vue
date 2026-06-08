@@ -31,6 +31,7 @@
           :key="item.key"
           :data-testid="`nav-${item.key}`"
           :class="['nav-item', { active: activeTab === item.key }]"
+          :aria-current="activeTab === item.key ? 'page' : undefined"
           @click="activeTab = item.key"
         >
           <span class="nav-label">{{ item.label }}</span>

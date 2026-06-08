@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 
 import { loadAcceptanceOverview } from './api/endpoints'
 import type { AcceptanceOverviewResponse } from './api/types'
@@ -29,9 +29,25 @@ import TicketsPage from './pages/TicketsPage.vue'
 const VALID_TABS = ['acceptance', 'status', 'documents', 'jobs', 'audit', 'chat', 'tickets', 'eval']
 const TAB_STORAGE_KEY = 'project_a_active_tab'
 
+function isValidTab(value: string): boolean {
+  return VALID_TABS.includes(value)
+}
+
+function tabFromHash(hash: string = window.location.hash): string | null {
+  const route = decodeURIComponent(hash.replace(/^#\/?/, '')).split(/[?#]/)[0].trim()
+  return isValidTab(route) ? route : null
+}
+
+function tabToHash(tab: string): string {
+  return `#/${tab}`
+}
+
 function loadTab(): string {
+  const hashTab = tabFromHash()
+  if (hashTab) return hashTab
+  if (window.location.hash) return 'acceptance'
   const stored = localStorage.getItem(TAB_STORAGE_KEY) || ''
-  return VALID_TABS.includes(stored) ? stored : 'acceptance'
+  return isValidTab(stored) ? stored : 'acceptance'
 }
 
 const activeTab = ref(loadTab())
@@ -42,7 +58,30 @@ const ticketsPage = ref<InstanceType<typeof TicketsPage> | null>(null)
 
 watch(activeTab, (val) => {
   localStorage.setItem(TAB_STORAGE_KEY, val)
+  syncHash(val)
 })
+
+function syncHash(tab: string, replace = false) {
+  const nextHash = tabToHash(tab)
+  if (window.location.hash === nextHash) return
+  if (replace) {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`)
+    return
+  }
+  window.location.hash = nextHash
+}
+
+function handleHashChange() {
+  const hashTab = tabFromHash()
+  if (hashTab) {
+    if (hashTab !== activeTab.value) activeTab.value = hashTab
+    return
+  }
+  if (window.location.hash) {
+    activeTab.value = 'acceptance'
+    syncHash(activeTab.value, true)
+  }
+}
 
 async function refreshAll() {
   globalLoading.value = true
@@ -60,5 +99,13 @@ async function refreshAll() {
   }
 }
 
-onMounted(refreshAll)
+onMounted(() => {
+  window.addEventListener('hashchange', handleHashChange)
+  syncHash(activeTab.value, true)
+  refreshAll()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', handleHashChange)
+})
 </script>
