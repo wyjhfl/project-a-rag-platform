@@ -7,6 +7,7 @@ on:
       - master
       - "codex/**"
   pull_request:
+  workflow_dispatch:
 
 jobs:
   backend-and-frontend:
@@ -39,10 +40,17 @@ jobs:
             backend/tests/test_enterprise_api.py \
             backend/tests/test_hybrid_retrieval.py \
             backend/tests/test_health_readiness.py \
+            backend/tests/test_phase1_security.py \
+            backend/tests/test_phase2_observability_audit.py \
+            backend/tests/test_phase3_deployment_storage.py \
+            backend/tests/test_phase4_jobs.py \
             backend/tests/test_rag_security.py \
             backend/tests/test_release_scenarios.py \
             backend/tests/test_ticket_workflow.py \
             backend/tests/test_public_release_sanitization.py -q
+
+      - name: Full pytest
+        run: pytest backend/tests -q
 
       - name: Compile backend modules
         run: python -m compileall backend/app backend/scripts
@@ -62,6 +70,60 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  secret-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Secret scan
+        run: python scripts/secret_scan.py --dir .
+
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Start frontend preview
+        working-directory: frontend
+        run: npx vite preview --host 0.0.0.0 --port 4175 &
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4175
+
+      - name: Run E2E tests
+        working-directory: frontend
+        run: npx playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4175
+
   docker-config:
     runs-on: ubuntu-latest
 
@@ -70,4 +132,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate docker compose
-        run: docker compose config
+        run: |
+          docker compose config
+          docker compose -f docker-compose.demo.yml config

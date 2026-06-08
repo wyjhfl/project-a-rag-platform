@@ -1,10 +1,18 @@
-from scripts.run_av13_acceptance import (
+import sys
+from pathlib import Path
+
+# Make project-root scripts importable
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from backend.scripts.run_av13_acceptance import (  # noqa: E402
     build_multimodal_components,
     build_provider_detail,
     normalize_provider_status,
     summarize_components,
 )
-from scripts.run_provider_acceptance import (
+from backend.scripts.run_provider_acceptance import (  # noqa: E402
     build_provider_summary,
     classify_provider_result,
     determine_blocker_type,

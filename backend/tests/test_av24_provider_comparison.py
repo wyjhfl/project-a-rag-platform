@@ -1,4 +1,14 @@
-from scripts.run_av24_provider_comparison import rank_providers, summarize_provider_cases
+import sys
+from pathlib import Path
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from backend.scripts.run_av24_provider_comparison import (  # noqa: E402
+    rank_providers,
+    summarize_provider_cases,
+)
 
 
 def test_summarize_provider_cases_computes_rates():

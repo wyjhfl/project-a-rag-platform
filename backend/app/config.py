@@ -1,10 +1,27 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 PROJECT_DIR = Path(__file__).resolve().parents[2]
+
+_DEFAULT_CORS_ORIGINS = [
+    "http://127.0.0.1:4175",
+    "http://localhost:4175",
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+]
+
+
+_VALID_STORAGE_BACKENDS = ("sqlite", "postgres")
+_VALID_VECTOR_BACKENDS = ("chroma", "milvus")
+_VALID_MULTIMODAL_BACKENDS = ("sidecar", "mineru", "paddleocr", "vision_llm")
+_VALID_RATE_LIMIT_BACKENDS = ("memory", "redis")
+_MIN_CACHE_TTL = 1
+_MAX_CACHE_TTL = 86400
+_MIN_UPLOAD_BYTES = 1
+_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -43,6 +60,66 @@ class Settings:
     viewer_api_key: str = ""
     operator_api_key: str = ""
     admin_api_key: str = ""
+    cors_allow_origins: list[str] = field(default_factory=list)
+    upload_max_bytes: int = 10 * 1024 * 1024
+    log_level: str = "INFO"
+    job_execution_mode: str = "inprocess"
+    job_poll_interval_seconds: int = 5
+    job_default_timeout_seconds: int = 300
+    rate_limit_enabled: bool = False
+    rate_limit_requests_per_minute: int = 60
+    rate_limit_burst: int = 30
+    rate_limit_exempt_paths: list[str] = field(default_factory=list)
+    rate_limit_backend: str = "memory"
+    rate_limit_redis_url: str = ""
+    metrics_enabled: bool = False
+
+    def validate(self) -> list[str]:
+        errors: list[str] = []
+        sb = self.storage_backend.strip().lower()
+        if sb not in _VALID_STORAGE_BACKENDS:
+            errors.append(f"STORAGE_BACKEND must be one of {_VALID_STORAGE_BACKENDS}")
+        if sb == "postgres" and not self.database_url:
+            errors.append("DATABASE_URL is required when STORAGE_BACKEND=postgres")
+        vb = self.vector_backend.strip().lower()
+        if vb not in _VALID_VECTOR_BACKENDS:
+            errors.append(f"VECTOR_BACKEND must be one of {_VALID_VECTOR_BACKENDS}")
+        if vb == "milvus" and not self.milvus_uri:
+            errors.append("MILVUS_URI is required when VECTOR_BACKEND=milvus")
+        lp = self.llm_provider.strip().lower()
+        if not lp:
+            errors.append("LLM_PROVIDER must not be empty")
+        mb = self.multimodal_backend.strip().lower()
+        if mb not in _VALID_MULTIMODAL_BACKENDS:
+            errors.append(f"MULTIMODAL_BACKEND must be one of {_VALID_MULTIMODAL_BACKENDS}")
+        if self.cache_enabled and not self.redis_url:
+            errors.append("REDIS_URL is required when CACHE_ENABLED=true")
+        if self.cache_ttl_seconds < _MIN_CACHE_TTL or self.cache_ttl_seconds > _MAX_CACHE_TTL:
+            errors.append(
+                f"CACHE_TTL_SECONDS must be between {_MIN_CACHE_TTL} and {_MAX_CACHE_TTL}"
+            )
+        if self.graph_retrieval_enabled:
+            if not self.neo4j_uri:
+                errors.append("NEO4J_URI is required when GRAPH_RETRIEVAL_ENABLED=true")
+            if not self.neo4j_username:
+                errors.append("NEO4J_USERNAME is required when GRAPH_RETRIEVAL_ENABLED=true")
+            if not self.neo4j_password:
+                errors.append("NEO4J_PASSWORD is required when GRAPH_RETRIEVAL_ENABLED=true")
+        if self.auth_enabled:
+            if not any([self.viewer_api_key, self.operator_api_key, self.admin_api_key]):
+                errors.append(
+                    "At least one API key (VIEWER_API_KEY, OPERATOR_API_KEY, "
+                    "ADMIN_API_KEY) must be configured when AUTH_ENABLED=true"
+                )
+        if self.upload_max_bytes < _MIN_UPLOAD_BYTES or self.upload_max_bytes > _MAX_UPLOAD_BYTES:
+            errors.append(
+                f"UPLOAD_MAX_BYTES must be between {_MIN_UPLOAD_BYTES} and {_MAX_UPLOAD_BYTES}"
+            )
+        if self.rate_limit_backend == "redis" and not self.rate_limit_redis_url:
+            errors.append("RATE_LIMIT_REDIS_URL is required when RATE_LIMIT_BACKEND=redis")
+        if self.rate_limit_backend.strip().lower() not in _VALID_RATE_LIMIT_BACKENDS:
+            errors.append(f"RATE_LIMIT_BACKEND must be one of {_VALID_RATE_LIMIT_BACKENDS}")
+        return errors
 
 
 def get_settings() -> Settings:
@@ -77,7 +154,7 @@ def get_settings() -> Settings:
         neo4j_database=os.getenv("NEO4J_DATABASE", "neo4j"),
         cache_enabled=_env_bool("CACHE_ENABLED"),
         redis_url=os.getenv("REDIS_URL", ""),
-        cache_ttl_seconds=int(os.getenv("CACHE_TTL_SECONDS", "1800")),
+        cache_ttl_seconds=_env_int("CACHE_TTL_SECONDS", 1800),
         multimodal_backend=os.getenv("MULTIMODAL_BACKEND", "sidecar"),
         mineru_command=os.getenv("MINERU_COMMAND", "mineru"),
         mineru_output_dir=Path(
@@ -90,8 +167,48 @@ def get_settings() -> Settings:
         viewer_api_key=os.getenv("VIEWER_API_KEY", ""),
         operator_api_key=os.getenv("OPERATOR_API_KEY", ""),
         admin_api_key=os.getenv("ADMIN_API_KEY", ""),
+        cors_allow_origins=_parse_cors_origins(
+            os.getenv("CORS_ALLOW_ORIGINS")
+        ),
+        upload_max_bytes=_env_int("UPLOAD_MAX_BYTES", 10 * 1024 * 1024),
+        log_level=os.getenv("LOG_LEVEL", "INFO").strip().upper(),
+        job_execution_mode=os.getenv("JOB_EXECUTION_MODE", "inprocess"),
+        job_poll_interval_seconds=_env_int("JOB_POLL_INTERVAL_SECONDS", 5),
+        job_default_timeout_seconds=_env_int("JOB_DEFAULT_TIMEOUT_SECONDS", 300),
+        rate_limit_enabled=_env_bool("RATE_LIMIT_ENABLED"),
+        rate_limit_requests_per_minute=_env_int("RATE_LIMIT_REQUESTS_PER_MINUTE", 60),
+        rate_limit_burst=_env_int("RATE_LIMIT_BURST", 30),
+        rate_limit_exempt_paths=_parse_list(os.getenv("RATE_LIMIT_EXEMPT_PATHS", "")),
+        rate_limit_backend=os.getenv("RATE_LIMIT_BACKEND", "memory").strip().lower(),
+        rate_limit_redis_url=os.getenv("RATE_LIMIT_REDIS_URL", ""),
+        metrics_enabled=_env_bool("METRICS_ENABLED"),
     )
+
+
+def _parse_cors_origins(raw: str | None) -> list[str]:
+    if raw is None or raw.strip() == "":
+        return list(_DEFAULT_CORS_ORIGINS)
+    raw = raw.strip()
+    if raw == "*":
+        return ["*"]
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
+def _parse_list(raw: str) -> list[str]:
+    if not raw.strip():
+        return []
+    return [item.strip() for item in raw.split(",") if item.strip()]
 
 
 def _env_bool(name: str) -> bool:
     return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.getenv(name, "")
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        return -1

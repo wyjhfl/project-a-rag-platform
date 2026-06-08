@@ -1,4 +1,11 @@
-from scripts.run_av23_paddleocr_compatibility import build_report
+import sys
+from pathlib import Path
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from backend.scripts.run_av23_paddleocr_compatibility import build_report  # noqa: E402
 
 
 def test_build_report_marks_runtime_incompatible_boundary():

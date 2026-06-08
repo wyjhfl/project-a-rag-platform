@@ -1,10 +1,11 @@
-import 'element-plus/dist/index.css'
-import './styles.css'
-
-import ElementPlus from 'element-plus'
-import { createPinia } from 'pinia'
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import './style.css'
 
 import App from './App.vue'
+import { installElementPlus } from './plugins/element-plus'
 
-createApp(App).use(createPinia()).use(ElementPlus).mount('#app')
+const app = createApp(App)
+app.use(createPinia())
+installElementPlus(app)
+app.mount('#app')

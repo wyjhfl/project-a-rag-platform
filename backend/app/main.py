@@ -1,26 +1,35 @@
 import json
 import logging
-import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, File, UploadFile
+from fastapi import Depends, FastAPI, File, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 
 from app.acceptance.service import build_acceptance_overview
+from app.audit import build_audit_event, record_audit_event
 from app.auth import require_role
 from app.cache.redis_cache import RedisCache, RedisCacheConfig
 from app.config import get_settings
+from app.errors import AppError, install_exception_handlers
+from app.jobs import JobService
+from app.metrics import get_metrics
 from app.models import (
     AcceptanceOverviewResponse,
+    AuditEventResponse,
     ChatRequest,
     ChatResponse,
     EvaluationRunRequest,
     EvaluationRunResponse,
     IngestRequest,
     IngestResponse,
+    JobCancelRequest,
+    JobCreateResponse,
+    JobEvaluationRequest,
+    JobIngestRequest,
+    JobRecord,
     SessionChatRequest,
     SessionChatResponse,
     SystemStatusResponse,
@@ -29,25 +38,34 @@ from app.models import (
     TicketStartRequest,
     UploadResponse,
 )
+from app.observability import RequestContextMiddleware, configure_logging
 from app.rag.conversation import ConversationMemory
 from app.rag.graph import Neo4jGraphRetriever
 from app.rag.llm import LLMConfig
 from app.rag.pipeline import RagPipeline
 from app.rag.vector_factory import build_vector_store
+from app.rate_limit import MemoryRateLimiter, RateLimitMiddleware, RedisRateLimiter
 from app.storage.factory import build_store
 from app.ticketing.models import TicketRecord, TicketWorkflowResult
 from app.ticketing.workflow import TicketWorkflowService
+from app.upload_security import safe_save_upload
 
 APP_VERSION = "v2.0"
 
 logger = logging.getLogger("project_a")
 
 
+_OPTIONAL_CONFIG_KEYWORDS = ("REDIS_URL", "NEO4J_", "RATE_LIMIT_REDIS_URL")
+
+
 def _check_config(settings) -> dict:
-    try:
+    errors = settings.validate()
+    if not errors:
         return {"status": "ok", "provider": settings.llm_provider}
-    except Exception as exc:
-        return {"status": "error", "reason": str(exc)}
+    core_errors = [e for e in errors if not any(kw in e for kw in _OPTIONAL_CONFIG_KEYWORDS)]
+    if core_errors:
+        return {"status": "error", "errors": errors}
+    return {"status": "degraded", "errors": errors, "provider": settings.llm_provider}
 
 
 def _check_storage(settings, store) -> dict:
@@ -67,7 +85,7 @@ def _check_vector_store(pipeline) -> dict:
         return {"status": "error", "reason": str(exc)}
 
 
-def _check_optional_dependencies(settings, cache) -> dict:
+def _check_optional_dependencies(settings, cache, rate_limiter=None) -> dict:
     checks: dict[str, str] = {}
     if settings.cache_enabled:
         try:
@@ -94,7 +112,84 @@ def _check_optional_dependencies(settings, cache) -> dict:
         checks["neo4j"] = "enabled"
     else:
         checks["neo4j"] = "disabled"
+    if settings.rate_limit_backend == "redis":
+        try:
+            if rate_limiter is not None and isinstance(rate_limiter, RedisRateLimiter):
+                if rate_limiter.ping():
+                    checks["rate_limit_redis"] = "ok"
+                else:
+                    checks["rate_limit_redis"] = "error: ping failed"
+            else:
+                checks["rate_limit_redis"] = "error: limiter not initialized"
+        except Exception as exc:
+            checks["rate_limit_redis"] = f"error: {exc}"
+    else:
+        checks["rate_limit_redis"] = "disabled"
     return checks
+
+
+def _run_evaluation_sync(app: FastAPI, request: EvaluationRunRequest) -> EvaluationRunResponse:
+    docs_dir = _resolve_docs_dir(app, request.docs_source)
+    app.state.pipeline.ingest_directory(docs_dir)
+    cases = json.loads(Path(request.cases_path).read_text(encoding="utf-8"))
+    if request.evaluation_type == "regression":
+        results = []
+        for case in cases:
+            response = app.state.pipeline.answer(case["question"])
+            text = response.answer + "\n" + "\n".join(c.content for c in response.citations)
+            hits = [kw for kw in case.get("expected_keywords", []) if kw in text]
+            results.append({"id": case["id"], "passed": bool(hits), "hits": hits})
+        summary = {
+            "case_count": len(results),
+            "passed_count": sum(1 for result in results if result["passed"]),
+        }
+    else:
+        script_map = {
+            "ragas": "evaluate_ragas.py",
+            "adversarial": "run_adversarial.py",
+        }
+        summary = {
+            "case_count": len(cases),
+            "script": script_map[request.evaluation_type],
+            "message": "Use backend script for full report generation.",
+        }
+    return EvaluationRunResponse(summary=summary)
+
+
+class _MetricsMiddleware:
+    """ASGI middleware to record request metrics."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        import time as _time
+
+        from app.config import get_settings as _get_settings
+        from app.metrics import get_metrics as _get_metrics
+
+        settings = _get_settings()
+        if not settings.metrics_enabled:
+            await self.app(scope, receive, send)
+            return
+
+        start = _time.monotonic()
+        status_code = 200
+
+        async def send_with_status(message):
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message.get("status", 200)
+            await send(message)
+
+        await self.app(scope, receive, send_with_status)
+        duration_ms = (_time.monotonic() - start) * 1000
+        method = scope.get("method", "GET")
+        path = scope.get("path", "/")
+        _get_metrics().record_request(method, path, status_code, duration_ms)
 
 
 def create_app(
@@ -127,9 +222,28 @@ def create_app(
         "uploaded_docs": uploaded_docs_dir or settings.uploaded_docs_dir,
     }
 
+    # Rate limiter (shared between middleware and health checks)
+    if settings.rate_limit_backend == "redis" and settings.rate_limit_redis_url:
+        rate_limiter = RedisRateLimiter(
+            redis_url=settings.rate_limit_redis_url,
+            requests_per_minute=settings.rate_limit_requests_per_minute,
+            burst=settings.rate_limit_burst,
+        )
+    else:
+        rate_limiter = MemoryRateLimiter(
+            requests_per_minute=settings.rate_limit_requests_per_minute,
+            burst=settings.rate_limit_burst,
+        )
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         logger.info("Project A starting up (version %s)", APP_VERSION)
+        config_errors = settings.validate()
+        if config_errors:
+            for err in config_errors:
+                logger.warning("config validation: %s", err)
+        else:
+            logger.info("config validation: all checks passed")
         yield
         logger.info("Project A shutting down")
         if cache is not None and hasattr(cache, "client"):
@@ -139,20 +253,37 @@ def create_app(
                 pass
 
     app = FastAPI(title=f"Project A {APP_VERSION} Enterprise RAG", lifespan=lifespan)
+    install_exception_handlers(app)
+    app.add_middleware(_MetricsMiddleware)
+    app.add_middleware(RequestContextMiddleware)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=settings.cors_allow_origins,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type", "X-API-Key", "X-Request-ID"],
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        enabled=settings.rate_limit_enabled,
+        requests_per_minute=settings.rate_limit_requests_per_minute,
+        burst=settings.rate_limit_burst,
+        exempt_paths=set(settings.rate_limit_exempt_paths) if settings.rate_limit_exempt_paths else None,
+        backend=settings.rate_limit_backend,
+        redis_url=settings.rate_limit_redis_url,
     )
     app.state.pipeline = pipeline
     app.state.docs_sources = docs_sources
     app.state.current_docs_source = "seed_docs"
+    app.state.acceptance_docs_dir = seed_docs_dir or settings.seed_docs_dir
     app.state.conversation_memory = ConversationMemory(cache=cache)
     app.state.ticket_workflow = TicketWorkflowService(store=store, rag_pipeline=pipeline)
     app.state._settings = settings
     app.state._store = store
     app.state._cache = cache
+    app.state._rate_limiter = rate_limiter
+    app.state.job_service = JobService(store, execution_mode=settings.job_execution_mode)
+
+    configure_logging(settings.log_level)
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -167,7 +298,7 @@ def create_app(
         config_check = _check_config(s)
         storage_check = _check_storage(s, st)
         vector_check = _check_vector_store(p)
-        optional_checks = _check_optional_dependencies(s, c)
+        optional_checks = _check_optional_dependencies(s, c, app.state._rate_limiter)
         checks = {
             "config": config_check,
             "storage": storage_check,
@@ -186,23 +317,35 @@ def create_app(
                 content={"status": overall, "version": APP_VERSION, "checks": checks},
             )
         all_core_ok = (
-            config_check["status"] == "ok"
+            config_check["status"] in ("ok", "degraded")
             and storage_check["status"] == "ok"
             and vector_check["status"] in ("ok", "degraded")
         )
-        opt_degraded = any(
+        config_degraded = config_check["status"] == "degraded"
+        opt_degraded = config_degraded or any(
             v.startswith("error:") or v.startswith("degraded:")
             for v in optional_checks.values()
         )
-        if all_core_ok and not opt_degraded:
+        rate_limit_error = (
+            optional_checks.get("rate_limit_redis", "").startswith("error:")
+        )
+        if all_core_ok and not opt_degraded and not rate_limit_error:
             overall = "ok"
-        else:
+        elif all_core_ok and (opt_degraded or rate_limit_error):
             overall = "degraded"
+        else:
+            overall = "error"
         return {"status": overall, "version": APP_VERSION, "checks": checks}
 
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok", "version": APP_VERSION}
+
+    @app.get("/metrics")
+    def metrics_endpoint() -> PlainTextResponse:
+        if not settings.metrics_enabled:
+            return PlainTextResponse("# Metrics disabled\n", media_type="text/plain")
+        return PlainTextResponse(get_metrics().generate(), media_type="text/plain")
 
     @app.get("/api/v1/system/status", response_model=SystemStatusResponse)
     def system_status(_role: str = Depends(require_role("viewer"))) -> SystemStatusResponse:
@@ -218,37 +361,55 @@ def create_app(
 
     @app.get("/api/v1/acceptance/overview", response_model=AcceptanceOverviewResponse)
     def acceptance_overview(_role: str = Depends(require_role("viewer"))) -> AcceptanceOverviewResponse:
-        return build_acceptance_overview(version=APP_VERSION)
+        acceptance_docs = getattr(app.state, "acceptance_docs_dir", None)
+        return build_acceptance_overview(docs_dir=acceptance_docs, version=APP_VERSION, llm_provider=settings.llm_provider)
 
     @app.post("/api/v1/documents/ingest", response_model=IngestResponse)
     def ingest_documents(request: IngestRequest | None = None, _role: str = Depends(require_role("operator"))) -> IngestResponse:
         request = request or IngestRequest()
         docs_dir = _resolve_docs_dir(app, request.docs_source)
         app.state.current_docs_source = request.docs_source
-        return app.state.pipeline.ingest_directory(docs_dir)
+        result = app.state.pipeline.ingest_directory(docs_dir)
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="document.ingest",
+                actor_role=_role,
+                resource_type="document_source",
+                resource_id=request.docs_source,
+                summary="ingested documents",
+                metadata={
+                    "document_count": result.document_count,
+                    "chunk_count": result.chunk_count,
+                },
+            ),
+        )
+        return result
 
     @app.post("/api/v1/documents/upload", response_model=UploadResponse)
     def upload_document(file: Annotated[UploadFile, File()], _role: str = Depends(require_role("operator"))) -> UploadResponse:
         target_dir = app.state.docs_sources["uploaded_docs"]
-        target_dir.mkdir(parents=True, exist_ok=True)
-        filename = Path(file.filename or "uploaded.txt").name
-        if Path(filename).suffix.lower() not in {
-            ".txt",
-            ".md",
-            ".csv",
-            ".pdf",
-            ".docx",
-            ".xlsx",
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".webp",
-        }:
-            raise ValueError("Unsupported file type")
-        target_path = target_dir / filename
-        with target_path.open("wb") as output:
-            shutil.copyfileobj(file.file, output)
-        return UploadResponse(filename=filename, path=str(target_path))
+        filename, saved_path = safe_save_upload(
+            file=file,
+            target_dir=target_dir,
+            max_bytes=settings.upload_max_bytes,
+        )
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="document.upload",
+                actor_role=_role,
+                resource_type="document",
+                resource_id=filename,
+                summary="uploaded document",
+                metadata={
+                    "filename": filename,
+                    "content_type": file.content_type or "",
+                    "size_bytes": file.size if hasattr(file, "size") and file.size else 0,
+                },
+            ),
+        )
+        return UploadResponse(filename=filename, path=str(saved_path))
 
     @app.post("/api/v1/chat", response_model=ChatResponse)
     def chat(request: ChatRequest, _role: str = Depends(require_role("viewer"))) -> ChatResponse:
@@ -279,25 +440,73 @@ def create_app(
 
     @app.post("/api/v1/tickets/start", response_model=TicketWorkflowResult)
     def start_ticket(request: TicketStartRequest, _role: str = Depends(require_role("operator"))) -> TicketWorkflowResult:
-        return app.state.ticket_workflow.start(
+        result = app.state.ticket_workflow.start(
             question=request.question,
             idempotency_key=request.idempotency_key,
         )
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="ticket.start",
+                actor_role=_role,
+                resource_type="ticket",
+                resource_id=result.ticket.ticket_id,
+                summary="started ticket",
+                metadata={
+                    "risk_level": result.ticket.risk_level,
+                    "status": result.ticket.status,
+                    "human_required": result.ticket.human_required,
+                    "question_length": len(request.question),
+                },
+            ),
+        )
+        return result
 
     @app.post("/api/v1/tickets/{ticket_id}/resume", response_model=TicketWorkflowResult)
     def resume_ticket(ticket_id: str, request: TicketResumeRequest, _role: str = Depends(require_role("operator"))) -> TicketWorkflowResult:
-        return app.state.ticket_workflow.resume_after_human_review(
+        result = app.state.ticket_workflow.resume_after_human_review(
             ticket_id=ticket_id,
             reviewer=request.reviewer,
             decision=request.decision,
         )
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="ticket.resume",
+                actor_role=_role,
+                resource_type="ticket",
+                resource_id=ticket_id,
+                summary="resumed ticket after human review",
+                metadata={
+                    "reviewer": request.reviewer[:80],
+                    "decision": request.decision[:80],
+                    "status": result.ticket.status,
+                },
+            ),
+        )
+        return result
 
     @app.post("/api/v1/tickets/{ticket_id}/close", response_model=TicketRecord)
     def close_ticket(ticket_id: str, request: TicketCloseRequest, _role: str = Depends(require_role("operator"))) -> TicketRecord:
-        return app.state.ticket_workflow.close_ticket(
+        result = app.state.ticket_workflow.close_ticket(
             ticket_id=ticket_id,
             closed_by=request.closed_by,
         )
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="ticket.close",
+                actor_role=_role,
+                resource_type="ticket",
+                resource_id=ticket_id,
+                summary="closed ticket",
+                metadata={
+                    "closed_by": request.closed_by[:80],
+                    "status": str(result.status),
+                },
+            ),
+        )
+        return result
 
     @app.get("/api/v1/tickets", response_model=list[TicketRecord])
     def list_tickets(_role: str = Depends(require_role("viewer"))) -> list[TicketRecord]:
@@ -305,31 +514,224 @@ def create_app(
 
     @app.post("/api/v1/evaluations/run", response_model=EvaluationRunResponse)
     def run_evaluation(request: EvaluationRunRequest, _role: str = Depends(require_role("admin"))) -> EvaluationRunResponse:
-        docs_dir = _resolve_docs_dir(app, request.docs_source)
-        app.state.pipeline.ingest_directory(docs_dir)
-        cases = json.loads(Path(request.cases_path).read_text(encoding="utf-8"))
-        if request.evaluation_type == "regression":
-            results = []
-            for case in cases:
-                response = app.state.pipeline.answer(case["question"])
-                text = response.answer + "\n" + "\n".join(c.content for c in response.citations)
-                hits = [kw for kw in case.get("expected_keywords", []) if kw in text]
-                results.append({"id": case["id"], "passed": bool(hits), "hits": hits})
-            summary = {
-                "case_count": len(results),
-                "passed_count": sum(1 for result in results if result["passed"]),
+        result = _run_evaluation_sync(app, request)
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="evaluation.run",
+                actor_role=_role,
+                resource_type="evaluation",
+                resource_id=request.evaluation_type,
+                summary="ran evaluation",
+                metadata={
+                    "docs_source": request.docs_source,
+                    "case_count": result.summary.get("case_count", 0),
+                    "passed_count": result.summary.get("passed_count"),
+                },
+            ),
+        )
+        return result
+
+    @app.get("/api/v1/admin/audit/events", response_model=list[AuditEventResponse])
+    def list_audit_events(
+        limit: int = Query(default=100, ge=1, le=500),
+        _role: str = Depends(require_role("admin")),
+    ) -> list[AuditEventResponse]:
+        events = app.state._store.list_audit_events(limit=limit)
+        return [AuditEventResponse(**event) for event in events]
+
+    @app.post("/api/v1/jobs/ingest", response_model=JobCreateResponse)
+    def create_ingest_job(request: JobIngestRequest, _role: str = Depends(require_role("operator"))) -> JobCreateResponse:
+        job_service = app.state.job_service
+
+        def runner():
+            docs_dir = _resolve_docs_dir(app, request.docs_source)
+            app.state.current_docs_source = request.docs_source
+            result = app.state.pipeline.ingest_directory(docs_dir)
+            return {
+                "document_count": result.document_count,
+                "chunk_count": result.chunk_count,
+                "docs_source": request.docs_source,
             }
-        else:
-            script_map = {
-                "ragas": "evaluate_ragas.py",
-                "adversarial": "run_adversarial.py",
+
+        def _on_succeeded(job: dict) -> None:
+            record_audit_event(
+                store,
+                build_audit_event(
+                    action="job.succeeded",
+                    actor_role=_role,
+                    resource_type="job",
+                    resource_id=job["job_id"],
+                    summary="ingest job succeeded",
+                    metadata={
+                        "job_type": job["job_type"],
+                        "status": job["status"],
+                        "document_count": job["result"].get("document_count"),
+                        "chunk_count": job["result"].get("chunk_count"),
+                        "docs_source": job["result"].get("docs_source"),
+                    },
+                ),
+            )
+
+        def _on_failed(job: dict) -> None:
+            record_audit_event(
+                store,
+                build_audit_event(
+                    action="job.failed",
+                    actor_role=_role,
+                    resource_type="job",
+                    resource_id=job["job_id"],
+                    summary="ingest job failed",
+                    metadata={
+                        "job_type": job["job_type"],
+                        "status": job["status"],
+                        "error": job["error"],
+                    },
+                ),
+            )
+
+        record = job_service.create_job(
+            job_type="document.ingest",
+            payload={"docs_source": request.docs_source},
+            runner=runner,
+            actor_role=_role,
+            on_succeeded=_on_succeeded,
+            on_failed=_on_failed,
+            timeout_seconds=settings.job_default_timeout_seconds,
+        )
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="job.create",
+                actor_role=_role,
+                resource_type="job",
+                resource_id=record.job_id,
+                summary="created ingest job",
+                metadata={"job_type": "document.ingest", "status": record.status},
+            ),
+        )
+        return JobCreateResponse(job=record)
+
+    @app.post("/api/v1/jobs/evaluations", response_model=JobCreateResponse)
+    def create_evaluation_job(request: JobEvaluationRequest, _role: str = Depends(require_role("admin"))) -> JobCreateResponse:
+        job_service = app.state.job_service
+
+        def runner():
+            eval_request = EvaluationRunRequest(
+                evaluation_type=request.evaluation_type,
+                cases_path=request.cases_path,
+                docs_source=request.docs_source,
+            )
+            result = _run_evaluation_sync(app, eval_request)
+            return {
+                "summary": result.summary,
+                "evaluation_type": request.evaluation_type,
+                "docs_source": request.docs_source,
             }
-            summary = {
-                "case_count": len(cases),
-                "script": script_map[request.evaluation_type],
-                "message": "Use backend script for full report generation.",
-            }
-        return EvaluationRunResponse(summary=summary)
+
+        def _on_succeeded(job: dict) -> None:
+            result = job.get("result", {})
+            summary = result.get("summary", {})
+            record_audit_event(
+                store,
+                build_audit_event(
+                    action="job.succeeded",
+                    actor_role=_role,
+                    resource_type="job",
+                    resource_id=job["job_id"],
+                    summary="evaluation job succeeded",
+                    metadata={
+                        "job_type": job["job_type"],
+                        "status": job["status"],
+                        "evaluation_type": result.get("evaluation_type"),
+                        "docs_source": result.get("docs_source"),
+                        "case_count": summary.get("case_count"),
+                    },
+                ),
+            )
+
+        def _on_failed(job: dict) -> None:
+            record_audit_event(
+                store,
+                build_audit_event(
+                    action="job.failed",
+                    actor_role=_role,
+                    resource_type="job",
+                    resource_id=job["job_id"],
+                    summary="evaluation job failed",
+                    metadata={
+                        "job_type": job["job_type"],
+                        "status": job["status"],
+                        "error": job["error"],
+                    },
+                ),
+            )
+
+        record = job_service.create_job(
+            job_type="evaluation.run",
+            payload={
+                "evaluation_type": request.evaluation_type,
+                "cases_path": request.cases_path,
+                "docs_source": request.docs_source,
+            },
+            runner=runner,
+            actor_role=_role,
+            on_succeeded=_on_succeeded,
+            on_failed=_on_failed,
+            timeout_seconds=settings.job_default_timeout_seconds,
+        )
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="job.create",
+                actor_role=_role,
+                resource_type="job",
+                resource_id=record.job_id,
+                summary="created evaluation job",
+                metadata={"job_type": "evaluation.run", "status": record.status},
+            ),
+        )
+        return JobCreateResponse(job=record)
+
+    @app.get("/api/v1/jobs/{job_id}", response_model=JobRecord)
+    def get_job(job_id: str, _role: str = Depends(require_role("viewer"))) -> JobRecord:
+        record = app.state.job_service.get_job(job_id)
+        if record is None:
+            raise AppError(code="not_found", message="Job not found", status_code=404)
+        return record
+
+    @app.get("/api/v1/jobs", response_model=list[JobRecord])
+    def list_jobs(
+        limit: int = Query(default=100, ge=1, le=500),
+        _role: str = Depends(require_role("viewer")),
+    ) -> list[JobRecord]:
+        return app.state.job_service.list_jobs(limit=limit)
+
+    @app.post("/api/v1/jobs/{job_id}/cancel", response_model=JobRecord)
+    def cancel_job(job_id: str, request: JobCancelRequest, _role: str = Depends(require_role("operator"))) -> JobRecord:
+        job = app.state.job_service.get_job(job_id)
+        if job is None:
+            raise AppError(code="not_found", message="Job not found", status_code=404)
+        job_type = job.get("job_type", "") if isinstance(job, dict) else job.job_type
+        if _role == "operator" and job_type != "document.ingest":
+            raise AppError(code="forbidden", message="Operators can only cancel ingest jobs", status_code=403)
+        if _role == "viewer":
+            raise AppError(code="forbidden", message="Viewers cannot cancel jobs", status_code=403)
+        result = app.state.job_service.cancel_job(job_id)
+        if result is None:
+            raise AppError(code="conflict", message="Job cannot be cancelled", status_code=409)
+        record_audit_event(
+            store,
+            build_audit_event(
+                action="job.cancelled",
+                actor_role=_role,
+                resource_type="job",
+                resource_id=job_id,
+                summary="job cancelled",
+                metadata={"reason": request.reason[:200] if request.reason else ""},
+            ),
+        )
+        return JobRecord(**result)
 
     return app
 

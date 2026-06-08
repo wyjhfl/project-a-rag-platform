@@ -1,18 +1,17 @@
-import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
-  server: {
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_BASE_URL || 'http://127.0.0.1:18081',
-        changeOrigin: true
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-vue': ['vue', 'pinia'],
+          'vendor-element': ['element-plus'],
+          'vendor-axios': ['axios'],
+        },
       },
-      '/health': {
-        target: process.env.VITE_API_BASE_URL || 'http://127.0.0.1:18081',
-        changeOrigin: true
-      }
-    }
-  }
+    },
+  },
 })

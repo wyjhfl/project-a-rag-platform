@@ -1,32 +1,55 @@
-from typing import Protocol
+"""Storage interface for Project A RAG Platform."""
+from __future__ import annotations
 
-from app.rag.costing import TokenUsage
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.rag.costing import TokenUsage
 
 
-class Store(Protocol):
-    def add_document(self, document_id: str, source: str, path: str, chunk_count: int) -> None:
-        pass
-
-    def add_chat_record(self, question: str, answer: str, citations: str) -> None:
-        pass
-
-    def list_chat_records(self) -> list:
-        pass
-
-    def add_token_usage(self, usage: TokenUsage) -> None:
-        pass
-
-    def list_token_usage(self) -> list[dict]:
-        pass
-
-    def upsert_ticket(self, ticket: dict) -> None:
-        pass
-
-    def get_ticket(self, ticket_id: str) -> dict | None:
-        pass
-
-    def get_ticket_by_idempotency_key(self, idempotency_key: str) -> dict | None:
-        pass
-
-    def list_tickets(self) -> list[dict]:
-        pass
+class Store(ABC):
+    @abstractmethod
+    def add_document(self, document_id: str, source: str, path: str, chunk_count: int) -> None: ...
+    @abstractmethod
+    def create_job(self, job: dict) -> None: ...
+    @abstractmethod
+    def get_job(self, job_id: str) -> dict | None: ...
+    @abstractmethod
+    def update_job(self, job: dict) -> None: ...
+    @abstractmethod
+    def upsert_job(self, job: dict) -> None: ...
+    @abstractmethod
+    def list_jobs(self, limit: int = 100) -> list[dict]: ...
+    @abstractmethod
+    def claim_next_job(self, worker_id: str) -> dict | None: ...
+    @abstractmethod
+    def timeout_stale_jobs(self, timeout_seconds: int = 300, now: str | None = None) -> int: ...
+    @abstractmethod
+    def try_request_cancel_job(self, job_id: str, now: str) -> dict | None: ...
+    @abstractmethod
+    def try_complete_job(self, job_id: str, worker_id: str, result: dict, now: str) -> bool: ...
+    @abstractmethod
+    def try_fail_job(self, job_id: str, worker_id: str, error: str, now: str) -> bool: ...
+    @abstractmethod
+    def try_heartbeat_job(self, job_id: str, worker_id: str, now: str) -> bool: ...
+    @abstractmethod
+    def try_cancel_running_job(self, job_id: str, worker_id: str, reason: str | None, now: str) -> bool: ...
+    @abstractmethod
+    def list_chat_records(self) -> list: ...
+    @abstractmethod
+    def add_chat_record(self, question: str, answer: str, citations: str) -> None: ...
+    @abstractmethod
+    def add_token_usage(self, usage: TokenUsage) -> None: ...
+    @abstractmethod
+    def list_audit_events(self, limit: int = 100) -> list[dict]: ...
+    @abstractmethod
+    def record_audit_event(self, event: dict) -> None: ...
+    @abstractmethod
+    def upsert_ticket(self, ticket: dict) -> None: ...
+    @abstractmethod
+    def get_ticket(self, ticket_id: str) -> dict | None: ...
+    @abstractmethod
+    def get_ticket_by_idempotency_key(self, idempotency_key: str) -> dict | None: ...
+    @abstractmethod
+    def list_tickets(self) -> list[dict]: ...

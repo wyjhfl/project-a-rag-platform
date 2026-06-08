@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -138,3 +140,51 @@ class TicketResumeRequest(BaseModel):
 
 class TicketCloseRequest(BaseModel):
     closed_by: str = Field(min_length=1)
+
+
+class AuditEventResponse(BaseModel):
+    action: str
+    actor_role: str = ""
+    resource_type: str = ""
+    resource_id: str = ""
+    summary: str = ""
+    metadata: dict = {}
+    timestamp: str = ""
+
+
+class JobCreateResponse(BaseModel):
+    job: dict
+
+
+class JobRecord(BaseModel):
+    job_id: str
+    job_type: str = ""
+    status: str = "PENDING"
+    payload: dict = {}
+    result: dict = {}
+    error: Optional[str] = None
+    retry_count: int = 0
+    max_retries: int = 3
+    locked_by: Optional[str] = None
+    locked_at: Optional[str] = None
+    heartbeat_at: Optional[str] = None
+    timeout_seconds: int = 300
+    cancel_requested: bool = False
+    created_at: str = ""
+    updated_at: str = ""
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+
+
+class JobCancelRequest(BaseModel):
+    reason: str = ""
+
+
+class JobIngestRequest(BaseModel):
+    docs_source: str = "seed_docs"
+
+
+class JobEvaluationRequest(BaseModel):
+    evaluation_type: str = "regression"
+    cases_path: str = ""
+    docs_source: str = "seed_docs"
