@@ -16,7 +16,7 @@
           </p>
         </template>
         <el-empty v-else-if="!healthzError" description="暂无健康检查数据" />
-        <el-alert v-if="healthzError" :title="healthzError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert v-if="healthzError" :error="healthzError" />
       </el-card>
 
       <el-card data-testid="readyz-card">
@@ -32,7 +32,7 @@
           </el-collapse>
         </template>
         <el-empty v-else-if="!readyzError" description="暂无就绪检查数据" />
-        <el-alert v-if="readyzError" :title="readyzError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert v-if="readyzError" :error="readyzError" />
       </el-card>
 
       <el-card data-testid="legacy-health-card">
@@ -43,7 +43,7 @@
           <p class="muted section">version: <span data-testid="legacy-health-version">{{ displayValue(healthData.version) }}</span></p>
         </template>
         <el-empty v-else-if="!healthError" description="暂无 legacy health 数据" />
-        <el-alert v-if="healthError" :title="healthError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert v-if="healthError" :error="healthError" />
       </el-card>
     </div>
 
@@ -81,14 +81,7 @@
         </div>
       </template>
       <el-empty v-else-if="!statusError" description="暂无系统详情数据" />
-      <el-alert
-        v-if="statusError"
-        data-testid="system-status-error"
-        :title="statusError"
-        type="error"
-        show-icon
-        :closable="false"
-      />
+      <ApiErrorAlert v-if="statusError" data-testid="system-status-error" :error="statusError" />
     </el-card>
   </section>
 </template>
@@ -97,6 +90,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 import { formatApiError } from '../api/client'
+import ApiErrorAlert from '../components/ApiErrorAlert.vue'
 import { getHealth, getHealthz, getReadyz, getSystemStatus } from '../api/endpoints'
 import type { HealthResponse, HealthzResponse, ReadyzResponse, SystemStatusResponse } from '../api/types'
 import { RELEASE_URL } from '../release'

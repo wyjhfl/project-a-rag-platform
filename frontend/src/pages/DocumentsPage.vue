@@ -26,7 +26,7 @@
         <p class="muted section">请前往「异步任务」页面查看执行状态。</p>
       </div>
       <div v-if="ingestError" class="section">
-        <el-alert :title="ingestError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="ingestError" />
       </div>
     </el-card>
 
@@ -49,7 +49,7 @@
         </el-alert>
       </div>
       <div v-if="uploadError" class="section">
-        <el-alert :title="uploadError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="uploadError" />
       </div>
     </el-card>
 
@@ -72,7 +72,7 @@
       </div>
       <pre v-if="syncResult" class="mono section">{{ syncResult }}</pre>
       <div v-if="syncError" class="section">
-        <el-alert :title="syncError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="syncError" />
       </div>
     </el-card>
   </section>
@@ -83,6 +83,7 @@ import { ref } from 'vue'
 import { ElMessageBox } from '../plugins/element-plus'
 
 import { formatApiError } from '../api/client'
+import ApiErrorAlert from '../components/ApiErrorAlert.vue'
 import { createIngestJob, ingestDocuments, uploadDocument } from '../api/endpoints'
 import type { JobCreateResponse, UploadResponse } from '../api/types'
 import { useAuthStore } from '../stores/auth'

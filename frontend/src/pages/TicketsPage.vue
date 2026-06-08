@@ -6,7 +6,7 @@
       <el-input v-model="idempotencyKey" class="section" placeholder="幂等 key" />
       <el-button type="primary" data-testid="ticket-start-button" :loading="createLoading" @click="confirmCreateTicket">启动工单</el-button>
       <div v-if="ticketError" class="section">
-        <el-alert :title="ticketError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="ticketError" />
       </div>
       <pre v-if="ticketResult" class="mono section">{{ ticketResult }}</pre>
     </el-card>
@@ -31,13 +31,13 @@
         <el-button type="danger" :loading="closeLoading" @click="confirmClose">关闭工单</el-button>
       </div>
       <div v-if="opError" class="section">
-        <el-alert :title="opError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="opError" />
       </div>
     </el-card>
 
     <el-card class="full-span">
       <template #header>工单列表</template>
-      <el-alert v-if="listError" :title="listError" type="error" show-icon :closable="false" />
+      <ApiErrorAlert v-if="listError" :error="listError" />
       <el-table :data="tickets" size="small" stripe v-loading="listLoading">
         <el-table-column prop="ticket_id" label="Ticket ID" width="180" />
         <el-table-column prop="status" label="状态" width="130" />
@@ -55,6 +55,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessageBox } from '../plugins/element-plus'
 
 import { formatApiError } from '../api/client'
+import ApiErrorAlert from '../components/ApiErrorAlert.vue'
 import { closeTicket, listTickets, resumeTicket, startTicket } from '../api/endpoints'
 import type { TicketRecord } from '../api/types'
 

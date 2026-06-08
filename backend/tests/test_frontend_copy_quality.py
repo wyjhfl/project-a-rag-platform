@@ -213,3 +213,31 @@ def test_api_client_parses_unified_error_payload_and_formats_cleanly() -> None:
     assert "parts.join(' " + chr(0x2014) + " ')" in client_text
     assert chr(0x9225) not in client_text
     assert chr(0xFFFD) not in client_text
+
+
+def test_api_error_alert_component_is_used_for_request_id_traceability() -> None:
+    component = FRONTEND_SRC / "components" / "ApiErrorAlert.vue"
+    assert component.exists()
+
+    component_text = component.read_text(encoding="utf-8")
+    assert 'data-testid="api-error-alert"' in component_text
+    assert 'data-testid="api-error-request-id"' in component_text
+    assert 'data-testid="api-error-copy-request-id"' in component_text
+    assert "navigator.clipboard.writeText" in component_text
+    assert "request_id" in component_text
+    assert "const separator = ' " + chr(0x2014) + " '" in component_text
+    assert "split(separator)" in component_text
+    assert "details.join(separator)" in component_text
+
+    pages = [
+        "AuditPage.vue",
+        "ChatPage.vue",
+        "DocumentsPage.vue",
+        "EvaluationsPage.vue",
+        "JobsPage.vue",
+        "SystemStatusPage.vue",
+        "TicketsPage.vue",
+    ]
+    for page in pages:
+        page_text = (FRONTEND_SRC / "pages" / page).read_text(encoding="utf-8")
+        assert "ApiErrorAlert" in page_text, page

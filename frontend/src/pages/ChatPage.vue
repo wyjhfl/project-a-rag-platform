@@ -5,7 +5,7 @@
       <el-input v-model="question" type="textarea" :rows="4" placeholder="输入设备相关问题" />
       <el-button class="section" type="primary" :loading="chatLoading" @click="handleChat">提问</el-button>
       <div v-if="chatError" class="section">
-        <el-alert :title="chatError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="chatError" />
       </div>
       <template v-if="chatResult">
         <div class="section">
@@ -35,7 +35,7 @@
       <el-input v-model="sessionQuestion" type="textarea" :rows="4" placeholder="输入设备相关问题（多轮上下文）" />
       <el-button class="section" type="primary" :loading="sessionLoading" @click="handleSessionChat">提问</el-button>
       <div v-if="sessionError" class="section">
-        <el-alert :title="sessionError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="sessionError" />
       </div>
       <template v-if="sessionResult">
         <div class="section">
@@ -62,6 +62,7 @@
 import { ref } from 'vue'
 
 import { formatApiError } from '../api/client'
+import ApiErrorAlert from '../components/ApiErrorAlert.vue'
 import { chat, sessionChat } from '../api/endpoints'
 import type { ChatResponse, SessionChatResponse } from '../api/types'
 

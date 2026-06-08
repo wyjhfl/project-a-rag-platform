@@ -50,23 +50,9 @@
       </el-input>
     </div>
 
-    <el-alert
-      v-if="listError"
-      data-testid="jobs-list-error"
-      :title="listError"
-      type="error"
-      show-icon
-      :closable="false"
-    />
+    <ApiErrorAlert v-if="listError" data-testid="jobs-list-error" :error="listError" />
 
-    <el-alert
-      v-if="searchError"
-      data-testid="job-search-error"
-      :title="searchError"
-      type="error"
-      show-icon
-      :closable="false"
-    />
+    <ApiErrorAlert v-if="searchError" data-testid="job-search-error" :error="searchError" />
 
     <el-alert v-if="searchResult && searchResult.status === 'FAILED'" type="error" :closable="false" show-icon>
       <template #title>Job {{ searchResult.job_id }} 失败: {{ truncate(searchResult.error || '未知错误', 300) }}</template>
@@ -151,6 +137,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 import { ApiClientError, formatApiError } from '../api/client'
+import ApiErrorAlert from '../components/ApiErrorAlert.vue'
 import { cancelJob, getJob, listJobs } from '../api/endpoints'
 import type { JobRecord } from '../api/types'
 import { ElMessage, ElMessageBox } from '../plugins/element-plus'

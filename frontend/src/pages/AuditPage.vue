@@ -9,7 +9,7 @@
       <el-button @click="refresh" :loading="loading">刷新审计日志</el-button>
     </div>
 
-    <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" />
+    <ApiErrorAlert v-if="error" :error="error" />
 
     <el-card>
       <template #header>
@@ -53,6 +53,7 @@
 import { onMounted, ref, watch } from 'vue'
 
 import { formatApiError } from '../api/client'
+import ApiErrorAlert from '../components/ApiErrorAlert.vue'
 import { listAuditEvents } from '../api/endpoints'
 import type { AuditEventResponse } from '../api/types'
 import { useAuthStore } from '../stores/auth'

@@ -32,7 +32,7 @@
         <p class="muted">请前往「异步任务」页面查看执行状态。</p>
       </div>
       <div v-if="asyncError" class="section">
-        <el-alert :title="asyncError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="asyncError" />
       </div>
     </el-card>
 
@@ -67,7 +67,7 @@
         </el-descriptions>
       </div>
       <div v-if="syncError" class="section">
-        <el-alert :title="syncError" type="error" show-icon :closable="false" />
+        <ApiErrorAlert :error="syncError" />
       </div>
     </el-card>
   </section>
@@ -78,6 +78,7 @@ import { ref } from 'vue'
 import { ElMessageBox } from '../plugins/element-plus'
 
 import { formatApiError } from '../api/client'
+import ApiErrorAlert from '../components/ApiErrorAlert.vue'
 import { createEvaluationJob, runEvaluation } from '../api/endpoints'
 import type { EvaluationRunResponse, JobCreateResponse } from '../api/types'
 import { useAuthStore } from '../stores/auth'
