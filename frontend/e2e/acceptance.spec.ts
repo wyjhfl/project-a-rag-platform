@@ -19,12 +19,12 @@ test.describe('Acceptance Page', () => {
   test('shows production release entrypoint', async ({ page }) => {
     const releaseBadge = page.locator('[data-testid="release-badge"]')
     await expect(releaseBadge).toBeVisible()
-    await expect(releaseBadge).toContainText('v1.0.4')
+    await expect(releaseBadge).toContainText('v1.0.5')
 
     const releaseLink = page.locator('[data-testid="release-link"]')
     await expect(releaseLink).toHaveAttribute(
       'href',
-      'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4',
+      'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.5',
     )
   })
 

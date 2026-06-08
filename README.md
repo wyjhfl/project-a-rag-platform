@@ -32,9 +32,9 @@ Project A 是一个面向简历与技术面试展示的 **企业设备售后诊�
 
 ## 当前发布版本
 
-- Production release tag: `v1.0.4`
+- Production release tag: `v1.0.5`
 - Hosted repository: `https://github.com/wyjhfl/project-a-rag-platform`
-- Release notes: [docs/release_notes_v1.0.4.md](docs/release_notes_v1.0.4.md)
+- Release notes: [docs/release_notes_v1.0.5.md](docs/release_notes_v1.0.5.md)
 - Release lineage notice: [docs/release_lineage_notice.md](docs/release_lineage_notice.md)
 
 > 注意：当前生产线基于重建后的 Git 历史，已在 release notes 和 lineage notice 中透明说明。面试展示时重点讲工程能力与验收证据，不把 reconstructed lineage 表述为原始连续历史。

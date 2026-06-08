@@ -38,7 +38,7 @@ def test_api_ingest_and_chat(tmp_path: Path):
         json={"question": "UPS-30K 逆变器过温怎么办？"},
     )
 
-    assert health_response.json()["version"] == "v1.0.4"
+    assert health_response.json()["version"] == "v1.0.5"
     assert ingest_response.status_code == 200
     assert ingest_response.json()["chunk_count"] >= 1
     assert chat_response.status_code == 200

@@ -54,7 +54,7 @@ test.describe('System Status', () => {
       await expect(panel.locator('[data-testid="system-status-version"]').first()).toBeVisible()
       await expect(panel.locator('[data-testid="system-release-link"]').first()).toHaveAttribute(
         'href',
-        'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4',
+        'https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.5',
       )
     } else {
       await expect(page.locator('[data-testid="system-status-error"]')).toBeVisible()

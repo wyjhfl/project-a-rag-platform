@@ -56,8 +56,8 @@ def test_app_shell_exposes_current_release_entrypoint() -> None:
     assert 'data-testid="release-link"' in text
     assert "RELEASE_VERSION" in text
     assert "RELEASE_URL" in text
-    assert "v1.0.4" in release_text
-    assert "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4" in release_text
+    assert "v1.0.5" in release_text
+    assert "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.5" in release_text
 
 
 def test_app_shell_uses_central_release_metadata() -> None:
@@ -380,7 +380,7 @@ def test_readme_resume_links_are_current_and_existing() -> None:
         "docs/interview_questions.md",
         "docs/architecture_overview.md",
         "docs/demo_guide.md",
-        "docs/release_notes_v1.0.4.md",
+        "docs/release_notes_v1.0.5.md",
     ]
 
     for link in required_links:

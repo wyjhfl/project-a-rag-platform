@@ -60,12 +60,12 @@ def _resolve_app_version() -> str:
         if isinstance(version, str) and version:
             return f"v{version}"
     except (OSError, tomllib.TOMLDecodeError):
-        return "v1.0.4"
-    return "v1.0.4"
+        return "v1.0.5"
+    return "v1.0.5"
 
 
 APP_VERSION = _resolve_app_version()
-RELEASE_URL = "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.4"
+RELEASE_URL = "https://github.com/wyjhfl/project-a-rag-platform/releases/tag/v1.0.5"
 
 logger = logging.getLogger("project_a")
 

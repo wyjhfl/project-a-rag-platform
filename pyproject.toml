@@ -1,6 +1,6 @@
 [project]
 name = "project-a-rag-platform"
-version = "1.0.4"
+version = "1.0.5"
 description = "Equipment after-sales diagnosis and ticket workflow RAG platform."
 requires-python = ">=3.11"
 dependencies = [

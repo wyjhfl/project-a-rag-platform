@@ -9,14 +9,17 @@ The current repository history was reconstructed after a local `.git` directory 
 - The original v1.0.0 release-gate commit `e64b095` is not present in the current local history.
 - The current `v1.0.0` tag is a reconstructed tag pointing to `111066c`, not the original `e64b095`.
 - The current `v1.0.1` tag points to `3c2ce62`.
-- The current `v1.0.2` tag points to `d0c4f94`; `v1.0.3` is the latest production release.
+- The current `v1.0.2` tag points to `d0c4f94`; later reconstructed release tags include `v1.0.3`, `v1.0.4`, and `v1.0.5`.
 - The project owner approved using `https://github.com/wyjhfl/project-a-rag-platform` as the hosted remote.
 - To avoid overwriting the older public-delivery `main` branch, production releases are published on versioned production branches such as `production/v1.0.3`.
 
 ## Current production line
 
 ```text
-production/v1.0.3  latest versioned production handoff branch
+main / v1.0.5  latest resume/interview showcase release line
+v1.0.5         architecture, quality, worker, observability, and interview showcase polish
+v1.0.4         production landing baseline before interview showcase polish
+production/v1.0.3  previous versioned production handoff branch
 94e413b  (v1.0.3-rc.1) atomic job worker state transitions; final v1.0.3 metadata follows on top
 production/v1.0.2  previous versioned production handoff branch
 d0c4f94  (tag: v1.0.2) documentation-consistent v1.0.2 release baseline

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Project A v1.0.4 Enterprise RAG",
+    "title": "Project A v1.0.5 Enterprise RAG",
     "version": "0.1.0"
   },
   "paths": {

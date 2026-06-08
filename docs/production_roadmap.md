@@ -410,3 +410,12 @@ D:\codex安装\tools\Python312\python.exe -m ruff check backend
 - [x] Final production acceptance passed: 13/13 with `-RunFullE2E` on 2026-06-08.
 - [x] Hosted production handoff target: `origin/production/v1.0.4` and tag `v1.0.4` on `https://github.com/wyjhfl/project-a-rag-platform`.
 
+### v1.0.5 Resume / Interview Showcase Release DONE
+
+- [x] README rewritten around resume delivery, 30-second pitch, demo route, and production gate evidence.
+- [x] Architecture console page added for system layers, RAG flow, Worker flow, observability, and acceptance gate.
+- [x] Quality console page added for RAG metrics, Bad Case boundaries, Trace review, and engineering tradeoffs.
+- [x] Jobs page now explains Worker / queue architecture, `claim_next_job`, `heartbeat`, cancel semantics, and worker stress.
+- [x] Interview docs added/updated: resume showcase, demo script, interview questions, architecture overview, demo guide.
+- [x] Package metadata updated to `1.0.5`; release notes added: `docs/release_notes_v1.0.5.md`.
+
