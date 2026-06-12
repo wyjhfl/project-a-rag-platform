@@ -24,7 +24,7 @@ Project A RAG 平台支持两种部署模式：
 使用项目提供的 PowerShell 脚本一键启动：
 
 ```powershell
-.\scripts\start_demo_stack.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\run_full_e2e_demo.ps1
 ```
 
 脚本会自动：
@@ -53,7 +53,7 @@ npx vite preview --host 0.0.0.0 --port 4175
 ### 停止服务
 
 ```powershell
-.\scripts\stop_demo_stack.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\e2e_demo_smoke.ps1
 ```
 
 ---
