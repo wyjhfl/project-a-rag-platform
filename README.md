@@ -140,8 +140,8 @@ Latest local gate:
 
 ```text
 13/13 ALL CHECKS PASSED
-backend/tests: 204 passed, 1 warning
-E2E list: 33 tests in 11 files
+backend/tests: 185 passed, 1 warning
+E2E list: 35 tests in 12 files
 Secret scan: No secrets found
 Docker compose config: passed
 PostgreSQL smoke / Redis smoke / Worker stress: passed
