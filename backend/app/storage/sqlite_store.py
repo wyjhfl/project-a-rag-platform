@@ -99,6 +99,23 @@ class SqliteStore(Store):
                 estimated_cost REAL NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS rag_traces (
+                trace_id TEXT PRIMARY KEY,
+                question TEXT NOT NULL,
+                decision TEXT NOT NULL,
+                route TEXT DEFAULT '',
+                rewritten_query TEXT DEFAULT '',
+                retrieved_chunks TEXT DEFAULT '[]',
+                selected_chunks TEXT DEFAULT '[]',
+                citations TEXT DEFAULT '[]',
+                tool_calls TEXT DEFAULT '[]',
+                latency_ms REAL DEFAULT 0,
+                token_usage TEXT DEFAULT '{}',
+                safety_warning INTEGER DEFAULT 0,
+                insufficient INTEGER DEFAULT 0,
+                raw_trace TEXT DEFAULT '{}',
+                created_at TEXT NOT NULL
+            );
         """)
         self._ensure_column("jobs", "finished_at", "TEXT")
         conn.commit()
@@ -404,6 +421,52 @@ class SqliteStore(Store):
         )
         self._conn.commit()
 
+    def save_rag_trace(self, trace: dict) -> str:
+        trace_id = trace.get("trace_id") or f"TRACE-{uuid.uuid4().hex[:12]}"
+        now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+        created_at = trace.get("created_at") or now
+        self._conn.execute(
+            """INSERT OR REPLACE INTO rag_traces (
+                trace_id, question, decision, route, rewritten_query,
+                retrieved_chunks, selected_chunks, citations, tool_calls,
+                latency_ms, token_usage, safety_warning, insufficient,
+                raw_trace, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                trace_id,
+                trace.get("question", ""),
+                trace.get("decision", ""),
+                trace.get("route", ""),
+                trace.get("rewritten_query", ""),
+                json.dumps(trace.get("retrieved_chunks", []), ensure_ascii=False),
+                json.dumps(trace.get("selected_chunks", []), ensure_ascii=False),
+                json.dumps(trace.get("citations", []), ensure_ascii=False),
+                json.dumps(trace.get("tool_calls", []), ensure_ascii=False),
+                float(trace.get("latency_ms", 0.0) or 0.0),
+                json.dumps(trace.get("token_usage", {}), ensure_ascii=False),
+                1 if trace.get("safety_warning") else 0,
+                1 if trace.get("insufficient") else 0,
+                json.dumps(trace.get("raw_trace", {}), ensure_ascii=False),
+                created_at,
+            ),
+        )
+        self._conn.commit()
+        return trace_id
+
+    def get_rag_trace(self, trace_id: str) -> dict | None:
+        row = self._conn.execute(
+            "SELECT * FROM rag_traces WHERE trace_id = ?",
+            (trace_id,),
+        ).fetchone()
+        return self._row_to_rag_trace(row) if row else None
+
+    def list_rag_traces(self, limit: int = 50) -> list[dict]:
+        rows = self._conn.execute(
+            "SELECT * FROM rag_traces ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [self._row_to_rag_trace(row) for row in rows]
+
     def upsert_ticket(self, ticket: dict) -> None:
         self._conn.execute(
             """INSERT INTO tickets (
@@ -494,5 +557,23 @@ class SqliteStore(Store):
         d["result"] = json.loads(d.get("result", "{}"))
         d["cancel_requested"] = bool(d.get("cancel_requested", 0))
         return d
+
+    @staticmethod
+    def _row_to_rag_trace(row: sqlite3.Row) -> dict:
+        trace = dict(row)
+        for key, default in {
+            "retrieved_chunks": [],
+            "selected_chunks": [],
+            "citations": [],
+            "tool_calls": [],
+            "token_usage": {},
+            "raw_trace": {},
+        }.items():
+            value = trace.get(key)
+            trace[key] = json.loads(value) if value else default
+        trace["safety_warning"] = bool(trace.get("safety_warning", 0))
+        trace["insufficient"] = bool(trace.get("insufficient", 0))
+        trace["latency_ms"] = float(trace.get("latency_ms", 0.0) or 0.0)
+        return trace
 
 SQLiteStore = SqliteStore  # backward-compatible alias

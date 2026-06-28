@@ -19,11 +19,14 @@ from app.jobs import JobService
 from app.metrics import get_metrics
 from app.models import (
     AcceptanceOverviewResponse,
+    AgentDiagnoseRequest,
+    AgentDiagnoseResponse,
     AuditEventResponse,
     ChatRequest,
     ChatResponse,
     EvaluationRunRequest,
     EvaluationRunResponse,
+    GraphRelationRecord,
     IngestRequest,
     IngestResponse,
     JobCancelRequest,
@@ -41,7 +44,8 @@ from app.models import (
 )
 from app.observability import RequestContextMiddleware, configure_logging
 from app.rag.conversation import ConversationMemory
-from app.rag.graph import Neo4jGraphRetriever
+from app.rag.diagnosis_agent import DiagnosisAgent
+from app.rag.graph import LocalGraphRetriever, Neo4jGraphRetriever
 from app.rag.llm import LLMConfig
 from app.rag.pipeline import RagPipeline
 from app.rag.vector_factory import build_vector_store
@@ -157,6 +161,55 @@ def _run_evaluation_sync(app: FastAPI, request: EvaluationRunRequest) -> Evaluat
         summary = {
             "case_count": len(results),
             "passed_count": sum(1 for result in results if result["passed"]),
+        }
+    elif request.evaluation_type == "agentic":
+        results = []
+        for case in cases:
+            response = app.state.diagnosis_agent.diagnose(
+                question=case["question"],
+                create_ticket_on_escalation=False,
+            )
+            text = response.answer + "\n" + "\n".join(c.content for c in response.citations)
+            expected_keywords = case.get("expected_keywords", [])
+            expected_decision = case.get("expected_decision")
+            hits = [kw for kw in expected_keywords if kw in text]
+            trace = app.state._store.get_rag_trace(response.trace_id) or {}
+            results.append(
+                {
+                    "id": case.get("id", ""),
+                    "decision": response.decision,
+                    "expected_decision": expected_decision,
+                    "decision_match": not expected_decision or response.decision == expected_decision,
+                    "citation_ok": bool(response.citations) if response.decision == "answer" else True,
+                    "refusal_ok": response.decision == "refuse" if expected_decision == "refuse" else True,
+                    "escalation_ok": response.decision == "escalate" if expected_decision == "escalate" else True,
+                    "trace_ok": bool(trace.get("tool_calls")) and bool(trace.get("trace_id")),
+                    "retried": any(
+                        call.outputs.get("retrieval_attempts", 1) > 1
+                        for call in response.tool_calls
+                        if call.tool == "knowledge_search"
+                    ),
+                    "hits": hits,
+                }
+            )
+
+        def _rate(key: str) -> float:
+            if not results:
+                return 0.0
+            return round(sum(1 for item in results if item[key]) / len(results), 4)
+
+        summary = {
+            "case_count": len(results),
+            "passed_count": sum(1 for item in results if item["decision_match"]),
+            "citation_accuracy": _rate("citation_ok"),
+            "refusal_accuracy": _rate("refusal_ok"),
+            "escalation_accuracy": _rate("escalation_ok"),
+            "trace_completeness": _rate("trace_ok"),
+            "retrieval_retry_rate": round(
+                sum(1 for item in results if item["retried"]) / len(results),
+                4,
+            ) if results else 0.0,
+            "results": results,
         }
     else:
         script_map = {
@@ -292,6 +345,11 @@ def create_app(
     app.state.acceptance_docs_dir = seed_docs_dir or settings.seed_docs_dir
     app.state.conversation_memory = ConversationMemory(cache=cache)
     app.state.ticket_workflow = TicketWorkflowService(store=store, rag_pipeline=pipeline)
+    app.state.diagnosis_agent = DiagnosisAgent(
+        pipeline=pipeline,
+        store=store,
+        ticket_workflow=app.state.ticket_workflow,
+    )
     app.state._settings = settings
     app.state._store = store
     app.state._cache = cache
@@ -458,6 +516,55 @@ def create_app(
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(events(), media_type="text/event-stream")
+
+    @app.post("/api/v1/agent/diagnose", response_model=AgentDiagnoseResponse)
+    def agent_diagnose(
+        request: AgentDiagnoseRequest,
+        _role: str = Depends(require_role("viewer")),
+    ) -> AgentDiagnoseResponse:
+        return app.state.diagnosis_agent.diagnose(
+            question=request.question,
+            top_k=request.top_k,
+            session_id=request.session_id,
+            create_ticket_on_escalation=request.create_ticket_on_escalation,
+        )
+
+    @app.get("/api/v1/rag/traces", response_model=list[dict])
+    def list_rag_traces(
+        limit: int = Query(default=50, ge=1, le=200),
+        _role: str = Depends(require_role("viewer")),
+    ) -> list[dict]:
+        return app.state._store.list_rag_traces(limit=limit)
+
+    @app.get("/api/v1/rag/traces/{trace_id}", response_model=dict)
+    def get_rag_trace(
+        trace_id: str,
+        _role: str = Depends(require_role("viewer")),
+    ) -> dict:
+        trace = app.state._store.get_rag_trace(trace_id)
+        if trace is None:
+            raise AppError(code="not_found", message="RAG trace not found", status_code=404)
+        return trace
+
+    @app.get("/api/v1/rag/graph/relations", response_model=list[GraphRelationRecord])
+    def list_graph_relations(_role: str = Depends(require_role("viewer"))) -> list[GraphRelationRecord]:
+        graph_retriever = getattr(app.state.pipeline, "graph_retriever", None)
+        if graph_retriever is None or not hasattr(graph_retriever, "relations"):
+            hybrid = getattr(app.state.pipeline, "hybrid_retriever", None)
+            keyword = getattr(hybrid, "keyword_retriever", None)
+            chunks = getattr(keyword, "chunks", [])
+            graph_retriever = LocalGraphRetriever()
+            graph_retriever.index_chunks(chunks)
+        return [
+            GraphRelationRecord(
+                source=source,
+                relation=relation,
+                target=target,
+                weight=1.0,
+                evidence_source="local_graph",
+            )
+            for source, relation, target in sorted(graph_retriever.relations())
+        ]
 
     @app.post("/api/v1/tickets/start", response_model=TicketWorkflowResult)
     def start_ticket(request: TicketStartRequest, _role: str = Depends(require_role("operator"))) -> TicketWorkflowResult:

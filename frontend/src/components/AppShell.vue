@@ -98,6 +98,7 @@ const navItems = [
   { key: 'acceptance', label: '验收中心', hint: '展示文本主链、多模态、评测与 bad case 的统一证据面板。' },
   { key: 'architecture', label: '架构总览', hint: '从系统分层、RAG 数据流、Worker、可观测性和生产门禁讲清整体设计。' },
   { key: 'quality', label: '质量洞察', hint: '集中展示 RAG 指标、Bad Case、Trace 复盘与工程取舍，方便面试深挖。' },
+  { key: 'agentic', label: 'Agentic RAG', hint: '展示诊断 Agent、工具调用、Adaptive Retrieval、Trace 和 GraphRAG 关系。' },
   { key: 'status', label: '系统状态', hint: '查看 API、LLM 与向量库当前状态及健康检查。' },
   { key: 'documents', label: '资料管理', hint: '上传资料、切换 docs source 并执行入库。' },
   { key: 'jobs', label: '异步任务', hint: '查看和管理异步入库与评测任务。' },

@@ -12,6 +12,10 @@ class Metrics:
         self._request_counts: dict[tuple[str, str, str], int] = defaultdict(int)
         self._error_counts: dict[str, int] = defaultdict(int)
         self._job_counts: dict[tuple[str, str], int] = defaultdict(int)
+        self._agent_decision_counts: dict[str, int] = defaultdict(int)
+        self._rag_trace_count = 0
+        self._rag_retrieval_retry_count = 0
+        self._rag_escalation_count = 0
         self._job_durations: list[float] = []
         self._request_durations: list[float] = []
         self._start_time = time.time()
@@ -30,6 +34,20 @@ class Metrics:
             self._job_counts[key] += 1
             if duration_ms:
                 self._job_durations.append(duration_ms)
+
+    def record_agent_decision(self, decision: str):
+        with self._lock:
+            self._agent_decision_counts[decision] += 1
+            if decision == "escalate":
+                self._rag_escalation_count += 1
+
+    def record_rag_trace(self):
+        with self._lock:
+            self._rag_trace_count += 1
+
+    def record_rag_retrieval_retry(self):
+        with self._lock:
+            self._rag_retrieval_retry_count += 1
 
     def generate(self) -> str:
         lines = []
@@ -53,6 +71,22 @@ class Metrics:
                 lines.append("# TYPE project_a_job_total counter")
                 for (job_type, status), count in sorted(self._job_counts.items()):
                     lines.append(f'project_a_job_total{{job_type="{job_type}",status="{status}"}} {count}')
+
+            if self._agent_decision_counts:
+                lines.append("# HELP project_a_agent_decision_total Total Agentic RAG decisions")
+                lines.append("# TYPE project_a_agent_decision_total counter")
+                for decision, count in sorted(self._agent_decision_counts.items()):
+                    lines.append(f'project_a_agent_decision_total{{decision="{decision}"}} {count}')
+
+            lines.append("# HELP project_a_rag_trace_total Total persisted RAG traces")
+            lines.append("# TYPE project_a_rag_trace_total counter")
+            lines.append(f"project_a_rag_trace_total {self._rag_trace_count}")
+            lines.append("# HELP project_a_rag_retrieval_retry_total Total adaptive retrieval retries")
+            lines.append("# TYPE project_a_rag_retrieval_retry_total counter")
+            lines.append(f"project_a_rag_retrieval_retry_total {self._rag_retrieval_retry_count}")
+            lines.append("# HELP project_a_rag_escalation_total Total RAG escalations")
+            lines.append("# TYPE project_a_rag_escalation_total counter")
+            lines.append(f"project_a_rag_escalation_total {self._rag_escalation_count}")
 
             # Job duration
             if self._job_durations:

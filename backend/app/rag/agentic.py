@@ -20,6 +20,10 @@ class AgenticSearchResult:
     retried: bool = False
     rewritten_query: str = ""
     contradictions: list[str] = field(default_factory=list)
+    needs_retrieval: bool = True
+    retrieval_attempts: int = 1
+    retry_reason: str = ""
+    context_sufficient: bool = False
 
 
 class AgenticRetriever:
@@ -50,6 +54,10 @@ class AgenticRetriever:
             retried=retried,
             rewritten_query=rewritten_query,
             contradictions=self.detect_contradictions(chunks),
+            needs_retrieval=True,
+            retrieval_attempts=2 if retried else 1,
+            retry_reason="low_retrieval_quality" if retried else "",
+            context_sufficient=bool(chunks) and best_score >= 0.18,
         )
 
     def rewrite_query(self, question: str) -> str:

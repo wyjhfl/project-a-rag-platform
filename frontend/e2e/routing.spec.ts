@@ -8,6 +8,13 @@ test.describe('Console hash routing', () => {
     await expect(page.locator('[data-testid="nav-jobs"]')).toHaveAttribute('aria-current', 'page')
   })
 
+  test('opens agentic rag page directly from hash URL', async ({ page }) => {
+    await page.goto('/#/agentic')
+
+    await expect(page.locator('[data-testid="page-agentic"]')).toBeVisible()
+    await expect(page.locator('[data-testid="nav-agentic"]')).toHaveAttribute('aria-current', 'page')
+  })
+
   test('updates URL hash when navigating between console pages', async ({ page }) => {
     await page.goto('/')
 

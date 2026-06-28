@@ -1,9 +1,11 @@
 import { http } from './client'
 import type {
   AcceptanceOverviewResponse,
+  AgentDiagnoseResponse,
   AuditEventResponse,
   ChatResponse,
   EvaluationRunResponse,
+  GraphRelationRecord,
   HealthResponse,
   HealthzResponse,
   IngestResponse,
@@ -65,6 +67,24 @@ export async function uploadDocument(file: File): Promise<UploadResponse> {
 
 export async function chat(question: string): Promise<ChatResponse> {
   const { data } = await http.post<ChatResponse>('/api/v1/chat', { question })
+  return data
+}
+
+export async function agentDiagnose(
+  question: string,
+  topK: number = 4,
+  createTicketOnEscalation: boolean = true,
+): Promise<AgentDiagnoseResponse> {
+  const { data } = await http.post<AgentDiagnoseResponse>('/api/v1/agent/diagnose', {
+    question,
+    top_k: topK,
+    create_ticket_on_escalation: createTicketOnEscalation,
+  })
+  return data
+}
+
+export async function listGraphRelations(): Promise<GraphRelationRecord[]> {
+  const { data } = await http.get<GraphRelationRecord[]>('/api/v1/rag/graph/relations')
   return data
 }
 

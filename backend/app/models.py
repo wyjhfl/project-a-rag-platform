@@ -21,6 +21,65 @@ class ChatResponse(BaseModel):
     safety_warning: bool = False
 
 
+class AgentDiagnoseRequest(BaseModel):
+    question: str = Field(min_length=1)
+    top_k: int = Field(default=4, ge=1, le=10)
+    session_id: str | None = None
+    create_ticket_on_escalation: bool = True
+
+
+class AgentToolCall(BaseModel):
+    tool: str
+    status: str
+    summary: str = ""
+    inputs: dict = Field(default_factory=dict)
+    outputs: dict = Field(default_factory=dict)
+
+
+class AgentQuality(BaseModel):
+    retrieval_score: float = 0.0
+    citation_count: int = 0
+    faithfulness_hint: str = "unknown"
+    risk_level: str = "low"
+
+
+class AgentDiagnoseResponse(BaseModel):
+    decision: str
+    answer: str
+    plan: list[str]
+    tool_calls: list[AgentToolCall]
+    citations: list[Citation]
+    quality: AgentQuality
+    trace_id: str
+    ticket_id: str | None = None
+
+
+class RagTraceRecord(BaseModel):
+    trace_id: str
+    question: str = ""
+    decision: str = ""
+    route: str = ""
+    rewritten_query: str = ""
+    retrieved_chunks: list[dict] = Field(default_factory=list)
+    selected_chunks: list[dict] = Field(default_factory=list)
+    citations: list[dict] = Field(default_factory=list)
+    tool_calls: list[dict] = Field(default_factory=list)
+    latency_ms: float = 0.0
+    token_usage: dict = Field(default_factory=dict)
+    safety_warning: bool = False
+    insufficient: bool = False
+    created_at: str = ""
+    raw_trace: dict = Field(default_factory=dict)
+
+
+class GraphRelationRecord(BaseModel):
+    source: str
+    relation: str
+    target: str
+    weight: float = 1.0
+    evidence_source: str = ""
+
+
 class SessionChatRequest(BaseModel):
     session_id: str = Field(min_length=1)
     question: str = Field(min_length=1)
@@ -57,7 +116,7 @@ class SystemStatusResponse(BaseModel):
 
 
 class EvaluationRunRequest(BaseModel):
-    evaluation_type: str = Field(pattern="^(ragas|regression|adversarial)$")
+    evaluation_type: str = Field(pattern="^(ragas|regression|adversarial|agentic)$")
     cases_path: str
     docs_source: str = "seed_docs"
 
