@@ -2,21 +2,21 @@
 
 ## 一句话定位
 
-Project A 是一个企业设备售后诊断 RAG 平台，用于把设备型号、故障码和现场现象转成带引用的排障建议，并在资料不足或高风险场景下拒答或升级人工工单。
+Project A 是一个企业设备售后诊断 Agentic RAG 平台，用单诊断控制器把设备型号、故障码和现场现象转成带引用、可追踪的排障建议，并在资料不足或高风险场景下拒答或升级人工工单。
 
 ## 30 秒开场白
 
-我做的 Project A 不是普通聊天 demo，而是企业设备售后诊断 RAG 平台。它把故障描述接入知识检索，生成 grounded answer 和引用证据；当资料不足或操作高风险时，会拒答或升级人工工单。工程上我做了异步 Job、审计日志、Request ID、Prometheus metrics、OpenAPI 类型同步、Playwright E2E、Docker Compose 和最终生产验收脚本，所以这个项目能展示 RAG 应用从 demo 到生产化落地的完整思路。
+我做的 Project A 不是普通聊天 demo，也不是多 Agent 平台，而是企业设备售后诊断 Agentic RAG 平台。它用单诊断控制器串起安全检查、query route、知识检索、risk check、工单升级，生成 grounded answer、引用证据和 trace_id；当资料不足或操作高风险时，会拒答或升级人工工单。工程上我做了异步 Job、审计日志、Request ID、Prometheus/Grafana、Alembic 迁移骨架、OpenAPI 类型同步、Playwright E2E、Docker Compose 和最终生产验收脚本，所以这个项目能展示 RAG 应用从 demo 到生产化落地的完整思路。
 
 ## 简历 bullet
 
 ### 中文版
 
-企业设备售后诊断 RAG 平台，基于 FastAPI、Vue 3、Chroma/SQLite、LangChain/LangGraph 实现带引用的故障诊断问答、Prompt 注入防护、异步入库/评测任务、工单闭环、审计日志、Prometheus metrics、OpenAPI 类型同步与 Playwright E2E；通过 13 步生产验收脚本覆盖 pytest、ruff、前端构建、Docker Compose、Redis 限流 smoke、PostgreSQL worker stress 与 Full E2E。
+企业设备售后诊断 Agentic RAG 平台，基于 FastAPI、Vue 3、Chroma/SQLite、LangChain/LangGraph 实现单诊断控制器、动态检索、query rewrite、Prompt 注入防护、引用证据、Trace 持久化、GraphRAG 关系展示、高风险工单升级、异步任务、审计日志、Prometheus/Grafana、Alembic 迁移骨架、OpenAPI 类型同步与 Playwright E2E；通过生产验收脚本覆盖 pytest、ruff、前端构建、Docker Compose、Redis/PostgreSQL smoke 与 E2E。
 
 ### English version
 
-Built an enterprise equipment after-sales diagnosis RAG platform with FastAPI, Vue 3, Chroma/SQLite, LangChain/LangGraph, grounded answers with citations, prompt-injection guardrails, async ingestion/evaluation jobs, ticket escalation, audit logs, Prometheus metrics, OpenAPI-generated frontend types, Playwright E2E, and a 13-step production acceptance gate.
+Built an enterprise Agentic RAG diagnosis platform with FastAPI, Vue 3, Chroma/SQLite, LangChain/LangGraph, adaptive retrieval, trace persistence, GraphRAG relation views, grounded answers with citations, prompt-injection guardrails, async jobs, ticket escalation, audit logs, Prometheus/Grafana observability, Alembic migration skeletons, OpenAPI-generated frontend types, Playwright E2E, and a production acceptance gate.
 
 ## 面试亮点
 
@@ -49,7 +49,7 @@ Built an enterprise equipment after-sales diagnosis RAG platform with FastAPI, V
 
 ### 最大不足是什么？
 
-Git 历史是 reconstructed，需要透明说明；Grafana/OTel 还没有完整接入；数据库迁移还可以升级到 Alembic；真实业务样本还可以继续扩容。这些不是回避项，而是下一阶段工程计划。
+Git 历史是 reconstructed，需要透明说明；Prometheus/Grafana demo stack 和 Alembic 迁移骨架已经接入，但 OTel 链路追踪、生产级迁移治理、外部队列和更多真实业务样本还可以继续增强。这些不是回避项，而是下一阶段工程计划。
 
 ## GitHub 展示路径
 
