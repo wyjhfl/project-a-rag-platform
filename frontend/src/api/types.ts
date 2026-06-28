@@ -22,6 +22,35 @@ export interface ErrorResponse {
 export type ChatRequest = ApiSchema<'ChatRequest'>
 export type Citation = ApiSchema<'Citation'>
 export type ChatResponse = ApiSchema<'ChatResponse'>
+export type AgentToolCall = {
+  tool: string
+  status: string
+  summary?: string
+  inputs?: Record<string, unknown>
+  outputs?: Record<string, unknown>
+}
+export type AgentDiagnoseResponse = {
+  decision: string
+  answer: string
+  plan: string[]
+  tool_calls: AgentToolCall[]
+  citations: Citation[]
+  quality: {
+    retrieval_score: number
+    citation_count: number
+    faithfulness_hint: string
+    risk_level: string
+  }
+  trace_id: string
+  ticket_id?: string | null
+}
+export type GraphRelationRecord = {
+  source: string
+  relation: string
+  target: string
+  weight: number
+  evidence_source: string
+}
 export type SessionChatRequest = ApiSchema<'SessionChatRequest'>
 export type SessionChatResponse = ApiSchema<'SessionChatResponse'>
 export type IngestResponse = ApiSchema<'IngestResponse'>

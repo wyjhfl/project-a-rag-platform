@@ -117,8 +117,8 @@ const tradeoffs = [
   },
   {
     title: '文本 metrics vs 可视化观测',
-    summary: 'System Status 已解析 /metrics；下一步接 Grafana/OTel 做趋势和告警。',
-    next: 'Grafana',
+    summary: 'System Status 已解析 /metrics；Grafana demo stack 已接入，下一步补 OTel 和生产级告警。',
+    next: 'OTel / Alerts',
   },
 ]
 

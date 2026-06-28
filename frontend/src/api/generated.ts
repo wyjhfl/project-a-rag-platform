@@ -191,6 +191,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent/diagnose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Agent Diagnose */
+        post: operations["agent_diagnose_api_v1_agent_diagnose_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rag/traces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rag Traces */
+        get: operations["list_rag_traces_api_v1_rag_traces_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rag/traces/{trace_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Rag Trace */
+        get: operations["get_rag_trace_api_v1_rag_traces__trace_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rag/graph/relations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Graph Relations */
+        get: operations["list_graph_relations_api_v1_rag_graph_relations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tickets/start": {
         parameters: {
             query?: never;
@@ -500,6 +568,84 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** AgentDiagnoseRequest */
+        AgentDiagnoseRequest: {
+            /** Question */
+            question: string;
+            /**
+             * Top K
+             * @default 4
+             */
+            top_k: number;
+            /** Session Id */
+            session_id?: string | null;
+            /**
+             * Create Ticket On Escalation
+             * @default true
+             */
+            create_ticket_on_escalation: boolean;
+        };
+        /** AgentDiagnoseResponse */
+        AgentDiagnoseResponse: {
+            /** Decision */
+            decision: string;
+            /** Answer */
+            answer: string;
+            /** Plan */
+            plan: string[];
+            /** Tool Calls */
+            tool_calls: components["schemas"]["AgentToolCall"][];
+            /** Citations */
+            citations: components["schemas"]["Citation"][];
+            quality: components["schemas"]["AgentQuality"];
+            /** Trace Id */
+            trace_id: string;
+            /** Ticket Id */
+            ticket_id?: string | null;
+        };
+        /** AgentQuality */
+        AgentQuality: {
+            /**
+             * Retrieval Score
+             * @default 0
+             */
+            retrieval_score: number;
+            /**
+             * Citation Count
+             * @default 0
+             */
+            citation_count: number;
+            /**
+             * Faithfulness Hint
+             * @default unknown
+             */
+            faithfulness_hint: string;
+            /**
+             * Risk Level
+             * @default low
+             */
+            risk_level: string;
+        };
+        /** AgentToolCall */
+        AgentToolCall: {
+            /** Tool */
+            tool: string;
+            /** Status */
+            status: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Inputs */
+            inputs?: {
+                [key: string]: unknown;
+            };
+            /** Outputs */
+            outputs?: {
+                [key: string]: unknown;
+            };
+        };
         /** AuditEventResponse */
         AuditEventResponse: {
             /** Action */
@@ -598,6 +744,25 @@ export interface components {
             };
             /** Report Path */
             report_path?: string | null;
+        };
+        /** GraphRelationRecord */
+        GraphRelationRecord: {
+            /** Source */
+            source: string;
+            /** Relation */
+            relation: string;
+            /** Target */
+            target: string;
+            /**
+             * Weight
+             * @default 1
+             */
+            weight: number;
+            /**
+             * Evidence Source
+             * @default
+             */
+            evidence_source: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1180,6 +1345,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_diagnose_api_v1_agent_diagnose_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentDiagnoseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentDiagnoseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_rag_traces_api_v1_rag_traces_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rag_trace_api_v1_rag_traces__trace_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_graph_relations_api_v1_rag_graph_relations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GraphRelationRecord"][];
                 };
             };
         };

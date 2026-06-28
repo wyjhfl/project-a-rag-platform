@@ -2,7 +2,7 @@
 
 ## 目标
 
-用 5-10 分钟把 Project A 讲成一个完整 AI 工程项目，而不是“调了一个大模型接口”。
+用 5-10 分钟把 Project A 讲成一个完整 Agentic RAG 工程项目，而不是“调了一个大模型接口”。
 
 ## 0. 准备
 
@@ -22,7 +22,7 @@ http://127.0.0.1:4173
 
 ## 1. 30 秒开场
 
-“这是一个企业设备售后诊断 RAG 平台。输入设备型号、故障码或现场现象后，系统会检索企业资料并生成带引用的排障建议。如果资料不足或操作高风险，会拒答或升级人工工单。工程上我做了异步任务、审计日志、metrics、OpenAPI 类型同步、E2E 和生产验收脚本。”
+“这是一个企业设备售后诊断 Agentic RAG 平台。输入设备型号、故障码或现场现象后，单诊断控制器会执行安全检查、query route、知识检索、risk check 和必要的工单升级，系统会生成带引用、带 trace_id 的排障建议。如果资料不足或操作高风险，会拒答或升级人工工单。工程上我做了异步任务、审计日志、Prometheus/Grafana、Alembic 迁移骨架、OpenAPI 类型同步、E2E 和生产验收脚本。”
 
 ## 2. Acceptance 页：先讲项目价值
 
@@ -73,7 +73,7 @@ http://127.0.0.1:4173
 - context_precision / faithfulness / context_recall
 - Bad Case 边界
 - 低分 Trace 复盘
-- Demo 成本、外部队列、Grafana/OTel 等取舍
+- Demo 成本、外部队列、Grafana demo stack、OTel 等取舍
 
 讲法：
 
@@ -144,4 +144,4 @@ http://127.0.0.1:4173
 - **为什么用 RAG？** 企业售后知识更新频繁，需要 grounded answer 和引用证据。
 - **怎么防幻觉？** 检索上下文、引用证据、拒答边界、评测和 bad case 复盘。
 - **怎么扩展到生产？** PostgreSQL/Redis/Milvus compose、worker、metrics、readyz、final acceptance。
-- **最大不足？** Grafana/OTel、Alembic、外部队列和更多真实样本仍可继续增强。
+- **最大不足？** OTel、生产级 Grafana 告警、Alembic 回滚治理、外部队列和更多真实样本仍可继续增强。

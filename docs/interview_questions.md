@@ -70,7 +70,7 @@ Project A 有四类信号：
 
 - `/healthz`：进程是否活着。
 - `/readyz`：依赖是否就绪，可返回 degraded。
-- `/metrics`：Prometheus 文本指标，前端 System Status 会解析 summary。
+- `/metrics`：Prometheus 文本指标，前端 System Status 会解析 summary，Docker Compose 也提供 Prometheus/Grafana demo stack。
 - Audit events：记录关键业务事件，例如 job.create、job.succeeded、job.failed、job.cancelled。
 
 此外，统一错误体包含 `request_id`，前端错误卡片支持复制 Request ID，方便从 UI 追到日志和审计。
@@ -90,7 +90,7 @@ Project A 有四类信号：
 我会主动说三个不足：
 
 1. Git 历史是 reconstructed，需要透明说明，但代码、验收和发布证据是当前可信基础。
-2. `/metrics` 已经有 Prometheus 文本端点，但还没有 Grafana/OTel 面板。
+2. Prometheus/Grafana demo stack 已经接入，但 OTel 分布式追踪和生产级告警规则还可以继续增强。
 3. 内置 JobService 已覆盖任务语义，但多实例大规模生产更适合外部队列。
 
 这三个不足都不是“没考虑”，而是已记录在后续路线图里。
@@ -99,12 +99,12 @@ Project A 有四类信号：
 
 优先级：
 
-1. Grafana / OTel，把 metrics 从文本端点升级为可视化面板。
-2. Alembic 管理生产数据库迁移。
-3. 外部队列替代内置 JobService，提升多实例调度能力。
-4. 扩容真实业务样本和 bad case，持续改进 RAG 指标。
-5. 增加更多端到端真实 LLM 验收样本。
+1. OTel 分布式追踪，把 request_id、trace_id、tool_calls 和后端 span 串起来。
+2. 完善 Grafana dashboard 和告警规则，把 demo 监控升级为生产观测面板。
+3. 把 Alembic skeleton 扩展为生产级迁移流程，包括回滚策略和迁移 smoke。
+4. 外部队列替代内置 JobService，提升多实例调度能力。
+5. 扩容真实业务样本、bad case 和端到端真实 LLM 验收样本。
 
 ## 10. 面试收束话术
 
-“这个项目我最想展示的是：我不是只会调 LLM API，而是知道一个 RAG 应用从业务场景、检索、引用、拒答、评测、异步任务、审计、metrics、CI 到生产验收需要哪些工程环节。项目仍然有后续优化空间，但当前已经能完整展示 AI 应用工程化落地能力。”
+“这个项目我最想展示的是：我不是只会调 LLM API，而是知道一个 RAG 应用从业务场景、Agentic 检索、引用、拒答、Trace、评测、异步任务、审计、metrics、CI 到生产验收需要哪些工程环节。项目仍然有后续优化空间，比如 OTel、生产级迁移治理和外部队列，但当前已经能完整展示 AI 应用工程化落地能力。”

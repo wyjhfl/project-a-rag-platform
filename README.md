@@ -1,6 +1,6 @@
-# Project A — Enterprise RAG Ops Console
+# Project A — Enterprise Agentic RAG Diagnosis Platform
 
-> 企业设备售后诊断与工单闭环 RAG 平台｜FastAPI + Vue 3 + Chroma/SQLite + Async Jobs + Audit + Metrics + E2E
+> 企业设备售后诊断与工单闭环 Agentic RAG 平台｜FastAPI + Vue 3 + Chroma/SQLite + Trace + GraphRAG + Prometheus/Grafana + Alembic + E2E
 
 [![CI](https://github.com/wyjhfl/project-a-rag-platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wyjhfl/project-a-rag-platform/actions/workflows/ci.yml)
 ![Release](https://img.shields.io/badge/release-v1.0.5-blue)
@@ -9,15 +9,15 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-production--ready-009688)
 ![E2E](https://img.shields.io/badge/Playwright-E2E-green)
 
-Project A 是一个面向 **AI / RAG 工程岗位面试展示** 的企业设备售后诊断平台。它不是简单的 ChatGPT 套壳，而是把“故障描述 -> 知识检索 -> grounded 回答 -> 引用证据 -> 异步任务 -> 审计与指标 -> 工单闭环 -> 生产验收”做成完整工程闭环。
+Project A 是一个面向 **AI Agent / RAG / 大模型工程岗位面试展示** 的企业设备售后诊断平台。它不是简单的 ChatGPT 套壳，也不是多 Agent 协作平台，而是把“故障描述 -> Agentic 检索决策 -> grounded 回答 -> 引用证据 -> Trace 证据链 -> 高风险工单升级 -> 评测与监控 -> 生产验收”做成完整工程闭环。
 
 ```text
 设备型号 / 故障码 / 现场现象
--> 文档入库与检索
--> grounded answer + citations
--> 资料不足拒答 / 高风险升级人工
--> Jobs / Evaluation / Audit / Metrics
--> CI + Docker + Full E2E + Production Acceptance
+-> 文档入库、动态检索、query rewrite、GraphRAG 关系
+-> grounded answer + citations + trace_id
+-> 资料不足拒答 / 高风险升级人工工单
+-> Jobs / Evaluation / Audit / Prometheus + Grafana
+-> Alembic skeleton + CI + Docker + Full E2E + Production Acceptance
 ```
 
 ## Why this project is worth showing
@@ -33,17 +33,17 @@ Project A 是一个面向 **AI / RAG 工程岗位面试展示** 的企业设备�
 
 ## 30-second interview pitch
 
-> I built an enterprise equipment after-sales diagnosis RAG platform. It turns equipment models, fault codes, and field symptoms into grounded troubleshooting answers with citations. When evidence is insufficient or an operation is high risk, the system refuses or escalates to a human ticket. Engineering-wise, it includes FastAPI APIs, a Vue 3 operations console, async Jobs, audit logs, Prometheus metrics, OpenAPI-generated frontend types, Playwright E2E, Docker Compose, and a final production acceptance gate.
+> I built an enterprise Agentic RAG diagnosis platform for equipment after-sales support. It turns equipment models, fault codes, and field symptoms into grounded troubleshooting answers with citations, while a single diagnosis controller performs safety checks, query routing, adaptive retrieval, risk detection, trace persistence, and ticket escalation. Engineering-wise, it includes FastAPI APIs, a Vue 3 operations console, async Jobs, audit logs, Prometheus/Grafana observability, Alembic migration skeletons, OpenAPI-generated frontend types, Playwright E2E, Docker Compose, and a final production acceptance gate.
 
 ## Resume bullet
 
 **中文：**
 
-> 企业设备售后诊断 RAG 平台，基于 FastAPI、Vue 3、Chroma/SQLite、LangChain/LangGraph 实现带引用的故障诊断问答、Prompt 注入防护、异步入库/评测任务、工单闭环、审计日志、Prometheus metrics、OpenAPI 类型同步与 Playwright E2E；通过 13 步生产验收脚本覆盖 pytest、ruff、前端构建、Docker Compose、Redis 限流 smoke、PostgreSQL worker stress 与 Full E2E。
+> 企业设备售后诊断 Agentic RAG 平台，基于 FastAPI、Vue 3、Chroma/SQLite、LangChain/LangGraph 实现单诊断控制器、动态检索、query rewrite、Prompt 注入防护、引用证据、Trace 持久化、GraphRAG 关系展示、高风险工单升级、异步任务、审计日志、Prometheus/Grafana 监控、Alembic 迁移骨架、OpenAPI 类型同步与 Playwright E2E；通过生产验收脚本覆盖 pytest、ruff、前端构建、Docker Compose、Redis/PostgreSQL smoke 与 E2E。
 
 **English：**
 
-> Built an enterprise equipment after-sales diagnosis RAG platform with FastAPI, Vue 3, Chroma/SQLite, LangChain/LangGraph, grounded answers with citations, prompt-injection guardrails, async ingestion/evaluation jobs, ticket escalation, audit logs, Prometheus metrics, OpenAPI-generated frontend types, Playwright E2E, and a 13-step production acceptance gate.
+> Built an enterprise Agentic RAG diagnosis platform with FastAPI, Vue 3, Chroma/SQLite, LangChain/LangGraph, adaptive retrieval, trace persistence, GraphRAG relation views, grounded answers with citations, prompt-injection guardrails, async jobs, ticket escalation, audit logs, Prometheus/Grafana observability, Alembic migration skeletons, OpenAPI-generated frontend types, Playwright E2E, and a production acceptance gate.
 
 ## Architecture
 
@@ -56,7 +56,9 @@ flowchart LR
   API --> Jobs["JobService / Worker"]
   API --> Audit["Audit Events"]
   API --> Metrics["Prometheus /metrics"]
-  RAG --> Vector["Chroma / Hybrid Retrieval"]
+  Metrics --> Grafana["Grafana Dashboard"]
+  RAG --> Agent["Agentic Diagnosis Controller"]
+  Agent --> Vector["Chroma / Hybrid Retrieval"]
   RAG --> LLM["LLM Provider"]
   Jobs --> Store["SQLite / PostgreSQL"]
   API --> Redis["Redis Rate Limit"]
@@ -69,10 +71,11 @@ The frontend console is designed for interviews:
 
 1. **Acceptance** — project pitch and evidence entry point.
 2. **Architecture** — system layers, RAG flow, Worker flow, observability, production gate.
-3. **Quality** — RAG metrics, bad case boundaries, trace review, engineering tradeoffs.
-4. **System Status** — release, healthz/readyz, metrics, Request ID.
-5. **Jobs** — async lifecycle, `claim_next_job`, `heartbeat`, cancel/retry/timeout, queue evolution.
-6. **Chat / Tickets / Evaluations / Audit** — grounded answer, human escalation, evaluation, traceability.
+3. **Agentic RAG** — diagnosis controller, tool calls, adaptive retrieval, trace, GraphRAG relations.
+4. **Quality** — RAG metrics, bad case boundaries, trace review, engineering tradeoffs.
+5. **System Status** — release, healthz/readyz, metrics, Request ID.
+6. **Jobs** — async lifecycle, `claim_next_job`, `heartbeat`, cancel/retry/timeout, queue evolution.
+7. **Chat / Tickets / Evaluations / Audit** — grounded answer, human escalation, evaluation, traceability.
 
 ## Tech stack
 
@@ -80,12 +83,12 @@ The frontend console is designed for interviews:
 |---|---|
 | Backend | FastAPI, Pydantic, pytest, ruff |
 | Frontend | Vue 3, Vite, TypeScript, Element Plus, Playwright |
-| RAG | LangChain / LangGraph, Chroma, hybrid retrieval boundaries |
+| RAG | LangChain / LangGraph, Chroma, adaptive retrieval, Agentic diagnosis, GraphRAG relations |
 | Storage | SQLite for demo, PostgreSQL smoke path for production |
 | Async | JobService, worker claim, heartbeat, cancel, retry, timeout |
 | Security | X-API-Key roles, PromptInjectionGuard, upload constraints, secret scan |
-| Observability | Request ID, structured errors, audit logs, Prometheus metrics |
-| Delivery | Docker Compose, OpenAPI drift guard, Redis/PostgreSQL smoke, Full E2E |
+| Observability | Request ID, structured errors, audit logs, Prometheus metrics, Grafana demo dashboard |
+| Delivery | Docker Compose, Alembic skeleton, OpenAPI drift guard, Redis/PostgreSQL smoke, Full E2E |
 
 ## Quick start
 
@@ -105,6 +108,8 @@ Default local URLs:
 | Backend healthz | http://127.0.0.1:8000/healthz |
 | Backend readyz | http://127.0.0.1:8000/readyz |
 | Metrics | http://127.0.0.1:8000/metrics |
+| Prometheus | http://127.0.0.1:19090 |
+| Grafana | http://127.0.0.1:13000 |
 
 ### Manual development run
 
@@ -140,8 +145,8 @@ Latest local gate:
 
 ```text
 13/13 ALL CHECKS PASSED
-backend/tests: 204 passed, 1 warning
-E2E list: 33 tests in 11 files
+backend/tests: 185 passed, 1 warning
+E2E list: 35 tests in 12 files
 Secret scan: No secrets found
 Docker compose config: passed
 PostgreSQL smoke / Redis smoke / Worker stress: passed

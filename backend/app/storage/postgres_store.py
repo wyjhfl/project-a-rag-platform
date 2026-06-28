@@ -146,6 +146,27 @@ class PostgresStore(Store):
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS rag_traces (
+                    trace_id TEXT PRIMARY KEY,
+                    question TEXT NOT NULL,
+                    decision TEXT NOT NULL,
+                    route TEXT DEFAULT '',
+                    rewritten_query TEXT DEFAULT '',
+                    retrieved_chunks JSONB DEFAULT '[]'::jsonb,
+                    selected_chunks JSONB DEFAULT '[]'::jsonb,
+                    citations JSONB DEFAULT '[]'::jsonb,
+                    tool_calls JSONB DEFAULT '[]'::jsonb,
+                    latency_ms DOUBLE PRECISION DEFAULT 0,
+                    token_usage JSONB DEFAULT '{}'::jsonb,
+                    safety_warning INTEGER DEFAULT 0,
+                    insufficient INTEGER DEFAULT 0,
+                    raw_trace JSONB DEFAULT '{}'::jsonb,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
             self._ensure_jobs_columns(conn)
             conn.commit()
 
@@ -517,6 +538,72 @@ class PostgresStore(Store):
             )
             conn.commit()
 
+    def save_rag_trace(self, trace: dict) -> str:
+        trace_id = trace.get("trace_id") or f"TRACE-{uuid.uuid4().hex[:12]}"
+        created_at = trace.get("created_at") or datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO rag_traces (
+                    trace_id, question, decision, route, rewritten_query,
+                    retrieved_chunks, selected_chunks, citations, tool_calls,
+                    latency_ms, token_usage, safety_warning, insufficient,
+                    raw_trace, created_at
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                ON CONFLICT (trace_id) DO UPDATE SET
+                    question = EXCLUDED.question,
+                    decision = EXCLUDED.decision,
+                    route = EXCLUDED.route,
+                    rewritten_query = EXCLUDED.rewritten_query,
+                    retrieved_chunks = EXCLUDED.retrieved_chunks,
+                    selected_chunks = EXCLUDED.selected_chunks,
+                    citations = EXCLUDED.citations,
+                    tool_calls = EXCLUDED.tool_calls,
+                    latency_ms = EXCLUDED.latency_ms,
+                    token_usage = EXCLUDED.token_usage,
+                    safety_warning = EXCLUDED.safety_warning,
+                    insufficient = EXCLUDED.insufficient,
+                    raw_trace = EXCLUDED.raw_trace,
+                    created_at = EXCLUDED.created_at
+                """,
+                (
+                    trace_id,
+                    trace.get("question", ""),
+                    trace.get("decision", ""),
+                    trace.get("route", ""),
+                    trace.get("rewritten_query", ""),
+                    Jsonb(trace.get("retrieved_chunks", [])),
+                    Jsonb(trace.get("selected_chunks", [])),
+                    Jsonb(trace.get("citations", [])),
+                    Jsonb(trace.get("tool_calls", [])),
+                    float(trace.get("latency_ms", 0.0) or 0.0),
+                    Jsonb(trace.get("token_usage", {})),
+                    1 if trace.get("safety_warning") else 0,
+                    1 if trace.get("insufficient") else 0,
+                    Jsonb(trace.get("raw_trace", {})),
+                    created_at,
+                ),
+            )
+            conn.commit()
+        return trace_id
+
+    def get_rag_trace(self, trace_id: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM rag_traces WHERE trace_id = %s",
+                (trace_id,),
+            ).fetchone()
+        return self._rag_trace_row_to_dict(row) if row else None
+
+    def list_rag_traces(self, limit: int = 50) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM rag_traces ORDER BY created_at DESC LIMIT %s",
+                (limit,),
+            ).fetchall()
+        return [self._rag_trace_row_to_dict(row) for row in rows]
+
     def upsert_ticket(self, ticket: dict) -> None:
         with self._connect() as conn:
             conn.execute(
@@ -637,6 +724,22 @@ class PostgresStore(Store):
         event = dict(row)
         event["metadata"] = self._json_value(event.get("metadata"), {})
         return event
+
+    def _rag_trace_row_to_dict(self, row: dict) -> dict:
+        trace = dict(row)
+        for key, default in {
+            "retrieved_chunks": [],
+            "selected_chunks": [],
+            "citations": [],
+            "tool_calls": [],
+            "token_usage": {},
+            "raw_trace": {},
+        }.items():
+            trace[key] = self._json_value(trace.get(key), default)
+        trace["safety_warning"] = bool(trace.get("safety_warning", 0))
+        trace["insufficient"] = bool(trace.get("insufficient", 0))
+        trace["latency_ms"] = float(trace.get("latency_ms", 0.0) or 0.0)
+        return trace
 
 
 PostgreSQLStore = PostgresStore

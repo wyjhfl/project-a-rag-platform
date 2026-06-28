@@ -237,7 +237,7 @@ const riskTradeoffs = [
   'SQLite + Chroma 降低面试 demo 成本，PostgreSQL + Redis + Milvus 保留生产增强路径',
   '内置 JobService 展示任务生命周期，外部队列是多实例规模化的下一步',
   'OpenAPI 生成前端类型并在 CI 阻断 drift，避免手写类型长期失真',
-  'Prometheus /metrics 已可用，Grafana/OTel 是后续可观测性增强方向',
+  'Prometheus /metrics 与 Grafana demo stack 已接入，OTel 是后续可观测性增强方向',
 ]
 
 const qualityPanel = computed(() => findPanel('evaluation'))

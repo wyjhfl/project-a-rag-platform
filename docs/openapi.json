@@ -347,6 +347,174 @@
         ]
       }
     },
+    "/api/v1/agent/diagnose": {
+      "post": {
+        "summary": "Agent Diagnose",
+        "operationId": "agent_diagnose_api_v1_agent_diagnose_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentDiagnoseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentDiagnoseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/v1/rag/traces": {
+      "get": {
+        "summary": "List Rag Traces",
+        "operationId": "list_rag_traces_api_v1_rag_traces_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Rag Traces Api V1 Rag Traces Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rag/traces/{trace_id}": {
+      "get": {
+        "summary": "Get Rag Trace",
+        "operationId": "get_rag_trace_api_v1_rag_traces__trace_id__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "trace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Rag Trace Api V1 Rag Traces  Trace Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rag/graph/relations": {
+      "get": {
+        "summary": "List Graph Relations",
+        "operationId": "list_graph_relations_api_v1_rag_graph_relations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GraphRelationRecord"
+                  },
+                  "type": "array",
+                  "title": "Response List Graph Relations Api V1 Rag Graph Relations Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/api/v1/tickets/start": {
       "post": {
         "summary": "Start Ticket",
@@ -1142,6 +1310,164 @@
         ],
         "title": "AcceptanceTraceEvent"
       },
+      "AgentDiagnoseRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Question"
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "default": 4
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "create_ticket_on_escalation": {
+            "type": "boolean",
+            "title": "Create Ticket On Escalation",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "AgentDiagnoseRequest"
+      },
+      "AgentDiagnoseResponse": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "plan": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Plan"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/AgentToolCall"
+            },
+            "type": "array",
+            "title": "Tool Calls"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/AgentQuality"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision",
+          "answer",
+          "plan",
+          "tool_calls",
+          "citations",
+          "quality",
+          "trace_id"
+        ],
+        "title": "AgentDiagnoseResponse"
+      },
+      "AgentQuality": {
+        "properties": {
+          "retrieval_score": {
+            "type": "number",
+            "title": "Retrieval Score",
+            "default": 0.0
+          },
+          "citation_count": {
+            "type": "integer",
+            "title": "Citation Count",
+            "default": 0
+          },
+          "faithfulness_hint": {
+            "type": "string",
+            "title": "Faithfulness Hint",
+            "default": "unknown"
+          },
+          "risk_level": {
+            "type": "string",
+            "title": "Risk Level",
+            "default": "low"
+          }
+        },
+        "type": "object",
+        "title": "AgentQuality"
+      },
+      "AgentToolCall": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Inputs"
+          },
+          "outputs": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Outputs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool",
+          "status"
+        ],
+        "title": "AgentToolCall"
+      },
       "AuditEventResponse": {
         "properties": {
           "action": {
@@ -1277,7 +1603,7 @@
         "properties": {
           "evaluation_type": {
             "type": "string",
-            "pattern": "^(ragas|regression|adversarial)$",
+            "pattern": "^(ragas|regression|adversarial|agentic)$",
             "title": "Evaluation Type"
           },
           "cases_path": {
@@ -1321,6 +1647,39 @@
           "summary"
         ],
         "title": "EvaluationRunResponse"
+      },
+      "GraphRelationRecord": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target"
+          },
+          "weight": {
+            "type": "number",
+            "title": "Weight",
+            "default": 1.0
+          },
+          "evidence_source": {
+            "type": "string",
+            "title": "Evidence Source",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "relation",
+          "target"
+        ],
+        "title": "GraphRelationRecord"
       },
       "HTTPValidationError": {
         "properties": {
