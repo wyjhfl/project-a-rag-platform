@@ -42,6 +42,11 @@ class Settings:
     llm_model: str = ""
     llm_api_key: str = ""
     llm_base_url: str = ""
+    embedding_provider: str = ""
+    embedding_model: str = ""
+    embedding_api_key: str = ""
+    embedding_base_url: str = ""
+    embedding_dimension: int = 384
     graph_retrieval_enabled: bool = False
     neo4j_uri: str = ""
     neo4j_username: str = "neo4j"
@@ -89,6 +94,14 @@ class Settings:
         lp = self.llm_provider.strip().lower()
         if not lp:
             errors.append("LLM_PROVIDER must not be empty")
+        embedding_fields = [self.embedding_model, self.embedding_api_key, self.embedding_base_url]
+        if any(embedding_fields) and not all(embedding_fields):
+            errors.append(
+                "EMBEDDING_MODEL, EMBEDDING_API_KEY and EMBEDDING_BASE_URL must be set "
+                "together to enable the embedding API (otherwise the local hash fallback is used)"
+            )
+        if self.embedding_dimension < 8 or self.embedding_dimension > 8192:
+            errors.append("EMBEDDING_DIMENSION must be between 8 and 8192")
         mb = self.multimodal_backend.strip().lower()
         if mb not in _VALID_MULTIMODAL_BACKENDS:
             errors.append(f"MULTIMODAL_BACKEND must be one of {_VALID_MULTIMODAL_BACKENDS}")
@@ -147,6 +160,11 @@ def get_settings() -> Settings:
         llm_model=os.getenv("LLM_MODEL", ""),
         llm_api_key=os.getenv("LLM_API_KEY", ""),
         llm_base_url=os.getenv("LLM_BASE_URL", ""),
+        embedding_provider=os.getenv("EMBEDDING_PROVIDER", ""),
+        embedding_model=os.getenv("EMBEDDING_MODEL", ""),
+        embedding_api_key=os.getenv("EMBEDDING_API_KEY", ""),
+        embedding_base_url=os.getenv("EMBEDDING_BASE_URL", ""),
+        embedding_dimension=_env_int("EMBEDDING_DIMENSION", 384),
         graph_retrieval_enabled=_env_bool("GRAPH_RETRIEVAL_ENABLED"),
         neo4j_uri=os.getenv("NEO4J_URI", ""),
         neo4j_username=os.getenv("NEO4J_USERNAME", "neo4j"),

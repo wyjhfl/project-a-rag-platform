@@ -4,7 +4,7 @@ from typing import Protocol
 import chromadb
 
 from app.rag.chunker import DocumentChunk
-from app.rag.embedding import HashEmbedding
+from app.rag.embedding import Embedding, HashEmbedding
 
 
 class VectorStore(Protocol):
@@ -19,11 +19,16 @@ class VectorStore(Protocol):
 
 
 class ChromaVectorStore:
-    def __init__(self, persist_dir: Path, collection_name: str = "project_a_v01") -> None:
+    def __init__(
+        self,
+        persist_dir: Path,
+        collection_name: str = "project_a_v01",
+        embedding: Embedding | None = None,
+    ) -> None:
         self.persist_dir = Path(persist_dir)
         self.collection_name = collection_name
         self.persist_dir.mkdir(parents=True, exist_ok=True)
-        self.embedding = HashEmbedding()
+        self.embedding = embedding or HashEmbedding()
         self.client = chromadb.PersistentClient(path=str(self.persist_dir))
         self.collection = self.client.get_or_create_collection(
             name=self.collection_name,
@@ -78,6 +83,7 @@ class MilvusVectorStore:
         token: str = "",
         collection_name: str = "project_a_v1",
         dimension: int = 384,
+        embedding: Embedding | None = None,
     ) -> None:
         if not uri:
             raise ValueError("VECTOR_BACKEND=milvus requires MILVUS_URI.")
@@ -86,8 +92,8 @@ class MilvusVectorStore:
         self.uri = uri
         self.token = token
         self.collection_name = collection_name
-        self.dimension = dimension
-        self.embedding = HashEmbedding(dimension=dimension)
+        self.embedding = embedding or HashEmbedding(dimension=dimension)
+        self.dimension = self.embedding.dimension
         self.client = MilvusClient(uri=uri, token=token or None)
         self._data_type = DataType
         self._ensure_collection()

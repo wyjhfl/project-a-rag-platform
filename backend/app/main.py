@@ -282,7 +282,7 @@ def create_app(
         ),
         graph_retriever=_build_graph_retriever(settings),
         cache=cache,
-        vector_store=build_vector_store(settings),
+        vector_store=build_vector_store(settings, chroma_dir=chroma_dir),
     )
     docs_sources = {
         "seed_docs": seed_docs_dir or settings.seed_docs_dir,
