@@ -21,7 +21,7 @@ def _config(**overrides) -> EmbeddingConfig:
     defaults = dict(
         provider="openai_compatible",
         model="bge-m3",
-        api_key="test-key",
+        api_key="test-key-placeholder",
         base_url="https://embedding.example.com/v1",
         dimension=4,
         batch_size=2,
@@ -40,7 +40,7 @@ def test_api_embedding_posts_openai_compatible_payload():
     assert all(len(vector) == 4 for vector in vectors)
     call = client.calls[0]
     assert call["url"] == "https://embedding.example.com/v1/embeddings"
-    assert call["headers"]["Authorization"] == "Bearer test-key"
+    assert call["headers"]["Authorization"] == "Bearer test-key-placeholder"
     assert call["payload"] == {"model": "bge-m3", "input": ["chunk one", "chunk two"]}
 
 
