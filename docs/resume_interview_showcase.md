@@ -51,7 +51,7 @@ Built an enterprise Agentic RAG diagnosis platform: a LangGraph StateGraph diagn
 
 ### 最大不足是什么？
 
-Git 历史是 reconstructed，需要透明说明；离线模式下 embedding 用确定性哈希向量兜底，语义召回能力必须配置真实 embedding 模型（BGE/Qwen 等）才能发挥，评测指标（context precision / faithfulness）目前是词面近似而非模型判分；OTel 链路追踪、生产级迁移治理、外部队列和更多真实业务样本还可以继续增强。这些不是回避项，而是下一阶段工程计划。
+Git 历史是 reconstructed，需要透明说明；真实模型（agnes-2.0-flash + bge-m3）已接入并完成一轮实测（regression 30/30、agentic 6/6、LLM-judge grounded 8/10），但评测集在 demo 语料上已饱和——哈希向量对照组分数相同，说明集合难度不足以区分检索后端，需要更大语料和改述式难例；faithfulness 判分目前是单票 LLM-as-judge 抽样，还没有人工标注对齐；OTel 链路追踪、生产级迁移治理、外部队列也在下一阶段计划里。这些不是回避项，而是已经写进质量报告的工程计划。
 
 ## GitHub 展示路径
 
