@@ -49,7 +49,9 @@ class RagPipeline:
         self.query_enhancer = QueryEnhancer()
         self.query_router = QueryRouter()
         self.security_guard = PromptInjectionGuard()
-        self.agentic_retriever = AgenticRetriever()
+        self.agentic_retriever = AgenticRetriever(
+            llm_rewriter=self._llm_query_rewrite if self.llm_generator.is_enabled else None
+        )
         self.cost_estimator = TokenCostEstimator()
         self.last_agentic_result: AgenticSearchResult | None = None
         self.last_trace: dict | None = None
@@ -441,19 +443,19 @@ class RagPipeline:
         )
         context_overlap_ok = len(overlap) >= 2 or (len(overlap) >= 1 and (model_hit or code_hit))
         partial_boundary_markers = [
-            "\u5f53\u524d\u8d44\u6599\u4e0d\u8db3",
-            "\u65e0\u6cd5\u786e\u8ba4",
-            "\u672a\u63d0\u53ca",
-            "\u672a\u5305\u542b",
-            "\u9700\u7ed3\u5408\u73b0\u573a",
+            "当前资料不足",
+            "无法确认",
+            "未提及",
+            "未包含",
+            "需结合现场",
         ]
         action_markers = [
-            "\u5efa\u8bae\u52a8\u4f5c",
-            "\u6392\u67e5",
-            "\u68c0\u67e5",
+            "建议动作",
+            "排查",
+            "检查",
             "1.",
-            "1\u3001",
-            "1\uff0e",
+            "1、",
+            "1．",
         ]
         has_partial_boundary = any(marker in cleaned for marker in partial_boundary_markers)
         has_grounded_actions = any(marker in cleaned for marker in action_markers)
@@ -465,6 +467,19 @@ class RagPipeline:
         if "当前资料不足，无法确认" in cleaned:
             return False
         return context_overlap_ok and (model_hit or code_hit or len(overlap) >= 3)
+
+    def _llm_query_rewrite(self, question: str) -> str:
+        prompt = (
+            "你是设备售后诊断系统的检索查询改写器。"
+            "请把用户口语化的故障描述改写成一条适合知识库检索的查询，"
+            "保留设备型号与故障码，补充规范的故障术语。\n"
+            f"用户问题：{question}\n"
+            "只输出改写后的一行查询，不要解释。"
+        )
+        result = self.llm_generator.generate(question=question, context="", prompt=prompt)
+        if result.error or not result.answer.strip():
+            return ""
+        return result.answer.strip().splitlines()[0].strip()
 
     def _build_llm_context(self, chunks) -> str:
         parts = []

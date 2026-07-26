@@ -11,6 +11,7 @@ from app.rag.scoring import (
 )
 
 SearchFn = Callable[[str, int], list[DocumentChunk]]
+QueryRewriter = Callable[[str], str]
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,16 @@ class AgenticSearchResult:
 
 
 class AgenticRetriever:
-    """Small v0.5 retrieval controller: judge, rewrite, retry, then flag conflicts."""
+    """Retrieval controller: judge quality, rewrite (LLM when available), retry, flag conflicts.
+
+    The rewrite step prefers an injected LLM rewriter and only runs on the retry
+    path (first-pass quality below threshold), so LLM cost is only paid when the
+    first retrieval attempt is weak. Without an LLM the deterministic heuristic
+    rewrite keeps the loop fully offline-capable.
+    """
+
+    def __init__(self, llm_rewriter: QueryRewriter | None = None) -> None:
+        self.llm_rewriter = llm_rewriter
 
     def search(self, question: str, search_fn: SearchFn, top_k: int = 4) -> AgenticSearchResult:
         first_chunks = search_fn(question, top_k)
@@ -61,6 +71,16 @@ class AgenticRetriever:
         )
 
     def rewrite_query(self, question: str) -> str:
+        if self.llm_rewriter:
+            try:
+                rewritten = (self.llm_rewriter(question) or "").strip()
+            except Exception:
+                rewritten = ""
+            if rewritten and rewritten != question:
+                return rewritten
+        return self._heuristic_rewrite(question)
+
+    def _heuristic_rewrite(self, question: str) -> str:
         tokens = self._tokens(question)
         hints = []
         if any(token.startswith("A") for token in tokens) or "空压机" in question:
