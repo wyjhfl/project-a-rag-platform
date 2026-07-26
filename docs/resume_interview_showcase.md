@@ -12,16 +12,18 @@ Project A 是一个企业设备售后诊断 Agentic RAG 平台，用单诊断控
 
 ### 中文版
 
-企业设备售后诊断 Agentic RAG 平台，基于 FastAPI、Vue 3、Chroma/SQLite、LangChain/LangGraph 实现单诊断控制器、动态检索、query rewrite、Prompt 注入防护、引用证据、Trace 持久化、GraphRAG 关系展示、高风险工单升级、异步任务、审计日志、Prometheus/Grafana、Alembic 迁移骨架、OpenAPI 类型同步与 Playwright E2E；通过生产验收脚本覆盖 pytest、ruff、前端构建、Docker Compose、Redis/PostgreSQL smoke 与 E2E。
+企业设备售后诊断 Agentic RAG 平台：基于 LangGraph StateGraph 实现诊断 Agent（安全检查 → LLM 计划生成 → 路由 → 自适应检索 → LLM+规则双通道风险判级 → 拒答/升级人工工单，条件边表达决策分支），LLM 查询改写仅在低质量 retry 路径触发以控制 token 成本；接入 OpenAI 兼容 LLM 与 Embedding Provider（BGE/Qwen 等），未配置时降级为确定性离线实现保证 CI 可复现；配套 grounded 引用、Prompt 注入防护、Trace 持久化、GraphRAG 关系、异步 Job、审计日志、Prometheus/Grafana、Alembic、OpenAPI 类型同步、Playwright E2E 与 13 步生产验收门禁（FastAPI + Vue 3 + Chroma/Milvus + SQLite/PostgreSQL）。
 
 ### English version
 
-Built an enterprise Agentic RAG diagnosis platform with FastAPI, Vue 3, Chroma/SQLite, LangChain/LangGraph, adaptive retrieval, trace persistence, GraphRAG relation views, grounded answers with citations, prompt-injection guardrails, async jobs, ticket escalation, audit logs, Prometheus/Grafana observability, Alembic migration skeletons, OpenAPI-generated frontend types, Playwright E2E, and a production acceptance gate.
+Built an enterprise Agentic RAG diagnosis platform: a LangGraph StateGraph diagnosis agent (security check → LLM-generated plan → routing → adaptive retrieval → dual-channel LLM+rule risk assessment → refuse/escalate via conditional edges), with LLM query rewriting bounded to the low-quality retry path; pluggable OpenAI-compatible LLM and embedding providers (BGE/Qwen/OpenAI) that degrade to deterministic offline implementations for reproducible CI; plus grounded citations, prompt-injection guardrails, trace persistence, GraphRAG relations, async jobs, ticket escalation, audit logs, Prometheus/Grafana observability, Alembic migrations, OpenAPI-generated frontend types, Playwright E2E, and a 13-step production acceptance gate (FastAPI + Vue 3 + Chroma/Milvus + SQLite/PostgreSQL).
 
 ## 面试亮点
 
 | 亮点 | 可以怎么讲 |
 |---|---|
+| LangGraph Agent | 诊断控制器是 StateGraph + 条件边，LLM 做计划与风险判级，关键词规则是安全下限（LLM 只能升险不能降险） |
+| 优雅降级设计 | LLM/Embedding 未配置时自动退回确定性实现：同一套代码离线 CI 可复现，线上接真实模型 |
 | RAG 不是聊天包装 | 检索、引用、拒答、评测、bad case 和工单闭环组成业务系统 |
 | 异步 Job | 入库和评测不阻塞请求，支持 claim、cancel、retry、timeout、heartbeat |
 | 可观测性 | Request ID、统一错误体、审计事件、Prometheus metrics 和 System Status UI |
@@ -49,7 +51,7 @@ Built an enterprise Agentic RAG diagnosis platform with FastAPI, Vue 3, Chroma/S
 
 ### 最大不足是什么？
 
-Git 历史是 reconstructed，需要透明说明；Prometheus/Grafana demo stack 和 Alembic 迁移骨架已经接入，但 OTel 链路追踪、生产级迁移治理、外部队列和更多真实业务样本还可以继续增强。这些不是回避项，而是下一阶段工程计划。
+Git 历史是 reconstructed，需要透明说明；离线模式下 embedding 用确定性哈希向量兜底，语义召回能力必须配置真实 embedding 模型（BGE/Qwen 等）才能发挥，评测指标（context precision / faithfulness）目前是词面近似而非模型判分；OTel 链路追踪、生产级迁移治理、外部队列和更多真实业务样本还可以继续增强。这些不是回避项，而是下一阶段工程计划。
 
 ## GitHub 展示路径
 

@@ -1,0 +1,178 @@
+{
+  "date": "2026-07-04",
+  "environment": {
+    "machine": "local Windows development environment",
+    "backend_start": "uv run python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
+    "env": {
+      "AUTH_ENABLED": "false",
+      "METRICS_ENABLED": "true",
+      "VECTOR_BACKEND": "chroma",
+      "STORAGE_BACKEND": "sqlite",
+      "APP_ENV": "load-test"
+    }
+  },
+  "boundary": "local production-like smoke load test; not real production traffic validation",
+  "results": [
+    {
+      "scenario": "agentic",
+      "requests": 10,
+      "concurrency": 2,
+      "ok": 10,
+      "failed": 0,
+      "error_rate": 0.0,
+      "elapsed_s": 0.448,
+      "throughput_rps": 22.334,
+      "latency_ms": {
+        "min": 25.303,
+        "avg": 86.349,
+        "p50": 77.282,
+        "p95": 149.895,
+        "p99": 149.895,
+        "max": 149.895
+      },
+      "status_counts": {
+        "200": 10
+      },
+      "error_counts": {},
+      "sample_errors": []
+    },
+    {
+      "scenario": "chat",
+      "requests": 20,
+      "concurrency": 2,
+      "ok": 20,
+      "failed": 0,
+      "error_rate": 0.0,
+      "elapsed_s": 0.667,
+      "throughput_rps": 29.992,
+      "latency_ms": {
+        "min": 16.49,
+        "avg": 65.836,
+        "p50": 46.508,
+        "p95": 152.309,
+        "p99": 184.515,
+        "max": 184.515
+      },
+      "status_counts": {
+        "200": 20
+      },
+      "error_counts": {},
+      "sample_errors": []
+    },
+    {
+      "scenario": "graph",
+      "requests": 50,
+      "concurrency": 5,
+      "ok": 50,
+      "failed": 0,
+      "error_rate": 0.0,
+      "elapsed_s": 0.31,
+      "throughput_rps": 161.483,
+      "latency_ms": {
+        "min": 6.785,
+        "avg": 29.115,
+        "p50": 14.889,
+        "p95": 76.115,
+        "p99": 84.218,
+        "max": 84.218
+      },
+      "status_counts": {
+        "200": 50
+      },
+      "error_counts": {},
+      "sample_errors": []
+    },
+    {
+      "scenario": "health",
+      "requests": 100,
+      "concurrency": 10,
+      "ok": 100,
+      "failed": 0,
+      "error_rate": 0.0,
+      "elapsed_s": 0.681,
+      "throughput_rps": 146.826,
+      "latency_ms": {
+        "min": 23.672,
+        "avg": 66.118,
+        "p50": 50.19,
+        "p95": 231.278,
+        "p99": 238.233,
+        "max": 241.855
+      },
+      "status_counts": {
+        "200": 100
+      },
+      "error_counts": {},
+      "sample_errors": []
+    },
+    {
+      "scenario": "metrics",
+      "requests": 50,
+      "concurrency": 5,
+      "ok": 50,
+      "failed": 0,
+      "error_rate": 0.0,
+      "elapsed_s": 0.375,
+      "throughput_rps": 133.302,
+      "latency_ms": {
+        "min": 4.805,
+        "avg": 35.943,
+        "p50": 26.838,
+        "p95": 105.782,
+        "p99": 110.109,
+        "max": 110.109
+      },
+      "status_counts": {
+        "200": 50
+      },
+      "error_counts": {},
+      "sample_errors": []
+    },
+    {
+      "scenario": "ready",
+      "requests": 100,
+      "concurrency": 10,
+      "ok": 100,
+      "failed": 0,
+      "error_rate": 0.0,
+      "elapsed_s": 0.635,
+      "throughput_rps": 157.374,
+      "latency_ms": {
+        "min": 24.335,
+        "avg": 60.834,
+        "p50": 43.53,
+        "p95": 234.856,
+        "p99": 239.255,
+        "max": 240.079
+      },
+      "status_counts": {
+        "200": 100
+      },
+      "error_counts": {},
+      "sample_errors": []
+    },
+    {
+      "scenario": "traces",
+      "requests": 50,
+      "concurrency": 5,
+      "ok": 50,
+      "failed": 0,
+      "error_rate": 0.0,
+      "elapsed_s": 0.267,
+      "throughput_rps": 187.452,
+      "latency_ms": {
+        "min": 4.165,
+        "avg": 25.391,
+        "p50": 15.44,
+        "p95": 100.662,
+        "p99": 102.203,
+        "max": 102.203
+      },
+      "status_counts": {
+        "200": 50
+      },
+      "error_counts": {},
+      "sample_errors": []
+    }
+  ]
+}
